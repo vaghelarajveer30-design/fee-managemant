@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// ૧. Firebase સેટઅપ
+// ૧. Firebase સેટઅપ[cite: 1]
 const firebaseConfig = {
     apiKey: "AIzaSyCjboFcoWJmVrjC9J0Izi4ZgjMnau9czmU",
     authDomain: "fee-managemant.firebaseapp.com",
@@ -19,7 +19,7 @@ const db = getDatabase(app);
 window.studentsData = {};
 window.currentStudentId = null;
 
-// Firebase Realtime Synchronization
+// Firebase Realtime Synchronization[cite: 1]
 onValue(ref(db, 'students'), (snapshot) => {
     window.studentsData = snapshot.val() || {};
     if (typeof window.renderStudentList === 'function') {
@@ -30,7 +30,7 @@ onValue(ref(db, 'students'), (snapshot) => {
     }
 });
 
-// ૨. વિભાગો દર્શાવવા અને છુપાવવા (Section Navigation)
+// ૨. વિભાગો દર્શાવવા અને છુપાવવા (Section Navigation)[cite: 1]
 window.showSection = function(sectionId) {
     const sections = ['dashboardSection', 'addStudentSection', 'studentDetailsSection', 'stationerySection'];
     sections.forEach(id => {
@@ -46,13 +46,13 @@ window.showDashboard = function() {
     window.showSection('dashboardSection');
 };
 
-// ૩. "નવો વિદ્યાર્થી ઉમેરો" બટન ફંક્શન
+// ૩. "નવો વિદ્યાર્થી ઉમેરો" બટન ફંક્શન[cite: 1]
 window.addStudent = function() {
     window.currentStudentId = null;
+    
     const form = document.getElementById("addStudentForm");
     if (form) form.reset();
     
-    // આજે ડિફોલ્ટ દાખલ તારીખ સેટ કરો
     const joinDateInput = document.getElementById("joinDate");
     if (joinDateInput) {
         joinDateInput.value = new Date().toISOString().split('T')[0];
@@ -61,18 +61,18 @@ window.addStudent = function() {
     window.showSection('addStudentSection');
 };
 
-// ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)
+// ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)[cite: 1]
 window.saveStudent = function(event) {
-    if (event) event.preventDefault(); // પેજ રીફ્રેશ થતું રોકવા માટે
+    if (event) event.preventDefault();
 
     const name = document.getElementById("studentName")?.value.trim();
     const phone = document.getElementById("phone")?.value.trim();
-    const std = document.getElementById("studentStd")?.value;
-    const course = document.getElementById("course")?.value;
+    const std = document.getElementById("studentStd")?.value || "";
+    const course = document.getElementById("course")?.value || "";
     const feeType = document.querySelector('input[name="feeType"]:checked')?.value || "માસિક";
     const monthlyFee = parseFloat(document.getElementById("monthlyFee")?.value) || 0;
-    const joinDate = document.getElementById("joinDate")?.value;
-    const dob = document.getElementById("dob")?.value;
+    const joinDate = document.getElementById("joinDate")?.value || "";
+    const dob = document.getElementById("dob")?.value || "";
     const status = document.getElementById("status")?.value || "Active (ચાલુ છે)";
 
     if (!name || !phone) {
@@ -98,7 +98,7 @@ window.saveStudent = function(event) {
     });
 };
 
-// ૫. ઓટો ફી ગણતરી (Auto Fee Calculation)
+// ૫. ઓટો ફી ગણતરી (Auto Fee Calculation)[cite: 1]
 window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     if (!joinDateStr || !monthlyFee) return 0;
     const join = new Date(joinDateStr);
@@ -109,7 +109,7 @@ window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     return Math.round(diffDays * dailyRate);
 };
 
-// ૬. રસીદ બનાવવાનું ફંક્શન (Generate Receipt)
+// ૬. રસીદ બનાવવાનું ફંક્શન (Generate Receipt)[cite: 1]
 window.generateReceipt = function() {
     if (!window.currentStudentId) return;
 
@@ -145,7 +145,7 @@ window.generateReceipt = function() {
     });
 };
 
-// ૭. રસીદ ઈમેજ પોપ-અપ (Receipt Modal)
+// ૭. રસીદ ઈમેજ પોપ-અપ (Receipt Modal)[cite: 1]
 window.showReceiptModal = function(receipt, student) {
     const modal = document.getElementById("receiptModal");
     if (!modal) return;
@@ -172,21 +172,3 @@ window.closeReceiptModal = function() {
     const modal = document.getElementById("receiptModal");
     if (modal) modal.style.display = "none";
 };
-
-// ૮. DOM લોડ થાય એટલે Event Listeners બાઇન્ડ કરો
-document.addEventListener("DOMContentLoaded", () => {
-    // "નવો વિદ્યાર્થી ઉમેરો" બટન લિંક કરો
-    const addBtn = document.getElementById("addStudentBtn") || document.querySelector("[onclick='addStudent()']");
-    if (addBtn) {
-        addBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            window.addStudent();
-        });
-    }
-
-    // ફોર્મ સબમિટ પર saveStudent કોલ કરો
-    const addStudentForm = document.getElementById("addStudentForm");
-    if (addStudentForm) {
-        addStudentForm.addEventListener("submit", window.saveStudent);
-    }
-});
