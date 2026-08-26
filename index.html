@@ -25,7 +25,6 @@
         .btn-cyan { background-color: #0097a7; }
         .btn-gray { background-color: #616161; }
         .btn-whatsapp { background-color: #25D366; }
-        .btn-darkgreen { background-color: #00695c; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -63,7 +62,6 @@
 
         <!-- 1. DASHBOARD PAGE -->
         <div id="pageDashboard">
-            
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ Google Drive કલાઉડ બેકઅપ સિસ્ટમ</div>
                 <button class="btn btn-green" onclick="alert('ડેટા Drive માં સેવ થઈ ગયો છે!')">📥 એક ક્લિક પર બધો ડેટા Drive માં સેવ કરો</button>
@@ -92,7 +90,6 @@
 
             <div id="studentListContainer"></div>
 
-            <!-- WORKING DASHBOARD BUTTONS -->
             <div class="grid-2" style="margin-top: 10px;">
                 <button class="btn btn-orange" onclick="navigateTo('pageStationeryReport')">📖 સ્ટેશનરી રિપોર્ટ & સ્ટોક</button>
                 <button class="btn btn-orange" onclick="navigateTo('pageAdminExpense')">💸 Admin ખર્ચ વિગત</button>
@@ -125,6 +122,11 @@
                     <div class="form-group">
                         <label>મોબાઈલ નં</label>
                         <input type="text" id="inpPhone" class="form-control" required placeholder="9033197515">
+                    </div>
+                    <!-- 📌 ઉમેરાયેલ: દાખલ તારીખ -->
+                    <div class="form-group">
+                        <label>📅 દાખલ તારીખ</label>
+                        <input type="date" id="inpJoinDate" class="form-control" required>
                     </div>
                     <div class="grid-2">
                         <div class="form-group">
@@ -160,7 +162,6 @@
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
             
-            <!-- ADD NEW STOCK ITEM -->
             <div class="card">
                 <h3 style="color:#1565c0;">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
                 <form onsubmit="event.preventDefault(); addNewStock();" style="margin-top:8px;">
@@ -186,7 +187,6 @@
                 </form>
             </div>
 
-            <!-- STOCK TABLE -->
             <div class="card">
                 <h4>📊 સ્ટેશનરી સ્ટોક અને નફાની ગણતરી</h4>
                 <table>
@@ -203,7 +203,6 @@
                 </table>
             </div>
 
-            <!-- ANNUAL ISSUED STATIONERY REPORT -->
             <div class="card">
                 <h4>📖 વિદ્યાર્થીઓને આપેલી સ્ટેશનરીનો વાર્ષિક રિપોર્ટ</h4>
                 <table>
@@ -271,6 +270,8 @@
                 </div>
                 <div style="margin-top:10px; font-size:13px; line-height:1.7; color:#333;">
                     <div><strong>મોબાઈલ નં:</strong> <span id="profPhone">9033197515</span></div>
+                    <!-- 📌 ઉમેરાયેલ: પ્રોફાઇલમાં દાખલ તારીખ -->
+                    <div><strong>📅 દાખલ તારીખ:</strong> <span id="profJoinDate">01-06-2026</span></div>
                     <div><strong>કોર્સનું નામ:</strong> <span id="profCourse">Navoday</span></div>
                     <div><strong>ફી નો પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
                 </div>
@@ -282,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- GIVE STATIONERY TO STUDENT (CASH / CREDIT) -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📖 વિદ્યાર્થીને સ્ટેશનરી આપો</h4>
                 <div class="form-group">
@@ -356,19 +356,19 @@
                     <input type="text" id="recPayer" class="form-control" placeholder="દા.ત. રવિભાઈ">
                 </div>
 
-                <button class="btn btn-orange" onclick="buildReceiptPreview()">🧾 પહોંચ જનરેટ કરો (બાકી રસીદ)</button>
+                <button class="btn btn-orange" onclick="buildReceiptPreview()">🧾 પહોંચ જનરેટ કરો</button>
             </div>
 
-            <!-- FEE HISTORY TABLE WITH PAID / DUE STATUS BUTTONS -->
+            <!-- 📌 જમા અને બાકી જાતે સુધારવા માટે ફી પહોંચ હિસ્ટ્રી TABLE -->
             <div class="card">
-                <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
+                <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ (મેન્યુઅલ ચેન્જ)</h4>
                 <table>
                     <thead>
                         <tr>
                             <th>તારીખ</th>
                             <th>રકમ</th>
                             <th>સ્ટેટસ</th>
-                            <th>એક્શન</th>
+                            <th>સ્ટેટસ બદલો</th>
                         </tr>
                     </thead>
                     <tbody id="feeHistoryTableBody"></tbody>
@@ -422,13 +422,14 @@
                             <span>✍️ <strong>ભરનાર:</strong> <span id="rPayer">રવિભાઈ</span></span>
                         </div>
                         <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
-                        <div style="text-align: center; font-weight: bold; color: #1565c0;">
-                            <span id="rFullNamePhone">વાઘેલા રવિ વિનોદભાઈ (9033197515)</span>
+                        
+                        <!-- 📌 કાયમી નામ અને મોબાઈલ નંબર -->
+                        <div style="text-align: center; font-weight: bold; color: #1565c0; font-size:14px;">
+                            વાઘેલા રવિ વિનોદભાઈ (9033197515)
                         </div>
                     </div>
                 </div>
 
-                <!-- GENERATED IMAGE -->
                 <div id="imageResultContainer" style="margin-top: 15px; text-align: center; display: none;">
                     <h4 style="color: #2e7d32; margin-bottom: 6px;">✨ જનરેટ થયેલી પહોંચ ઈમેજ:</h4>
                     <img id="generatedImage" src="" style="max-width: 100%; border: 2px solid #1565c0; border-radius: 8px;" />
@@ -448,15 +449,14 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // MAIN DATA ARRAYS
         let stockList = [
             { id: "s1", name: "નવોદય બુક", costPrice: 200, sellPrice: 300, qty: 50 },
             { id: "s2", name: "પરીક્ષા પેપર સેટ", costPrice: 90, sellPrice: 150, qty: 25 }
         ];
 
         let students = [
-            { id: "1", name: "Ravi", phone: "9033197515", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, stationery: [], receipts: [] },
-            { id: "2", name: "Karan", phone: "9033197515", course: "Navoday", std: "5", feeType: "વાર્ષિક", fee: 4000, paid: 0, due: 4000, stationery: [], receipts: [] }
+            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "01-06-2026", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, stationery: [], receipts: [] },
+            { id: "2", name: "Karan", phone: "9033197515", joinDate: "01-06-2026", course: "Navoday", std: "5", feeType: "વાર્ષિક", fee: 4000, paid: 0, due: 4000, stationery: [], receipts: [] }
         ];
 
         let expenses = [];
@@ -470,6 +470,7 @@
             document.getElementById('recDateVal').value = today;
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
+            document.getElementById('inpJoinDate').value = today;
         };
 
         function navigateTo(pageId) {
@@ -521,12 +522,13 @@
         function saveStudent() {
             const name = document.getElementById('inpName').value;
             const phone = document.getElementById('inpPhone').value;
+            const joinDate = formatDate(document.getElementById('inpJoinDate').value);
             const std = document.getElementById('inpStd').value;
             const course = document.getElementById('inpCourse').value;
             const feeType = document.getElementById('inpFeeType').value;
             const fee = parseFloat(document.getElementById('inpMonthlyFee').value) || 0;
 
-            students.push({ id: Date.now().toString(), name, phone, std, course, feeType, fee, paid: 0, due: fee, stationery: [], receipts: [] });
+            students.push({ id: Date.now().toString(), name, phone, joinDate, std, course, feeType, fee, paid: 0, due: fee, stationery: [], receipts: [] });
             renderDashboard();
             navigateTo('pageDashboard');
         }
@@ -540,6 +542,7 @@
         function updateStudentProfileUI() {
             document.getElementById('profName').innerText = currentStudent.name;
             document.getElementById('profPhone').innerText = currentStudent.phone;
+            document.getElementById('profJoinDate').innerText = currentStudent.joinDate || 'N/A';
             document.getElementById('profCourse').innerText = currentStudent.course;
             document.getElementById('profFeeType').innerText = currentStudent.feeType;
             document.getElementById('profFeeRate').innerText = currentStudent.fee;
@@ -553,7 +556,6 @@
             renderStockDropdown();
         }
 
-        /* STOCK MANAGEMENT LOGIC */
         function addNewStock() {
             const name = document.getElementById('stkName').value;
             const costPrice = parseFloat(document.getElementById('stkCostPrice').value) || 0;
@@ -593,44 +595,34 @@
             });
         }
 
-        /* GIVE STATIONERY TO STUDENT */
         function giveStationeryToStudent() {
             const stkId = document.getElementById('selectStationeryItem').value;
             const qty = parseInt(document.getElementById('giveQty').value) || 1;
             const payType = document.getElementById('givePayType').value;
             const stockItem = stockList.find(s => s.id === stkId);
 
-            if (!stockItem) {
-                alert('સ્ટોક પસંદ કરો.');
-                return;
-            }
-            if (stockItem.qty < qty) {
+            if (!stockItem || stockItem.qty < qty) {
                 alert('સ્ટોકમાં પુરતો જથ્થો નથી!');
                 return;
             }
 
-            // Reduce Stock
             stockItem.qty -= qty;
-
             const totalAmt = stockItem.sellPrice * qty;
-            const itemRecord = {
+
+            currentStudent.stationery.push({
                 date: new Date().toLocaleDateString('gu-IN'),
                 name: stockItem.name,
                 qty: qty,
                 price: totalAmt,
                 payType: payType
-            };
-
-            currentStudent.stationery.push(itemRecord);
+            });
 
             if (payType === 'ઉધાર') {
                 currentStudent.fee += totalAmt;
                 currentStudent.due += totalAmt;
-                alert(`${stockItem.name} (${qty} નંગ) ઉધાર આપેલ છે. (ફીમાં બાકી ઉમેરાઈ ગયા)`);
             } else {
                 currentStudent.fee += totalAmt;
                 currentStudent.paid += totalAmt;
-                alert(`${stockItem.name} (${qty} નંગ) રોકડેથી આપેલ છે. (જમા થઈ ગયા)`);
             }
 
             renderStockTable();
@@ -642,7 +634,7 @@
             const tbody = document.getElementById('studentStationeryList');
             tbody.innerHTML = '';
             if (currentStudent.stationery.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="color:#888;">હજી સુધી કોઈ સ્ટેશનરી આપેલી નથી.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="color:#888;">કોઈ સ્ટેશનરી આપેલી નથી.</td></tr>';
                 return;
             }
 
@@ -652,7 +644,7 @@
                         <td>${st.name}</td>
                         <td>${st.qty}</td>
                         <td>₹${st.price}</td>
-                        <td><span style="background:${st.payType==='ઉધાર'?'#ffebee':'#e8f5e9'}; color:${st.payType==='ઉધાર'?'red':'green'}; padding:2px 4px; border-radius:4px; font-weight:bold;">${st.payType}</span></td>
+                        <td><span style="color:${st.payType==='ઉધાર'?'red':'green'}; font-weight:bold;">${st.payType}</span></td>
                     </tr>
                 `;
             });
@@ -681,13 +673,10 @@
             document.getElementById('totalStationeryIssuedAmt').innerText = '₹' + totalAmt;
         }
 
-        /* ADMIN EXPENSE LOGIC */
         function addExpense() {
             const detail = document.getElementById('expDetail').value;
             const amount = parseFloat(document.getElementById('expAmount').value) || 0;
-            const date = new Date().toLocaleDateString('gu-IN');
-
-            expenses.push({ date, detail, amount });
+            expenses.push({ date: new Date().toLocaleDateString('gu-IN'), detail, amount });
             renderExpenses();
             document.getElementById('expDetail').value = '';
             document.getElementById('expAmount').value = '';
@@ -701,7 +690,6 @@
             });
         }
 
-        /* RECEIPT PREVIEW & STATUS TOGGLE (DUE / PAID) */
         function buildReceiptPreview() {
             const payDate = formatDate(document.getElementById('recDateVal').value);
             const fDate = formatDate(document.getElementById('recFromDate').value);
@@ -710,49 +698,29 @@
             const payMode = document.getElementById('recPayMode').value;
             const payer = document.getElementById('recPayer').value || currentStudent.name;
 
-            // Save Receipt with Default "🔴 બાકી" Status
             const newReceipt = {
                 id: Date.now().toString(),
                 date: payDate,
-                fromDate: fDate,
-                toDate: tDate,
                 feeVal: feeVal,
-                paidVal: 0, // DEFAULT UNPAID
-                dueVal: feeVal,
-                mode: payMode,
-                payer: payer,
                 status: '🔴 બાકી'
             };
 
             currentStudent.receipts.push(newReceipt);
             renderFeeHistoryTable();
 
-            // Populate Preview
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
             document.getElementById('rPayDate').innerText = payDate;
             
             const tbody = document.getElementById('receiptTableBody');
-            tbody.innerHTML = `
-                <tr>
-                    <td>1</td>
-                    <td>ટ્યુશન ફી (${currentStudent.feeType})</td>
-                    <td style="font-weight: bold;">₹${feeVal}</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td>1</td><td>ટ્યુશન ફી (${currentStudent.feeType})</td><td style="font-weight: bold;">₹${feeVal}</td></tr>`;
 
             let creditStationeryTotal = 0;
             currentStudent.stationery.forEach((st, i) => {
                 if (st.payType === 'ઉધાર') {
                     creditStationeryTotal += st.price;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${i + 2}</td>
-                            <td>${st.name} (ઉધાર)</td>
-                            <td style="font-weight: bold;">₹${st.price}</td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name} (ઉધાર)</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
                 }
             });
 
@@ -764,12 +732,12 @@
             document.getElementById('rPeriodTo').innerText = tDate;
             document.getElementById('rMode').innerText = payMode;
             document.getElementById('rPayer').innerText = payer;
-            document.getElementById('rFullNamePhone').innerText = `વાઘેલા ${currentStudent.name} વિનોદભાઈ (${currentStudent.phone})`;
 
             document.getElementById('previewContainer').style.display = 'block';
             document.getElementById('previewContainer').scrollIntoView({ behavior: 'smooth' });
         }
 
+        /* 📌 મેન્યુઅલ જમા / બાકી બદલવાનું લોજિક (TOGGLE STATUS) */
         function renderFeeHistoryTable() {
             const tbody = document.getElementById('feeHistoryTableBody');
             tbody.innerHTML = '';
@@ -782,30 +750,35 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${r.date}</td>
-                        <td>₹${r.dueVal}</td>
+                        <td>₹${r.feeVal}</td>
                         <td><span style="background:${r.status==='🟢 જમા'?'#e8f5e9':'#ffebee'}; color:${r.status==='🟢 જમા'?'green':'red'}; padding:2px 6px; border-radius:4px; font-weight:bold;">${r.status}</span></td>
                         <td>
-                            ${r.status === '🔴 બાકી' ? `<button class="btn btn-green" style="padding:2px 6px; font-size:10px; width:auto; display:inline-block;" onclick="markReceiptPaid('${r.id}')">🟢 જમા કરો</button>` : '✅ ચુકવાયેલ'}
+                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="toggleReceiptStatus('${r.id}')">🔄 સ્ટેટસ બદલો</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function markReceiptPaid(recId) {
+        function toggleReceiptStatus(recId) {
             const rec = currentStudent.receipts.find(r => r.id === recId);
             if (rec) {
-                rec.status = '🟢 જમા';
-                rec.paidVal = rec.dueVal;
-                rec.dueVal = 0;
-
-                currentStudent.paid += rec.paidVal;
-                currentStudent.due -= rec.paidVal;
-                if (currentStudent.due < 0) currentStudent.due = 0;
+                if (rec.status === '🔴 બાકી') {
+                    rec.status = '🟢 જમા';
+                    currentStudent.paid += rec.feeVal;
+                    currentStudent.due -= rec.feeVal;
+                    if (currentStudent.due < 0) currentStudent.due = 0;
+                    alert('સ્ટેટસ બદલીને "🟢 જમા" કરવામાં આવ્યું છે.');
+                } else {
+                    rec.status = '🔴 બાકી';
+                    currentStudent.paid -= rec.feeVal;
+                    currentStudent.due += rec.feeVal;
+                    if (currentStudent.paid < 0) currentStudent.paid = 0;
+                    alert('સ્ટેટસ બદલીને ફરી "🔴 બાકી" કરવામાં આવ્યું છે.');
+                }
 
                 updateStudentProfileUI();
                 renderDashboard();
-                alert('ફી સફળતાપૂર્વક જમા થઈ ગઈ છે!');
             }
         }
 
@@ -826,12 +799,12 @@
         }
 
         function shareWhatsAppText() {
-            const text = `*નિર્મળા નવોદય ક્લાસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}`;
+            const text = `*નિર્મળા નવોદય ક્લાસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n📅 *દાખલ તારીખ:* ${currentStudent.joinDate || 'N/A'}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             window.open(`https://api.whatsapp.com/send?phone=91${currentStudent.phone}&text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function copyTextReceipt() {
-            const text = `નિર્મળા નવોદય ક્લાસિસ - વિદ્યાર્થી: ${currentStudent.name}, બાકી ફી: ₹${currentStudent.due}`;
+            const text = `નિર્મળા નવોદય ક્લાસિસ - વિદ્યાર્થી: ${currentStudent.name}, દાખલ તારીખ: ${currentStudent.joinDate || 'N/A'}, બાકી ફી: ₹${currentStudent.due} - વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             navigator.clipboard.writeText(text).then(() => alert("લખાણ કોપી થઈ ગયું છે!"));
         }
 
