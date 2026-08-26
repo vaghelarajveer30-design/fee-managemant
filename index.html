@@ -63,7 +63,7 @@
         <!-- 1. DASHBOARD PAGE -->
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
-                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ કલાઉડ બેકઅપ સિસ્ટમ (Drive / Firebase)</div>
+                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Drive / Firebase)</div>
                 <div class="grid-2">
                     <button class="btn btn-green" onclick="backupDataToCloud()">📥 બેકઅપ ડેટા લેવો</button>
                     <button class="btn btn-blue" onclick="restoreDataFromCloud()">🔄 ડેટા રીસ્ટોર કરવો</button>
@@ -72,7 +72,7 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px 0;">
                 <h3 style="font-size: 17px; color: #333;">વિદ્યાર્થીઓની યાદી</h3>
-                <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="navigateTo('pageAddStudent')">+ નવો વિદ્યાર્થી</button>
+                <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
 
             <div class="grid-2" style="margin-bottom: 12px;">
@@ -82,13 +82,6 @@
                 <div class="stat-box" style="background-color: #d32f2f;">
                     🔴 ઇન-એક્ટિવ વિદ્યાર્થી<br><span id="countInactive" style="font-size: 20px;">0</span>
                 </div>
-            </div>
-
-            <div class="card" style="padding: 10px;">
-                <label style="font-size: 12px; font-weight: bold; color: #1565c0;">🔍 કોર્સ પ્રમાણે વિભાજન:</label>
-                <select class="form-control" style="margin-top: 4px;">
-                    <option>બધા જ કોર્સ (All Courses)</option>
-                </select>
             </div>
 
             <div id="studentListContainer"></div>
@@ -110,14 +103,15 @@
             <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
-        <!-- 2. ADD STUDENT PAGE -->
+        <!-- 2. ADD / EDIT STUDENT PAGE -->
         <div id="pageAddStudent" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
             </div>
             <div class="card">
-                <h3>નવો વિદ્યાર્થી ઉમેરો</h3>
+                <h3 id="formTitle">નવો વિદ્યાર્થી ઉમેરો</h3>
                 <form onsubmit="event.preventDefault(); saveStudent();">
+                    <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
                         <label>વિદ્યાર્થીનું નામ</label>
                         <input type="text" id="inpName" class="form-control" required placeholder="દા.ત. રવિ">
@@ -153,7 +147,7 @@
                             <input type="number" id="inpMonthlyFee" class="form-control" value="350">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-blue">સેવ કરો</button>
+                    <button type="submit" class="btn btn-blue" id="btnSaveStudent">સેવ કરો</button>
                 </form>
             </div>
         </div>
@@ -206,7 +200,7 @@
             </div>
         </div>
 
-        <!-- 4. STATIONERY REPORT & STOCK MANAGEMENT PAGE -->
+        <!-- 4. STATIONERY REPORT PAGE -->
         <div id="pageStationeryReport" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -254,7 +248,7 @@
             </div>
 
             <div class="card">
-                <h4>📖 વિદ્યાર્થીઓને આપેલી સ્ટેશનરીનો વાર્ષિક રિપોર્ટ</h4>
+                <h4>📖 વિદ્યાર્થીઓને આપેલી સ્ટેશનરીનો રિપોર્ટ</h4>
                 <table>
                     <thead>
                         <tr>
@@ -283,7 +277,7 @@
                 <form onsubmit="event.preventDefault(); addExpense();" style="margin-top:8px;">
                     <div class="form-group">
                         <label>ખર્ચની વિગત</label>
-                        <input type="text" id="expDetail" class="form-control" required placeholder="દા.ત. લાઈટ બિલ / ચોક બોક્સ">
+                        <input type="text" id="expDetail" class="form-control" required placeholder="દા.ત. લાઈટ બિલ">
                     </div>
                     <div class="form-group">
                         <label>ખર્ચ રકમ (₹)</label>
@@ -321,13 +315,19 @@
                 <div style="margin-top:10px; font-size:13px; line-height:1.7; color:#333;">
                     <div><strong>મોબાઈલ નં:</strong> <span id="profPhone">9033197515</span></div>
                     <div><strong>📅 દાખલ તારીખ:</strong> <span id="profJoinDate">01-06-2026</span></div>
-                    <div><strong>કોર્સનું નામ:</strong> <span id="profCourse">Navoday</span></div>
+                    <div><strong>ધોરણ:</strong> <span id="profStd">5</span> | <strong>કોર્સ:</strong> <span id="profCourse">Navoday</span></div>
                     <div><strong>ફી નો પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
                 </div>
 
+                <!-- EDIT AND DELETE BUTTONS -->
+                <div class="grid-2" style="margin-top: 10px;">
+                    <button class="btn btn-blue" onclick="editStudent(currentStudent.id)">✏️ વિગત સુધારો (Edit)</button>
+                    <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
+                </div>
+
                 <div class="grid-3" style="margin-top:12px;">
-                    <div class="stat-box" style="background:#1976d2;">કુલ ગણેલ ફી<br><span id="profFee">₹350</span></div>
-                    <div class="stat-box" style="background:#2e7d32;">કુલ જમા ફી<br><span id="profPaid">₹0</span></div>
+                    <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span id="profFee">₹350</span></div>
+                    <div class="stat-box" style="background:#2e7d32;">જમા ફી<br><span id="profPaid">₹0</span></div>
                     <div class="stat-box" style="background:#d32f2f;">બાકી ફી<br><span id="profDue">₹350</span></div>
                 </div>
             </div>
@@ -346,8 +346,8 @@
                     <div class="form-group">
                         <label>ચૂકવણી પ્રકાર</label>
                         <select id="givePayType" class="form-control">
-                            <option value="ઉધાર">ઉધાર (ફી પહોંચમાં એડ થશે)</option>
-                            <option value="રોકડ">રોકડ (રોકડા જમા - પહોંચમાં એડ નહી થાય)</option>
+                            <option value="ઉધાર">ઉધાર</option>
+                            <option value="રોકડ">રોકડ</option>
                         </select>
                     </div>
                 </div>
@@ -408,16 +408,16 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()">🧾 પહોંચ જનરેટ કરો</button>
             </div>
 
-            <!-- ફી પહોંચ હિસ્ટ્રી TABLE -->
+            <!-- FEE HISTORY -->
             <div class="card">
-                <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ (મેન્યુઅલ ચેન્જ)</h4>
+                <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
                     <thead>
                         <tr>
                             <th>તારીખ</th>
                             <th>રકમ</th>
                             <th>સ્ટેટસ</th>
-                            <th>સ્ટેટસ બદલો</th>
+                            <th>ક્રિયા</th>
                         </tr>
                     </thead>
                     <tbody id="feeHistoryTableBody"></tbody>
@@ -471,8 +471,6 @@
                             <span>✍️ <strong>ભરનાર:</strong> <span id="rPayer">રવિભાઈ</span></span>
                         </div>
                         <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
-                        
-                        <!-- કાયમી નામ અને મોબાઈલ નંબર -->
                         <div style="text-align: center; font-weight: bold; color: #1565c0; font-size:14px;">
                             વાઘેલા રવિ વિનોદભાઈ (9033197515)
                         </div>
@@ -487,8 +485,8 @@
 
                 <div style="margin-top: 15px;">
                     <button class="btn btn-purple" onclick="generateReceiptImage()">🖼️ પહોંચ ઈમેજ બનાવો</button>
-                    <button class="btn btn-whatsapp" onclick="shareWhatsAppText()">📱 📄 વ્હોટ્સએપ પર વિગત મોકલો</button>
-                    <button class="btn btn-cyan" onclick="copyTextReceipt()">📋 ટેક્સ્ટ લખાણ કોપી કરો</button>
+                    <button class="btn btn-whatsapp" onclick="shareWhatsAppText()">📱 📄 વ્હોટ્સએપ પર મોકલો</button>
+                    <button class="btn btn-cyan" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
                 </div>
             </div>
 
@@ -496,12 +494,10 @@
 
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Default initial data
         let masterSettings = {
-            apiKey: "",
-            dbUrl: "",
+            apiKey: "AIzaSyCjboFcoWJmVrjC9JOIzi4ZgjMnau9czmU",
+            dbUrl: "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app",
             defaultFee: 350,
             defaultStd: "5",
             defaultCourse: "Navoday"
@@ -513,7 +509,7 @@
         ];
 
         let students = [
-            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "01-06-2026", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, stationery: [], receipts: [] }
+            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "2026-06-01", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, stationery: [], receipts: [] }
         ];
 
         let expenses = [];
@@ -529,13 +525,7 @@
             document.getElementById('recDateVal').value = today;
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
-            document.getElementById('inpJoinDate').value = today;
 
-            // Apply Master defaults to inputs
-            document.getElementById('inpMonthlyFee').value = masterSettings.defaultFee;
-            document.getElementById('inpStd').value = masterSettings.defaultStd;
-            document.getElementById('inpCourse').value = masterSettings.defaultCourse;
-            
             document.getElementById('mApiKey').value = masterSettings.apiKey || "";
             document.getElementById('mDbUrl').value = masterSettings.dbUrl || "";
             document.getElementById('mDefaultFee').value = masterSettings.defaultFee;
@@ -586,7 +576,7 @@
                     <div class="student-item-card" onclick="openStudent('${s.id}')">
                         <div class="student-item-head">
                             <span class="student-name">👤 ${s.name}</span>
-                            <span class="student-badge">${s.course} (${s.feeType})</span>
+                            <span class="student-badge">${s.course} (${s.std})</span>
                         </div>
                         <div style="margin-top: 6px; font-size: 13px; color: #555; display:flex; justify-content:space-between;">
                             <span>ફી: ₹${s.fee}</span>
@@ -603,19 +593,84 @@
             document.getElementById('countActive').innerText = students.length;
         }
 
+        function openAddStudentModal() {
+            document.getElementById('formTitle').innerText = "નવો વિદ્યાર્થી ઉમેરો";
+            document.getElementById('btnSaveStudent').innerText = "સેવ કરો";
+            document.getElementById('editStudentId').value = "";
+            document.getElementById('inpName').value = "";
+            document.getElementById('inpPhone').value = "";
+            document.getElementById('inpJoinDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inpStd').value = masterSettings.defaultStd;
+            document.getElementById('inpCourse').value = masterSettings.defaultCourse;
+            document.getElementById('inpMonthlyFee').value = masterSettings.defaultFee;
+            navigateTo('pageAddStudent');
+        }
+
         function saveStudent() {
+            const editId = document.getElementById('editStudentId').value;
             const name = document.getElementById('inpName').value;
             const phone = document.getElementById('inpPhone').value;
-            const joinDate = formatDate(document.getElementById('inpJoinDate').value);
+            const joinDate = document.getElementById('inpJoinDate').value;
             const std = document.getElementById('inpStd').value;
             const course = document.getElementById('inpCourse').value;
             const feeType = document.getElementById('inpFeeType').value;
             const fee = parseFloat(document.getElementById('inpMonthlyFee').value) || 0;
 
-            students.push({ id: Date.now().toString(), name, phone, joinDate, std, course, feeType, fee, paid: 0, due: fee, stationery: [], receipts: [] });
+            if (editId) {
+                // EDIT EXISTING STUDENT
+                const st = students.find(s => s.id === editId);
+                if (st) {
+                    st.name = name;
+                    st.phone = phone;
+                    st.joinDate = joinDate;
+                    st.std = std;
+                    st.course = course;
+                    st.feeType = feeType;
+                    st.fee = fee;
+                    st.due = st.fee - st.paid;
+                    if(st.due < 0) st.due = 0;
+                }
+                alert('વિદ્યાર્થીની માહિતી સફળતાપૂર્વક સુધારાઈ ગઈ!');
+            } else {
+                // ADD NEW STUDENT
+                students.push({ id: Date.now().toString(), name, phone, joinDate, std, course, feeType, fee, paid: 0, due: fee, stationery: [], receipts: [] });
+                alert('નવો વિદ્યાર્થી સફળતાપૂર્વક ઉમેરાઈ ગયો!');
+            }
+
             saveLocalData();
             renderDashboard();
             navigateTo('pageDashboard');
+        }
+
+        function editStudent(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+
+            document.getElementById('formTitle').innerText = "✏️ વિદ્યાર્થીની માહિતી સુધારો";
+            document.getElementById('btnSaveStudent').innerText = "અપડેટ કરો";
+            document.getElementById('editStudentId').value = st.id;
+            document.getElementById('inpName').value = st.name;
+            document.getElementById('inpPhone').value = st.phone;
+            document.getElementById('inpJoinDate').value = st.joinDate || new Date().toISOString().split('T')[0];
+            document.getElementById('inpStd').value = st.std;
+            document.getElementById('inpCourse').value = st.course;
+            document.getElementById('inpFeeType').value = st.feeType;
+            document.getElementById('inpMonthlyFee').value = st.fee;
+
+            navigateTo('pageAddStudent');
+        }
+
+        function deleteStudent(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+
+            if (confirm(`શું તમે ચોક્કસ "${st.name}" નો બધો ડેટા ડિલીટ કરવા માંગો છો?`)) {
+                students = students.filter(s => s.id !== id);
+                saveLocalData();
+                renderDashboard();
+                alert('વિદ્યાર્થી સફળતાપૂર્વક ડિલીટ કરી દેવાયો છે.');
+                navigateTo('pageDashboard');
+            }
         }
 
         function openStudent(id) {
@@ -627,7 +682,8 @@
         function updateStudentProfileUI() {
             document.getElementById('profName').innerText = currentStudent.name;
             document.getElementById('profPhone').innerText = currentStudent.phone;
-            document.getElementById('profJoinDate').innerText = currentStudent.joinDate || 'N/A';
+            document.getElementById('profJoinDate').innerText = formatDate(currentStudent.joinDate) || 'N/A';
+            document.getElementById('profStd').innerText = currentStudent.std;
             document.getElementById('profCourse').innerText = currentStudent.course;
             document.getElementById('profFeeType').innerText = currentStudent.feeType;
             document.getElementById('profFeeRate').innerText = currentStudent.fee;
@@ -656,7 +712,7 @@
         function backupDataToCloud() {
             saveLocalData();
             if (!masterSettings.dbUrl) {
-                alert('ડેટા સ્થાનિક (Local Memory) માં સેવ થઈ ગયો છે!\n(નોંધ: ક્લાઉડ સિન્ક માટે માસ્ટર સેટિંગ્સમાં API Key / DB URL દાખલ કરો)');
+                alert('ડેટા સ્થાનિક (Local Memory) માં સેવ થઈ ગયો છે!');
             } else {
                 fetch(masterSettings.dbUrl + '/backup.json?auth=' + masterSettings.apiKey, {
                     method: 'PUT',
@@ -793,7 +849,7 @@
         function renderStudentStationeryList() {
             const tbody = document.getElementById('studentStationeryList');
             tbody.innerHTML = '';
-            if (currentStudent.stationery.length === 0) {
+            if (!currentStudent.stationery || currentStudent.stationery.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="color:#888;">કોઈ સ્ટેશનરી આપેલી નથી.</td></tr>';
                 return;
             }
@@ -816,18 +872,20 @@
             let totalAmt = 0;
 
             students.forEach(st => {
-                st.stationery.forEach(stn => {
-                    totalAmt += stn.price;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${st.name}</strong></td>
-                            <td>${stn.name}</td>
-                            <td>${stn.qty}</td>
-                            <td>₹${stn.price}</td>
-                            <td>${stn.payType}</td>
-                        </tr>
-                    `;
-                });
+                if(st.stationery) {
+                    st.stationery.forEach(stn => {
+                        totalAmt += stn.price;
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong>${st.name}</strong></td>
+                                <td>${stn.name}</td>
+                                <td>${stn.qty}</td>
+                                <td>₹${stn.price}</td>
+                                <td>${stn.payType}</td>
+                            </tr>
+                        `;
+                    });
+                }
             });
 
             document.getElementById('totalStationeryIssuedAmt').innerText = '₹' + totalAmt;
@@ -866,6 +924,7 @@
                 status: '🔴 બાકી'
             };
 
+            if(!currentStudent.receipts) currentStudent.receipts = [];
             currentStudent.receipts.push(newReceipt);
             saveLocalData();
             renderFeeHistoryTable();
@@ -879,12 +938,14 @@
             tbody.innerHTML = `<tr><td>1</td><td>ટ્યુશન ફી (${currentStudent.feeType})</td><td style="font-weight: bold;">₹${feeVal}</td></tr>`;
 
             let creditStationeryTotal = 0;
-            currentStudent.stationery.forEach((st, i) => {
-                if (st.payType === 'ઉધાર') {
-                    creditStationeryTotal += st.price;
-                    tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name} (ઉધાર)</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
-                }
-            });
+            if(currentStudent.stationery) {
+                currentStudent.stationery.forEach((st, i) => {
+                    if (st.payType === 'ઉધાર') {
+                        creditStationeryTotal += st.price;
+                        tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name} (ઉધાર)</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
+                    }
+                });
+            }
 
             const grandTotal = feeVal + creditStationeryTotal;
             document.getElementById('rTotalVal').innerText = grandTotal;
@@ -902,7 +963,7 @@
         function renderFeeHistoryTable() {
             const tbody = document.getElementById('feeHistoryTableBody');
             tbody.innerHTML = '';
-            if (currentStudent.receipts.length === 0) {
+            if (!currentStudent.receipts || currentStudent.receipts.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="color:#888;">કોઈ પહોંચ બનાવેલ નથી.</td></tr>';
                 return;
             }
@@ -929,13 +990,11 @@
                     currentStudent.paid += rec.feeVal;
                     currentStudent.due -= rec.feeVal;
                     if (currentStudent.due < 0) currentStudent.due = 0;
-                    alert('સ્ટેટસ બદલીને "🟢 જમા" કરવામાં આવ્યું છે.');
                 } else {
                     rec.status = '🔴 બાકી';
                     currentStudent.paid -= rec.feeVal;
                     currentStudent.due += rec.feeVal;
                     if (currentStudent.paid < 0) currentStudent.paid = 0;
-                    alert('સ્ટેટસ બદલીને ફરી "🔴 બાકી" કરવામાં આવ્યું છે.');
                 }
 
                 saveLocalData();
@@ -961,12 +1020,12 @@
         }
 
         function shareWhatsAppText() {
-            const text = `*નિર્મળા નવોદય ક્લાસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n📅 *દાખલ તારીખ:* ${currentStudent.joinDate || 'N/A'}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            const text = `*નિર્મળા નવોદય ક્લાસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n📅 *દાખલ તારીખ:* ${formatDate(currentStudent.joinDate) || 'N/A'}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             window.open(`https://api.whatsapp.com/send?phone=91${currentStudent.phone}&text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function copyTextReceipt() {
-            const text = `નિર્મળા નવોદય ક્લાસિસ - વિદ્યાર્થી: ${currentStudent.name}, દાખલ તારીખ: ${currentStudent.joinDate || 'N/A'}, બાકી ફી: ₹${currentStudent.due} - વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            const text = `નિર્મળા નવોદય ક્લાસિસ - વિદ્યાર્થી: ${currentStudent.name}, દાખલ તારીખ: ${formatDate(currentStudent.joinDate) || 'N/A'}, બાકી ફી: ₹${currentStudent.due} - વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             navigator.clipboard.writeText(text).then(() => alert("લખાણ કોપી થઈ ગયું છે!"));
         }
 
