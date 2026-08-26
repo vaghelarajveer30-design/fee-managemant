@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FEE MANAGEMENT SYSTEM - નિર્મળા નવોદય ક્લાસિસ</title>
-    <!-- html2pdf and html2canvas Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- HTML2Canvas Library for Safe Image Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
@@ -24,24 +23,71 @@
         .btn-red { background-color: #e53935; }
         .btn-yellow { background-color: #f57f17; }
         .btn-whatsapp { background-color: #25D366; color: white; }
+        .btn-darkgreen { background-color: #00695c; color: white; }
+        .btn-cyan { background-color: #00838f; color: white; }
+        
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 14px; font-weight: bold; color: #333; margin-bottom: 5px; }
         .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .stat-card { border-radius: 8px; padding: 12px; text-align: center; color: white; }
-        .stat-card .val { font-size: 18px; font-weight: bold; margin-top: 4px; }
-        .student-item { background: white; border: 1px solid #e0e0e0; border-left: 5px solid #1976d2; border-radius: 6px; padding: 12px; margin-bottom: 10px; cursor: pointer; }
-        .student-item .row1 { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 6px; }
-        .student-item .badge { background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-        .student-item .row2 { font-size: 13px; color: #555; display: flex; justify-content: space-between; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; margin-top: 10px; }
-        th, td { border: 1px solid #e0e0e0; padding: 8px 4px; }
-        th { background: #f5f5f5; }
-        .receipt-box { border: 2px solid #1565c0; border-radius: 8px; overflow: hidden; background: #fff; padding: 15px; position: relative; }
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
-        .badge-pending { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .badge-paid { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        
+        /* Receipt Preview Exact Styling matching User Image */
+        .receipt-card {
+            border: 2px solid #1565c0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #ffffff;
+            margin-top: 10px;
+        }
+        .receipt-header {
+            background-color: #1976d2;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .receipt-user-info {
+            background-color: #f0f4f8;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #1a237e;
+            border-bottom: 1px solid #dcdcdc;
+        }
+        .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .receipt-table th {
+            background-color: #f5f5f5;
+            color: #0d47a1;
+            padding: 6px;
+            border: 1px solid #dcdcdc;
+            text-align: center;
+        }
+        .receipt-table td {
+            padding: 6px;
+            border: 1px solid #dcdcdc;
+            text-align: center;
+        }
+        .receipt-footer-bar {
+            background-color: #e8f0fe;
+            color: #1565c0;
+            text-align: center;
+            padding: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            border-top: 1px solid #dcdcdc;
+            border-bottom: 1px solid #dcdcdc;
+        }
+        .receipt-details {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -54,53 +100,16 @@
 
     <div class="container">
 
-        <!-- ================= 1. HOME DASHBOARD ================= -->
+        <!-- DASHBOARD -->
         <div id="pageDashboard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h3 style="font-size: 18px;">વિદ્યાર્થીઓની યાદી</h3>
                 <button class="btn btn-primary" style="width: auto; padding: 8px 14px; font-size: 14px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
-
-            <div class="grid-2" style="margin-bottom: 12px;">
-                <div class="stat-card" style="background-color: #2e7d32;">
-                    🟢 એક્ટિવ વિદ્યાર્થી
-                    <div class="val" id="activeCount">0</div>
-                </div>
-                <div class="stat-card" style="background-color: #e53935;">
-                    🔴 ઇન-એક્ટિવ વિદ્યાર્થી
-                    <div class="val" id="inactiveCount">0</div>
-                </div>
-            </div>
-
-            <!-- Student List -->
             <div id="studentListContainer"></div>
-
-            <div class="grid-2" style="margin-top: 10px;">
-                <button class="btn btn-yellow" onclick="navigateTo('pageStationeryReport')">📖 સ્ટેશનરી રિપોર્ટ</button>
-                <button class="btn btn-orange" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ</button>
-            </div>
-
-            <!-- Summary Card -->
-            <div class="card" style="background: #1b5e20; color: white; margin-top: 12px;">
-                <h4 style="text-align: center; margin-bottom: 10px;">📊 વર્ષનું આખા ક્લાસનું સરવૈયું</h4>
-                <div class="grid-3">
-                    <div class="stat-card" style="background: #1976d2;">
-                        <div style="font-size: 11px;">કુલ ફી</div>
-                        <div class="val" id="totalCalculated">₹0</div>
-                    </div>
-                    <div class="stat-card" style="background: #2e7d32;">
-                        <div style="font-size: 11px;">કુલ જમા</div>
-                        <div class="val" id="totalPaid">₹0</div>
-                    </div>
-                    <div class="stat-card" style="background: #c62828;">
-                        <div style="font-size: 11px;">કુલ બાકી</div>
-                        <div class="val" id="totalDue">₹0</div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- ================= 2. ADD / EDIT STUDENT ================= -->
+        <!-- ADD / EDIT STUDENT -->
         <div id="pageAddStudent" style="display: none;">
             <a class="btn-back" onclick="navigateTo('pageDashboard')">← પાછા જાઓ</a>
             <div class="card">
@@ -109,7 +118,7 @@
                     <input type="hidden" id="editStudentId">
                     <div class="form-group">
                         <label>વિદ્યાર્થીનું નામ</label>
-                        <input type="text" id="inpName" class="form-control" required placeholder="ઉદા. રવિ વાઘેલા">
+                        <input type="text" id="inpName" class="form-control" required placeholder="રવિ વાઘેલા">
                     </div>
                     <div class="form-group">
                         <label>મોબાઈલ નં (WhatsApp)</label>
@@ -122,232 +131,160 @@
                         </div>
                         <div class="form-group">
                             <label>કોર્સ</label>
-                            <select id="inpCourse" class="form-control" onchange="autoFillCourseFee()">
-                                <option value="નવોદય">નવોદય</option>
-                                <option value="CET">CET</option>
-                                <option value="Gyan sadhana">Gyan sadhana</option>
-                                <option value="સામાન્ય">સામાન્ય</option>
-                                <option value="અગ્રેજી">અગ્રેજી</option>
-                            </select>
+                            <input type="text" id="inpCourse" class="form-control" value="Navoday">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>માસિક ફી (Monthly Fee ₹)</label>
+                        <label>માસિક ફી (₹)</label>
                         <input type="number" id="inpMonthlyFee" class="form-control" value="350">
                     </div>
                     <div class="form-group">
                         <label>દાખલ તારીખ</label>
                         <input type="date" id="inpJoinDate" class="form-control">
                     </div>
-                    <div class="form-group">
-                        <label>સ્ટેટસ</label>
-                        <select id="inpStatus" class="form-control">
-                            <option value="Active">Active (ચાલુ છે)</option>
-                            <option value="Inactive">Inactive (બંધ છે)</option>
-                        </select>
-                    </div>
                     <button type="submit" class="btn btn-primary" style="margin-top: 15px;">સેવ કરો</button>
                 </form>
             </div>
         </div>
 
-        <!-- ================= 3. STUDENT PROFILE & RECEIPT ================= -->
+        <!-- STUDENT DETAILS & RECEIPT GENERATOR -->
         <div id="pageStudentDetails" style="display: none;">
             <a class="btn-back" onclick="navigateTo('pageDashboard')">← પાછા જાઓ</a>
             
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 id="viewName">Ravi</h2>
-                    <div>
-                        <button class="btn btn-yellow" style="display:inline-block; width:auto; padding:5px 10px; font-size:12px;" onclick="editCurrentStudent()">✏️ સુધારો</button>
-                        <button class="btn btn-red" style="display:inline-block; width:auto; padding:5px 10px; font-size:12px;" onclick="deleteCurrentStudent()">🗑️ ડિલીટ</button>
-                    </div>
-                </div>
-                <div style="margin-top: 10px; font-size: 14px; line-height: 1.8;">
-                    <div><strong>મોબાઈલ નં:</strong> <span id="viewPhone">9033197515</span></div>
-                    <div><strong>દાખલ તારીખ:</strong> <span id="viewJoinDate">-</span></div>
-                    <div><strong>કોર્સ:</strong> <span id="viewCourse">નવોદય</span> | <strong>ધોરણ:</strong> <span id="viewStd">5</span></div>
-                </div>
-
-                <div class="grid-3" style="margin-top: 15px;">
-                    <div class="stat-card" style="background: #1976d2;">
-                        <div style="font-size: 11px;">કુલ ગણેલ ફી</div>
-                        <div class="val" id="viewAutoFeeVal">₹0</div>
-                    </div>
-                    <div class="stat-card" style="background: #2e7d32;">
-                        <div style="font-size: 11px;">કુલ જમા રકમ</div>
-                        <div class="val" id="viewPaidVal">₹0</div>
-                    </div>
-                    <div class="stat-card" style="background: #c62828;">
-                        <div style="font-size: 11px;">કુલ બાકી રકમ</div>
-                        <div class="val" id="viewDueVal">₹0</div>
-                    </div>
-                </div>
+                <h2 id="viewName">Ravi</h2>
+                <p style="font-size: 13px; color: #666; margin-top: 4px;">
+                    ધોરણ: <span id="viewStd">5</span> | કોર્સ: <span id="viewCourse">Navoday</span> | નં: <span id="viewPhone">9033197515</span>
+                </p>
             </div>
 
-            <!-- Add Stationery Items -->
+            <!-- Receipt Input Form -->
             <div class="card">
-                <h3>📚 સ્ટેશનરી / બુક આપો</h3>
-                <div class="grid-2" style="margin-top: 10px;">
-                    <div class="form-group">
-                        <label>વસ્તુ પસંદ કરો</label>
-                        <select id="studentStationerySelect" class="form-control" onchange="setStationeryPrice()"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>કિંમત (₹)</label>
-                        <input type="number" id="studentStationeryPrice" class="form-control">
-                    </div>
-                </div>
-                <button class="btn btn-success" onclick="addStationeryToStudent()">+ સ્ટેશનરી ઉમેરો</button>
-            </div>
-
-            <!-- Receipt Creation Form -->
-            <div class="card">
-                <h3>🧾 નવી ફી પહોંચ બનાવો</h3>
+                <h3>🧾 પહોંચ બનાવો</h3>
                 <div class="grid-2" style="margin-top:10px;">
                     <div class="form-group">
-                        <label>ફી ની તારીખ (થી)</label>
-                        <input type="date" id="feeFromDate" class="form-control">
+                        <label>જમા તારીખ</label>
+                        <input type="date" id="payDate" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label>ફી ની તારીખ (સુધી)</label>
-                        <input type="date" id="feeToDate" class="form-control">
+                        <label>મહિનાનું નામ / વિગત</label>
+                        <input type="text" id="payMonthDetail" class="form-control" placeholder="ઓગસ્ટ">
                     </div>
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
-                        <label>ભરેલ રકમ (₹)</label>
-                        <input type="number" id="payAmountInput" class="form-control" value="0">
+                        <label>ફી રકમ (₹)</label>
+                        <input type="number" id="payTotalAmount" class="form-control" value="350">
                     </div>
                     <div class="form-group">
-                        <label>પેમેન્ટ પ્રકાર</label>
+                        <label>જમા કરેલ રકમ (₹)</label>
+                        <input type="number" id="payPaidAmount" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>સમયગાળો (થી)</label>
+                        <input type="date" id="periodFrom" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>સમયગાળો (સુધી)</label>
+                        <input type="date" id="periodTo" class="form-control">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>પેમેન્ટ મોડ</label>
                         <select id="payMode" class="form-control">
+                            <option value="રોકડા/ઓન લાઈન">રોકડા/ઓન લાઈન</option>
                             <option value="રોકડા (Cash)">રોકડા (Cash)</option>
-                            <option value="ઓનલાઈન (Online)">ઓનલાઈન (Online)</option>
+                            <option value="ઓન લાઈન (Online)">ઓન લાઈન (Online)</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>ફી ભરનાર</label>
+                        <input type="text" id="payPayer" class="form-control" placeholder="J">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>ફી ભરનારનું નામ</label>
-                    <input type="text" id="payerName" class="form-control" placeholder="વાલી / વિદ્યાર્થીનું નામ">
-                </div>
-                <button class="btn btn-orange" onclick="createNewReceipt()">🧾 રસીદ જનરેટ કરો (બાકી રસીદ)</button>
+                <button class="btn btn-orange" onclick="generateReceiptUI()">📄 પહોંચ પ્રીવ્યૂ બનાવો</button>
             </div>
 
-            <!-- Active Created Receipt Preview Section -->
+            <!-- Receipt Preview Screen matching screenshot -->
             <div class="card" id="receiptPreviewSection" style="display:none;">
-                <h3>📄 જનરેટ થયેલી પહોંચ</h3>
-                <div class="receipt-box" id="printableReceipt">
-                    <div style="text-align: center;">
-                        <h2 style="color:#1565c0;">નિર્મળા નવોદય ક્લાસિસ</h2>
-                        <p style="font-size:12px; color:#555;">ફી પહોંચ / રસીદ</p>
+                <h3 style="color:#1565c0; text-align:center;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
+                
+                <!-- Exact Printable Card Area -->
+                <div class="receipt-card" id="receiptPrintArea">
+                    <div class="receipt-header">
+                        નિર્મળા નવોદય ક્લાસિસ
                     </div>
-                    <hr style="margin:8px 0;">
-                    <div style="font-size:13px; line-height:1.6;">
-                        <p><strong>વિદ્યાર્થી:</strong> <span id="rName"></span></p>
-                        <p><strong>દાખલ તારીખ:</strong> <span id="rJoinDate"></span></p>
-                        <p><strong>કોર્સ:</strong> <span id="rCourse"></span> | <strong>તારીખ:</strong> <span id="rDate"></span></p>
-                        <p><strong>ફી નો સમયગાળો:</strong> <span id="rPeriod"></span></p>
-                        <p><strong>ફી ભરનાર:</strong> <span id="rPayer"></span></p>
-                        <p><strong>પેમેન્ટ મોડ:</strong> <span id="rMode"></span></p>
-                        <hr style="margin:8px 0;">
-                        <p style="font-size:15px;"><strong>ભરેલ રકમ:</strong> ₹<span id="rPaid">0</span></p>
-                        <p><strong>સ્ટેટસ:</strong> <span id="rStatusBadge" class="status-badge badge-pending">બાકી</span></p>
+                    <div class="receipt-user-info">
+                        <div><strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="rName">Ravi</span></div>
+                        <div style="margin-top: 4px; font-size:13px;">
+                            <strong>ધોરણ:</strong> <span id="rStd">5</span> | 
+                            <strong>કોર્સ:</strong> <span id="rCourse">Navoday</span> | 
+                            📅 <strong>જમા તારીખ:</strong> <span id="rPayDate">26-08-2026</span>
+                        </div>
+                    </div>
+                    <table class="receipt-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">ક્રમ</th>
+                                <th>મહિનાના નામ / વિગત</th>
+                                <th style="width: 30%;">ફી (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td id="rMonth">ઓગસ્ટ</td>
+                                <td style="font-weight: bold;" id="rFeeVal">350</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: right; font-weight: bold; color: red;">ટોટલ</td>
+                                <td style="font-weight: bold; color: red;" id="rTotalVal">350</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: right; font-weight: bold; color: green;">જમા</td>
+                                <td style="font-weight: bold; color: green;" id="rPaidVal">0</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: right; font-weight: bold; color: red;">બાકી</td>
+                                <td style="font-weight: bold; color: red;" id="rDueVal">350</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="receipt-footer-bar">
+                        📅 સમયગાળો: <span id="rPeriodFrom">26-08-2026</span> થી <span id="rPeriodTo">26-08-2026</span>
+                    </div>
+                    <div class="receipt-details">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>💳 <strong>પેમેન્ટ મોડ:</strong> <span id="rMode">રોકડા/ઓન લાઈન</span></span>
+                            <span>✍️ <strong>ફી ભરનાર:</strong> <span id="rPayer">J</span></span>
+                        </div>
+                        <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
+                        <div style="text-align: center; font-weight: bold; color: #1565c0;">
+                            <span id="rFullNamePhone">વાઘેલા રવિ વિનોદભાઈ (9033197515)</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Action Buttons for Receipt -->
-                <div id="receiptActionButtons" style="margin-top: 10px;">
-                    <div class="grid-2">
-                        <button class="btn btn-success" id="btnMarkPaid" onclick="updateReceiptStatus('Paid')">✅ જમા કરો</button>
-                        <button class="btn btn-red" id="btnMarkPending" onclick="updateReceiptStatus('Pending')">⏳ બાકી રાખો</button>
-                    </div>
-                    <button class="btn btn-purple" onclick="downloadReceiptAuto()">📥 ક્રોમમાં ડાઉનલોડ કરો</button>
-                    <a id="whatsappBtn" class="btn btn-whatsapp" target="_blank">💬 વોટ્સએપ પર સેન્ડ કરો</a>
+                <!-- Action Buttons matching image styling -->
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-purple" onclick="downloadReceiptImage()">🖼️ પહોંચ ઈમેજ ડાઉનલોડ / ઓપન કરો</button>
+                    <button class="btn btn-whatsapp" onclick="shareToWhatsAppImage()">📱 🖼️ વ્હોટ્સએપ પર Photo શેર કરો</button>
+                    <button class="btn btn-darkgreen" onclick="shareToWhatsAppText()">📱 📄 વ્હોટ્સએપ પર વિગત મોકલો</button>
+                    <button class="btn btn-red" onclick="downloadReceiptImage()">🖨️ Local ડાઉનલોડ / ઓપન કરો</button>
+                    <button class="btn btn-cyan" onclick="copyReceiptText()">📋 ટેક્સ્ટ લખાણ કોપી કરો</button>
                 </div>
-            </div>
-
-            <!-- Receipt History Section -->
-            <div class="card">
-                <h3>📜 રસીદ હિસ્ટ્રી (Past Receipts)</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>તારીખ</th>
-                            <th>રકમ</th>
-                            <th>સ્ટેટસ</th>
-                            <th>એક્શન</th>
-                        </tr>
-                    </thead>
-                    <tbody id="receiptHistoryTable"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ================= 4. STATIONERY REPORT PAGE ================= -->
-        <div id="pageStationeryReport" style="display: none;">
-            <a class="btn-back" onclick="navigateTo('pageDashboard')">← પાછા જાઓ</a>
-            <div class="card">
-                <h3>📖 સ્ટેશનરી રિપોર્ટ</h3>
-                <div class="card" style="background:#e3f2fd; margin-top:10px;">
-                    <p><strong>કુલ આપેલ વસ્તુઓની કિંમત:</strong> ₹<span id="stReportTotal">0</span></p>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>વિદ્યાર્થી</th>
-                            <th>તારીખ</th>
-                            <th>વસ્તુ</th>
-                            <th>કિંમત</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fullStationeryReportBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ================= 5. MASTER SETTINGS PAGE ================= -->
-        <div id="pageMasterSettings" style="display: none;">
-            <a class="btn-back" onclick="navigateTo('pageDashboard')">← પાછા જાઓ</a>
-            <div class="card">
-                <h3>⚙️ કોર્સ પ્રમાણે ફી સેટિંગ્સ</h3>
-                <div class="form-group" style="margin-top:10px;">
-                    <label>કોર્સ પસંદ કરો</label>
-                    <select id="masterCourseSelect" class="form-control">
-                        <option value="નવોદય">નવોદય</option>
-                        <option value="CET">CET</option>
-                        <option value="Gyan sadhana">Gyan sadhana</option>
-                        <option value="સામાન્ય">સામાન્ય</option>
-                        <option value="અગ્રેજી">અગ્રેજી</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>માસિક ફી (₹)</label>
-                    <input type="number" id="masterCourseFee" class="form-control" placeholder="350">
-                </div>
-                <button class="btn btn-primary" onclick="saveCourseFeeMaster()">સેવ કરો</button>
-            </div>
-
-            <div class="card">
-                <h3>✏️ સ્ટેશનરી વસ્તુ સેટ કરો</h3>
-                <div class="form-group" style="margin-top:10px;">
-                    <label>વસ્તુનું નામ</label>
-                    <input type="text" id="masterItemName" class="form-control" placeholder="ઉદા. નવોદય બુક">
-                </div>
-                <div class="form-group">
-                    <label>કિંમત (₹)</label>
-                    <input type="number" id="masterItemPrice" class="form-control" placeholder="300">
-                </div>
-                <button class="btn btn-success" onclick="addMasterStationeryItem()">+ વસ્તુ સેવ કરો</button>
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase System Integration -->
+    <!-- Firebase Realtime Database Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCjboFcoWJmVrjC9J0Izi4ZgjMnau9czmU",
@@ -362,116 +299,61 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.db = db; window.ref = ref; window.set = set; window.remove = remove; window.update = update;
-
-        onValue(ref(db, 'system_data'), (snapshot) => {
-            window.systemData = snapshot.val() || { courseFees: {}, stationeryList: {} };
-            populateMasterStationeryDropdown();
-        });
+        window.db = db; window.ref = ref; window.set = set;
 
         onValue(ref(db, 'students'), (snapshot) => {
             window.studentsData = snapshot.val() || {};
             renderDashboard();
-            if (window.currentStudentId && window.studentsData[window.currentStudentId]) {
-                openStudentDetails(window.currentStudentId);
-            }
         });
     </script>
 
-    <!-- Core App Logic -->
     <script>
         window.studentsData = {};
-        window.systemData = { courseFees: {}, stationeryList: {} };
         window.currentStudentId = null;
-        window.activeReceiptId = null;
-        const todayStr = new Date().toISOString().split('T')[0];
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
 
         function navigateTo(pageId) {
-            ['pageDashboard', 'pageAddStudent', 'pageStudentDetails', 'pageStationeryReport', 'pageMasterSettings'].forEach(p => {
+            ['pageDashboard', 'pageAddStudent', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = "none";
             });
             document.getElementById(pageId).style.display = "block";
             window.scrollTo(0, 0);
-
-            if(pageId === 'pageStationeryReport') loadFullStationeryReport();
-        }
-
-        function calculateMonths(joinDateStr) {
-            if (!joinDateStr) return 1;
-            const joinDate = new Date(joinDateStr);
-            const now = new Date();
-            let months = (now.getFullYear() - joinDate.getFullYear()) * 12 + (now.getMonth() - joinDate.getMonth()) + 1;
-            return months <= 0 ? 1 : months;
         }
 
         function renderDashboard() {
             const container = document.getElementById("studentListContainer");
             container.innerHTML = "";
-            let active = 0, inactive = 0;
-            let totalCalculatedAll = 0, totalPaidAll = 0;
-
             Object.keys(window.studentsData).forEach(id => {
                 const stu = window.studentsData[id];
-                if (stu.status === "Inactive") inactive++; else active++;
-
-                const months = calculateMonths(stu.joinDate);
-                const tuitionFee = (parseFloat(stu.monthlyFee) || 0) * months;
-                
-                let stationeryTotal = 0;
-                if (stu.stationery) {
-                    Object.values(stu.stationery).forEach(s => stationeryTotal += (parseFloat(s.price) || 0));
-                }
-
-                const totalStudentFee = tuitionFee + stationeryTotal;
-
-                let paid = 0;
-                if (stu.receipts) {
-                    Object.values(stu.receipts).forEach(r => {
-                        if (r.status === 'Paid') paid += (parseFloat(r.paidAmount) || 0);
-                    });
-                }
-
-                totalCalculatedAll += totalStudentFee;
-                totalPaidAll += paid;
-
                 const div = document.createElement("div");
-                div.className = "student-item";
+                div.className = "card";
+                div.style.cursor = "pointer";
                 div.onclick = function() { openStudentDetails(id); };
                 div.innerHTML = `
-                    <div class="row1">
-                        <span>👤 ${stu.name}</span>
-                        <span class="badge">${stu.course || 'નવોદય'}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>👤 ${stu.name}</h3>
+                        <span style="background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:10px; font-size:12px;">${stu.course || 'Navoday'}</span>
                     </div>
-                    <div class="row2">
-                        <span>કુલ ફી: ₹${totalStudentFee}</span>
-                        <span style="color:green;">જમા: ₹${paid}</span>
-                        <span style="color:red; font-weight:bold;">બાકી: ₹${totalStudentFee - paid}</span>
-                    </div>
+                    <div style="margin-top:6px; font-size:13px; color:#555;">મોબાઈલ: ${stu.phone} | ધોરણ: ${stu.std || 5}</div>
                 `;
                 container.appendChild(div);
             });
-
-            document.getElementById("activeCount").innerText = active;
-            document.getElementById("inactiveCount").innerText = inactive;
-            document.getElementById("totalCalculated").innerText = "₹" + totalCalculatedAll;
-            document.getElementById("totalPaid").innerText = "₹" + totalPaidAll;
-            document.getElementById("totalDue").innerText = "₹" + (totalCalculatedAll - totalPaidAll);
         }
 
         function openAddStudentModal() {
-            window.currentStudentId = null;
             document.getElementById("addStudentForm").reset();
-            document.getElementById("editStudentId").value = "";
-            document.getElementById("studentFormTitle").innerText = "નવો વિદ્યાર્થી ઉમેરો";
-            document.getElementById("inpJoinDate").value = todayStr;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("inpJoinDate").value = today;
             navigateTo('pageAddStudent');
-        }
-
-        function autoFillCourseFee() {
-            const course = document.getElementById("inpCourse").value;
-            if (window.systemData.courseFees && window.systemData.courseFees[course]) {
-                document.getElementById("inpMonthlyFee").value = window.systemData.courseFees[course];
-            }
         }
 
         function saveStudent() {
@@ -481,17 +363,12 @@
             const course = document.getElementById("inpCourse").value;
             const monthlyFee = document.getElementById("inpMonthlyFee").value;
             const joinDate = document.getElementById("inpJoinDate").value;
-            const status = document.getElementById("inpStatus").value;
 
-            const editId = document.getElementById("editStudentId").value;
-            const id = editId ? editId : "STU_" + Date.now();
-
-            const existingData = editId && window.studentsData[editId] ? window.studentsData[editId] : {};
-
-            const studentObj = { ...existingData, id, name, phone, std, course, monthlyFee, joinDate, status };
+            const id = "STU_" + Date.now();
+            const studentObj = { id, name, phone, std, course, monthlyFee, joinDate };
 
             window.set(window.ref(window.db, 'students/' + id), studentObj).then(() => {
-                alert("માહિતી સફળતાપૂર્વક સેવ થઈ ગઈ છે!");
+                alert("વિદ્યાર્થી ઉમેરાઈ ગયો!");
                 navigateTo('pageDashboard');
             });
         }
@@ -503,247 +380,121 @@
 
             document.getElementById("viewName").innerText = stu.name;
             document.getElementById("viewPhone").innerText = stu.phone;
-            document.getElementById("viewJoinDate").innerText = stu.joinDate || "-";
-            document.getElementById("viewCourse").innerText = stu.course || "નવોદય";
+            document.getElementById("viewCourse").innerText = stu.course || "Navoday";
             document.getElementById("viewStd").innerText = stu.std || "5";
 
-            const months = calculateMonths(stu.joinDate);
-            const tuitionFee = (parseFloat(stu.monthlyFee) || 0) * months;
-            
-            let stationeryTotal = 0;
-            if (stu.stationery) {
-                Object.values(stu.stationery).forEach(s => stationeryTotal += (parseFloat(s.price) || 0));
-            }
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("payDate").value = today;
+            document.getElementById("periodFrom").value = today;
+            document.getElementById("periodTo").value = today;
+            document.getElementById("payTotalAmount").value = stu.monthlyFee || 350;
 
-            const totalFee = tuitionFee + stationeryTotal;
-            let paid = 0;
-            if (stu.receipts) {
-                Object.values(stu.receipts).forEach(r => {
-                    if(r.status === 'Paid') paid += (parseFloat(r.paidAmount) || 0);
-                });
-            }
-
-            document.getElementById("viewAutoFeeVal").innerText = "₹" + totalFee;
-            document.getElementById("viewPaidVal").innerText = "₹" + paid;
-            document.getElementById("viewDueVal").innerText = "₹" + (totalFee - paid);
-
-            // Default dates
-            document.getElementById("feeFromDate").value = stu.joinDate || todayStr;
-            document.getElementById("feeToDate").value = todayStr;
-
-            renderReceiptHistory(stu);
             navigateTo('pageStudentDetails');
         }
 
-        function createNewReceipt() {
-            const stu = window.studentsData[window.currentStudentId];
-            const paidAmount = parseFloat(document.getElementById("payAmountInput").value) || 0;
-            const payerName = document.getElementById("payerName").value || stu.name;
-            const fromDate = document.getElementById("feeFromDate").value;
-            const toDate = document.getElementById("feeToDate").value;
-            const payMode = document.getElementById("payMode").value;
-
-            const recId = "REC_" + Date.now();
-            window.activeReceiptId = recId;
-
-            const receiptObj = {
-                id: recId,
-                date: todayStr,
-                fromDate,
-                toDate,
-                paidAmount,
-                payerName,
-                payMode,
-                status: 'Pending' // Default as requested
-            };
-
-            window.set(window.ref(window.db, `students/${window.currentStudentId}/receipts/${recId}`), receiptObj).then(() => {
-                displayReceiptInUI(receiptObj, stu);
-            });
-        }
-
-        function displayReceiptInUI(rec, stu) {
-            document.getElementById("rName").innerText = stu.name;
-            document.getElementById("rJoinDate").innerText = stu.joinDate || "-";
-            document.getElementById("rCourse").innerText = stu.course;
-            document.getElementById("rDate").innerText = rec.date;
-            document.getElementById("rPeriod").innerText = `${rec.fromDate} થી ${rec.toDate}`;
-            document.getElementById("rPayer").innerText = rec.payerName;
-            document.getElementById("rMode").innerText = rec.payMode;
-            document.getElementById("rPaid").innerText = rec.paidAmount;
-
-            const badge = document.getElementById("rStatusBadge");
-            if (rec.status === 'Paid') {
-                badge.innerText = "જમા";
-                badge.className = "status-badge badge-paid";
-            } else {
-                badge.innerText = "બાકી";
-                badge.className = "status-badge badge-pending";
-            }
-
-            // Setup WhatsApp Link
-            const msg = `*નિર્મળા નવોદય ક્લાસિસ - ફી પહોંચ*\n` +
-                        `વિદ્યાર્થી: ${stu.name}\n` +
-                        `ફી તારીખ: ${rec.fromDate} થી ${rec.toDate}\n` +
-                        `રકમ: ₹${rec.paidAmount}\n` +
-                        `સ્ટેટસ: ${rec.status === 'Paid' ? 'જમા' : 'બાકી'}\n` +
-                        `આભાર!`;
-            const waPhone = stu.phone.length === 10 ? "91" + stu.phone : stu.phone;
-            document.getElementById("whatsappBtn").href = `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(msg)}`;
-
-            document.getElementById("receiptPreviewSection").style.display = "block";
-        }
-
-        function updateReceiptStatus(status) {
-            if (!window.activeReceiptId) return;
-            window.update(window.ref(window.db, `students/${window.currentStudentId}/receipts/${window.activeReceiptId}`), { status }).then(() => {
-                alert(`પોહંચનું સ્ટેટસ '${status === 'Paid' ? 'જમા' : 'બાકી'}' કરી દેવાયું છે.`);
-                const rec = window.studentsData[window.currentStudentId].receipts[window.activeReceiptId];
-                rec.status = status;
-                displayReceiptInUI(rec, window.studentsData[window.currentStudentId]);
-            });
-        }
-
-        function renderReceiptHistory(stu) {
-            const tbody = document.getElementById("receiptHistoryTable");
-            tbody.innerHTML = "";
-            if (stu.receipts) {
-                Object.values(stu.receipts).forEach(rec => {
-                    const stBadge = rec.status === 'Paid' ? '<span style="color:green;font-weight:bold;">જમા</span>' : '<span style="color:red;font-weight:bold;">બાકી</span>';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${rec.date}</td>
-                            <td>₹${rec.paidAmount}</td>
-                            <td>${stBadge}</td>
-                            <td><button class="btn btn-primary" style="padding:2px 6px; font-size:11px;" onclick='viewPastReceipt("${rec.id}")'>જુઓ</button></td>
-                        </tr>
-                    `;
-                });
-            }
-        }
-
-        function viewPastReceipt(recId) {
-            window.activeReceiptId = recId;
-            const stu = window.studentsData[window.currentStudentId];
-            const rec = stu.receipts[recId];
-            displayReceiptInUI(rec, stu);
-        }
-
-        function downloadReceiptAuto() {
-            const element = document.getElementById("printableReceipt");
-            const opt = {
-                margin:       0.5,
-                filename:     'Fee_Receipt.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).outputPdf('bloburl').then(function (pdfUrl) {
-                window.open(pdfUrl, '_blank');
-            });
-        }
-
-        function editCurrentStudent() {
+        function generateReceiptUI() {
             const stu = window.studentsData[window.currentStudentId];
             if (!stu) return;
-            document.getElementById("editStudentId").value = stu.id;
-            document.getElementById("inpName").value = stu.name;
-            document.getElementById("inpPhone").value = stu.phone;
-            document.getElementById("inpStd").value = stu.std;
-            document.getElementById("inpCourse").value = stu.course;
-            document.getElementById("inpMonthlyFee").value = stu.monthlyFee;
-            document.getElementById("inpJoinDate").value = stu.joinDate;
-            document.getElementById("inpStatus").value = stu.status || "Active";
-            
-            document.getElementById("studentFormTitle").innerText = "વિદ્યાર્થીની માહિતીમાં સુધારો";
-            navigateTo('pageAddStudent');
+
+            const payDate = formatDate(document.getElementById("payDate").value);
+            const monthDetail = document.getElementById("payMonthDetail").value || "ઓગસ્ટ";
+            const totalFee = parseFloat(document.getElementById("payTotalAmount").value) || 0;
+            const paidFee = parseFloat(document.getElementById("payPaidAmount").value) || 0;
+            const dueFee = totalFee - paidFee;
+
+            const periodFrom = formatDate(document.getElementById("periodFrom").value);
+            const periodTo = formatDate(document.getElementById("periodTo").value);
+            const payMode = document.getElementById("payMode").value;
+            const payer = document.getElementById("payPayer").value || "J";
+
+            // Update UI
+            document.getElementById("rName").innerText = stu.name;
+            document.getElementById("rStd").innerText = stu.std || "5";
+            document.getElementById("rCourse").innerText = stu.course || "Navoday";
+            document.getElementById("rPayDate").innerText = payDate;
+            document.getElementById("rMonth").innerText = monthDetail;
+            document.getElementById("rFeeVal").innerText = totalFee;
+            document.getElementById("rTotalVal").innerText = totalFee;
+            document.getElementById("rPaidVal").innerText = paidFee;
+            document.getElementById("rDueVal").innerText = dueFee;
+
+            document.getElementById("rPeriodFrom").innerText = periodFrom;
+            document.getElementById("rPeriodTo").innerText = periodTo;
+            document.getElementById("rMode").innerText = payMode;
+            document.getElementById("rPayer").innerText = payer;
+            document.getElementById("rFullNamePhone").innerText = `${stu.name} (${stu.phone})`;
+
+            document.getElementById("receiptPreviewSection").style.display = "block";
+            document.getElementById("receiptPreviewSection").scrollIntoView({ behavior: 'smooth' });
         }
 
-        function deleteCurrentStudent() {
-            if (confirm("શું તમે આ વિદ્યાર્થીનો ડેટા ડિલીટ કરવા માંગો છો?")) {
-                window.remove(window.ref(window.db, 'students/' + window.currentStudentId)).then(() => {
-                    alert("ડેટા ડિલીટ થઈ ગયો છે.");
-                    navigateTo('pageDashboard');
+        // Safe Download Method to prevent App Crash
+        function downloadReceiptImage() {
+            const receiptArea = document.getElementById("receiptPrintArea");
+            html2canvas(receiptArea, { scale: 2, useCORS: true }).then(canvas => {
+                const imageURI = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.download = `Fee_Receipt_${Date.now()}.png`;
+                link.href = imageURI;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(err => {
+                alert("ઈમેજ બનાવવામાં ભૂલ આવી, કૃપા કરીને ટેક્સ્ટ વિકલ્પ વાપરો.");
+            });
+        }
+
+        // WhatsApp Share Image (Using Web Share API for supported Android WebViews)
+        function shareToWhatsAppImage() {
+            const receiptArea = document.getElementById("receiptPrintArea");
+            html2canvas(receiptArea, { scale: 2 }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], "Fee_Receipt.png", { type: "image/png" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: 'ફી પહોંચ',
+                            text: 'નિર્મળા નવોદય ક્લાસિસ ફી પહોંચ'
+                        }).catch(() => {});
+                    } else {
+                        alert("તમારા બ્રાઉઝરમાં ડાયરેક્ટ ફોટો શેર સપોર્ટેડ નથી. ફોટો ડાઉનલોડ થઈ જશે, તે પછી વોટ્સએપ પર મોકલી આપો.");
+                        downloadReceiptImage();
+                    }
                 });
-            }
-        }
-
-        // Master Settings Helpers
-        function saveCourseFeeMaster() {
-            const course = document.getElementById("masterCourseSelect").value;
-            const fee = document.getElementById("masterCourseFee").value;
-            if (!fee) return alert("ફી લખો.");
-
-            window.set(window.ref(window.db, 'system_data/courseFees/' + course), fee).then(() => {
-                alert("કોર્સ ફી સેટ થઈ ગઈ!");
             });
         }
 
-        function addMasterStationeryItem() {
-            const name = document.getElementById("masterItemName").value.trim();
-            const price = document.getElementById("masterItemPrice").value;
-            if (!name || !price) return alert("વિગતો ભરો.");
+        // WhatsApp Text Detail Share
+        function shareToWhatsAppText() {
+            const stu = window.studentsData[window.currentStudentId];
+            const text = getReceiptTextFormatted();
+            const phone = stu.phone.length === 10 ? "91" + stu.phone : stu.phone;
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
+        }
 
-            const id = "ITEM_" + Date.now();
-            window.set(window.ref(window.db, 'system_data/stationeryList/' + id), { name, price }).then(() => {
-                alert("સ્ટેશનરી વસ્તુ ઉમેરાઈ ગઈ!");
-                document.getElementById("masterItemName").value = "";
-                document.getElementById("masterItemPrice").value = "";
+        function copyReceiptText() {
+            const text = getReceiptTextFormatted();
+            navigator.clipboard.writeText(text).then(() => {
+                alert("લખાણ સફળતાપૂર્વક કોપી થઈ ગયું છે!");
             });
         }
 
-        function populateMasterStationeryDropdown() {
-            const sel = document.getElementById("studentStationerySelect");
-            sel.innerHTML = "<option value=''>-- વસ્તુ પસંદ કરો --</option>";
-            if (window.systemData.stationeryList) {
-                Object.values(window.systemData.stationeryList).forEach(item => {
-                    sel.innerHTML += `<option value="${item.name}" data-price="${item.price}">${item.name} (₹${item.price})</option>`;
-                });
-            }
-        }
-
-        function setStationeryPrice() {
-            const sel = document.getElementById("studentStationerySelect");
-            const price = sel.options[sel.selectedIndex].getAttribute("data-price");
-            document.getElementById("studentStationeryPrice").value = price || "";
-        }
-
-        function addStationeryToStudent() {
-            const sel = document.getElementById("studentStationerySelect");
-            const name = sel.value;
-            const price = document.getElementById("studentStationeryPrice").value;
-
-            if (!name || !price) return alert("વસ્તુ અને કિંમત પસંદ કરો.");
-
-            const stId = "ST_" + Date.now();
-            const stObj = { id: stId, name, price, date: todayStr };
-
-            window.set(window.ref(window.db, `students/${window.currentStudentId}/stationery/${stId}`), stObj).then(() => {
-                alert("સ્ટેશનરી સફળતાપૂર્વક ઉમેરાઈ ગઈ!");
-            });
-        }
-
-        function loadFullStationeryReport() {
-            const tbody = document.getElementById("fullStationeryReportBody");
-            tbody.innerHTML = "";
-            let grandTotal = 0;
-
-            Object.values(window.studentsData).forEach(stu => {
-                if (stu.stationery) {
-                    Object.values(stu.stationery).forEach(s => {
-                        grandTotal += parseFloat(s.price) || 0;
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${stu.name}</td>
-                                <td>${s.date}</td>
-                                <td>${s.name}</td>
-                                <td>₹${s.price}</td>
-                            </tr>
-                        `;
-                    });
-                }
-            });
-            document.getElementById("stReportTotal").innerText = grandTotal;
+        function getReceiptTextFormatted() {
+            return `*નિર્મળા નવોદય ક્લાસિસ*\n` +
+                   `-----------------------\n` +
+                   `👤 *વિદ્યાર્થી:* ${document.getElementById("rName").innerText}\n` +
+                   `📚 *ધોરણ:* ${document.getElementById("rStd").innerText} | *કોર્સ:* ${document.getElementById("rCourse").innerText}\n` +
+                   `📅 *જમા તારીખ:* ${document.getElementById("rPayDate").innerText}\n` +
+                   `-----------------------\n` +
+                   `🗓️ *મહિનો/વિગત:* ${document.getElementById("rMonth").innerText}\n` +
+                   `💰 *ટોટલ ફી:* ₹${document.getElementById("rTotalVal").innerText}\n` +
+                   `✅ *જમા:* ₹${document.getElementById("rPaidVal").innerText}\n` +
+                   `❗ *બાકી:* ₹${document.getElementById("rDueVal").innerText}\n` +
+                   `-----------------------\n` +
+                   `🗓️ *સમયગાળો:* ${document.getElementById("rPeriodFrom").innerText} થી ${document.getElementById("rPeriodTo").innerText}\n` +
+                   `💳 *પેમેન્ટ મોડ:* ${document.getElementById("rMode").innerText}\n` +
+                   `✍️ *ફી ભરનાર:* ${document.getElementById("rPayer").innerText}\n` +
+                   `📞 *સંપર્ક:* ${document.getElementById("rFullNamePhone").innerText}`;
         }
     </script>
 </body>
