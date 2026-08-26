@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Firebase સેટઅપ
+// ⚠️ અહીં તમારી સાચી Firebase વિગત ઉમેરવી
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -46,7 +46,10 @@ window.saveStudent = (e) => {
 
     set(ref(db, 'students/' + id), student).then(() => {
         alert("વિદ્યાર્થી સફળતાપૂર્વક ઉમેરાઈ ગયો!");
+        document.getElementById("addStudentForm").reset();
         showDashboard();
+    }).catch((error) => {
+        alert("ભૂલ આવી: " + error.message);
     });
 };
 
@@ -57,7 +60,6 @@ function calculateAutoFee(joinDateStr, monthlyFee) {
     const diffTime = Math.abs(today - joinDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     
-    // દિવસ પ્રમાણે ઓટો ફી (મહિનાના ૩૦ દિવસ ગણીને)
     const dailyRate = monthlyFee / 30;
     const autoFee = Math.round(diffDays * dailyRate);
 
@@ -67,11 +69,12 @@ function calculateAutoFee(joinDateStr, monthlyFee) {
 // ૩. ડેટાબેઝમાંથી ડેટા રીડ કરવો
 onValue(ref(db, 'students'), (snapshot) => {
     studentsData = snapshot.val() || {};
-    renderStudents();
+    window.renderStudents();
 });
 
-function renderStudents() {
+window.renderStudents = () => {
     const listDiv = document.getElementById("studentList");
+    const courseFilter = document.getElementById("courseFilter") ? document.getElementById("courseFilter").value : "All";
     listDiv.innerHTML = "";
     
     let active = 0, inactive = 0;
@@ -79,6 +82,12 @@ function renderStudents() {
 
     for (let id in studentsData) {
         const s = studentsData[id];
+
+        // કોર્સ ફિલ્ટર ચેક
+        if (courseFilter !== "All" && s.course !== courseFilter) {
+            continue;
+        }
+
         if (s.status === "Active") active++; else inactive++;
 
         const { diffDays, autoFee } = calculateAutoFee(s.joinDate, s.monthlyFee);
@@ -92,7 +101,7 @@ function renderStudents() {
         card.className = "card student-item";
         card.onclick = () => openStudentDetail(id);
         card.innerHTML = `
-            <h3>👤 ${s.name} <span style="font-size: 12px; background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${s.course}</span></h3>
+            <h3>👤 ${s.name} <span style="font-size: 12px; background: #e0e0e0; padding: 2px 6px; border-radius: 3px;">${s.course} (ધોરણ ${s.std})</span></h3>
             <p style="margin-top: 5px; font-size: 14px;">
                 કુલ ઓટો: <strong>₹${autoFee}</strong> | 
                 જમા: <strong style="color: green;">₹${s.paidFee}</strong> | 
@@ -107,7 +116,7 @@ function renderStudents() {
     document.getElementById("totalCalculated").innerText = "₹" + totCalc;
     document.getElementById("totalPaid").innerText = "₹" + totPaid;
     document.getElementById("totalPending").innerText = "₹" + totPending;
-}
+};
 
 // ૪. વિદ્યાર્થી ડિટેલ્સ ખોલવી
 window.openStudentDetail = (id) => {
@@ -116,7 +125,7 @@ window.openStudentDetail = (id) => {
     const { diffDays, autoFee } = calculateAutoFee(s.joinDate, s.monthlyFee);
     const pending = autoFee - s.paidFee;
 
-    document.getElementById("dName").innerText = s.name;
+    document.getElementById("dName").innerText = s.name + " (ધોરણ " + s.std + ")";
     document.getElementById("dPhone").innerText = s.phone;
     document.getElementById("dCourse").innerText = s.course;
     document.getElementById("dJoinDate").innerText = s.joinDate;
@@ -152,6 +161,7 @@ window.addPayment = () => {
     const newPaidTotal = s.paidFee + pay;
     set(ref(db, `students/${currentStudentId}/paidFee`), newPaidTotal).then(() => {
         alert("પહોંચ સફળતાપૂર્વક બની ગઈ અને ફી જમા થઈ ગઈ!");
+        document.getElementById("payAmount").value = 0;
         openStudentDetail(currentStudentId);
     });
 };
