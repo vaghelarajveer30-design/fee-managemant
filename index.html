@@ -23,8 +23,16 @@
                 <button class="btn btn-primary" onclick="showForm()">+ નવો વિદ્યાર્થી</button>
             </div>
 
+            <!-- Google Drive ક્લાઉડ બેકઅપ -->
+            <div class="card card-green" style="text-align: center; background-color: #e8f5e9; border: 1px solid #4caf50;">
+                <p>☁️ <strong>Google Drive ક્લાઉડ બેકઅપ સિસ્ટમ</strong></p>
+                <button class="btn btn-primary" style="background-color: #2e7d32; width: 100%; margin-top: 8px;" onclick="alert('Drive બેકઅપ ફીચર ટૂંક સમયમાં શરૂ થશે!')">
+                    📥 એક ક્લિક પર બધો ડેટા Drive માં સેવ કરો
+                </button>
+            </div>
+
             <!-- સમરી કાર્ડ્સ -->
-            <div class="summary-cards">
+            <div class="summary-cards" style="margin-top: 10px;">
                 <div class="card card-green">
                     <span>🟢 એક્ટિવ વિદ્યાર્થી</span>
                     <h3 id="activeCount">0</h3>
@@ -35,20 +43,35 @@
                 </div>
             </div>
 
-            <!-- વિદ્યાર્થીઓની લિસ્ટ -->
+            <!-- કોર્સ પ્રમાણે ફિલ્ટર -->
             <div class="card" style="margin-top: 15px;">
-                <h3>🔍 કોર્સ પ્રમાણે વિભાજન</h3>
+                <h3>🔍 કોર્સ પ્રમાણે વિભાજન:</h3>
                 <select id="courseFilter" onchange="renderStudents()">
                     <option value="All">બધા જ કોર્સ (All Courses)</option>
-                    <option value="Navoday">Navoday</option>
+                    <option value="Navoday">નવોદય (Navoday)</option>
+                    <option value="CET">CET</option>
+                    <option value="Gyan Sadhana">Gyan Sadhana</option>
+                    <option value="Samanya">સામાન્ય</option>
+                    <option value="English">ઇંગ્લિશ</option>
                 </select>
             </div>
 
             <div id="studentList"></div>
 
-            <!-- કૂલ ફી સરવૈયું -->
-            <div class="card card-green-bg" style="margin-top: 20px;">
+            <!-- સ્ટેશનરી અને Admin બટન્સ -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn" style="background-color: #ffb300; color: #000; flex: 1;" onclick="alert('સ્ટેશનરી રિપોર્ટ ફીચર ટૂંક સમયમાં શરૂ થશે!')">
+                    📖 સ્ટેશનરી રિપોર્ટ & સ્ટોક
+                </button>
+                <button class="btn" style="background-color: #fb8c00; color: white; flex: 1;" onclick="alert('Admin ખર્ચ વિગત ફીચર ટૂંક સમયમાં શરૂ થશે!')">
+                    💸 Admin ખર્ચ વિગત
+                </button>
+            </div>
+
+            <!-- કુલ ફી સરવૈયું -->
+            <div class="card card-green-bg" style="margin-top: 15px;">
                 <h3>📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</h3>
+                <p style="font-size: 12px; text-align: center;">(નીચેના બટન પર ક્લિક કરીને ફિલ્ટર કરો)</p>
                 <div class="summary-cards" style="margin-top: 10px;">
                     <div class="card card-blue">
                         <span>કુલ ગણેલ ફી</span>
@@ -64,12 +87,17 @@
                     </div>
                 </div>
             </div>
+
+            <!-- માસ્ટર સેટિંગ્સ બટન -->
+            <button class="btn btn-block" style="background-color: #7b1fa2; color: white; margin-top: 15px;" onclick="alert('માસ્ટર સેટિંગ્સ ખુલી રહ્યું છે...')">
+                ⚙️ માસ્ટર સેટિંગ્સ & Cloud API
+            </button>
         </div>
 
         <!-- ૨. વિદ્યાર્થી ઉમેરવાનું ફોર્મ -->
         <div id="formView" class="hidden">
             <button class="btn btn-secondary" onclick="showDashboard()">← પાછા જાઓ</button>
-            <h2>વિદ્યાર્થીની માહિતી ઉમેરો</h2>
+            <h2 style="margin-top: 10px;">વિદ્યાર્થીની માહિતી ઉમેરો</h2>
             
             <form id="addStudentForm" onsubmit="saveStudent(event)">
                 <div class="form-group">
@@ -81,14 +109,29 @@
                     <input type="tel" id="sPhone" required placeholder="9033197515">
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label>ધોરણ</label>
-                        <input type="text" id="sStd" placeholder="5">
+                        <select id="sStd" required>
+                            <option value="1">ધોરણ ૧</option>
+                            <option value="2">ધોરણ ૨</option>
+                            <option value="3">ધોરણ ૩</option>
+                            <option value="4">ધોરણ ૪</option>
+                            <option value="5">ધોરણ ૫</option>
+                            <option value="6">ધોરણ ૬</option>
+                            <option value="7">ધોરણ ૭</option>
+                            <option value="8">ધોરણ ૮</option>
+                            <option value="9">ધોરણ ૯</option>
+                            <option value="10">ધોરણ ૧૦</option>
+                        </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label>કોર્સ</label>
-                        <select id="sCourse">
-                            <option value="Navoday">Navoday</option>
+                        <select id="sCourse" required>
+                            <option value="Navoday">નવોદય (Navoday)</option>
+                            <option value="CET">CET</option>
+                            <option value="Gyan Sadhana">Gyan Sadhana</option>
+                            <option value="Samanya">સામાન્ય</option>
+                            <option value="English">ઇંગ્લિશ</option>
                         </select>
                     </div>
                 </div>
