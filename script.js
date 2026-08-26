@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 1. Firebase સેટઅપ
+// ૧. Firebase સેટઅપ
 const firebaseConfig = {
     apiKey: "AIzaSyCjboFcoWJmVrjC9J0Izi4ZgjMnau9czmU",
     authDomain: "fee-managemant.firebaseapp.com",
@@ -16,19 +16,50 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let studentsData = {};
-let currentStudentId = null;
+window.studentsData = {};
+window.currentStudentId = null;
 
-// Realtime ડેટા લોડ
+// Firebase Realtime Synchronization
 onValue(ref(db, 'students'), (snapshot) => {
-    studentsData = snapshot.val() || {};
-    if (typeof renderStudentList === 'function') renderStudentList();
-    if (currentStudentId && typeof loadStudentDetails === 'function') {
-        loadStudentDetails(currentStudentId);
+    window.studentsData = snapshot.val() || {};
+    if (typeof window.renderStudentList === 'function') {
+        window.renderStudentList();
+    }
+    if (window.currentStudentId && typeof window.loadStudentDetails === 'function') {
+        window.loadStudentDetails(window.currentStudentId);
     }
 });
 
-// 2. વિદ્યાર્થી સેવ કરવાનો કોડ
+// ૨. વિભાગો દર્શાવવા અને છુપાવવા (Section Navigation)
+window.showSection = function(sectionId) {
+    const sections = ['dashboardSection', 'addStudentSection', 'studentDetailsSection', 'stationerySection'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === sectionId) ? 'block' : 'none';
+    });
+};
+
+window.showDashboard = function() {
+    window.currentStudentId = null;
+    window.showSection('dashboardSection');
+};
+
+// ૩. "નવો વિદ્યાર્થી ઉમેરો" બટન ફંક્શન
+window.addStudent = function() {
+    window.currentStudentId = null;
+    const form = document.getElementById("addStudentForm");
+    if (form) form.reset();
+    
+    // આજે ડિફોલ્ટ દાખલ તારીખ સેટ કરો
+    const joinDateInput = document.getElementById("joinDate");
+    if (joinDateInput) {
+        joinDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    window.showSection('addStudentSection');
+};
+
+// ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)
 window.saveStudent = function() {
     const name = document.getElementById("studentName")?.value;
     const phone = document.getElementById("phone")?.value;
@@ -45,24 +76,25 @@ window.saveStudent = function() {
         return;
     }
 
-    const id = currentStudentId || "STU_" + Date.now();
+    const id = window.currentStudentId || "STU_" + Date.now();
 
     const studentObj = {
         id, name, phone, std, course, feeType, monthlyFee, joinDate, dob, status,
-        stationery: studentsData[id]?.stationery || [],
-        receipts: studentsData[id]?.receipts || []
+        stationery: window.studentsData[id]?.stationery || [],
+        receipts: window.studentsData[id]?.receipts || []
     };
 
     set(ref(db, 'students/' + id), studentObj).then(() => {
         alert("વિદ્યાર્થી સફળતાપૂર્વક ઉમેરાઈ ગયો!");
-        if (document.getElementById("addStudentForm")) document.getElementById("addStudentForm").reset();
-        if (typeof showDashboard === 'function') showDashboard();
+        const form = document.getElementById("addStudentForm");
+        if (form) form.reset();
+        window.showDashboard();
     }).catch(error => {
         alert("ભૂલ આવી: " + error.message);
     });
 };
 
-// 3. ઓટો ફી કેલ્ક્યુલેશન
+// ૫. ઓટો ફી ગણતરી (Auto Fee Calculation)
 window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     if (!joinDateStr || !monthlyFee) return 0;
     const join = new Date(joinDateStr);
@@ -73,9 +105,9 @@ window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     return Math.round(diffDays * dailyRate);
 };
 
-// 4. પહોંચ બનાવવાનું ફંક્શન
+// ૬. રસીદ બનાવવાનું ફંક્શન (Generate Receipt)
 window.generateReceipt = function() {
-    if (!currentStudentId) return;
+    if (!window.currentStudentId) return;
 
     const fromDate = document.getElementById("fromDate")?.value;
     const toDate = document.getElementById("toDate")?.value;
@@ -98,29 +130,41 @@ window.generateReceipt = function() {
         payerName
     };
 
-    const student = studentsData[currentStudentId];
+    const student = window.studentsData[window.currentStudentId];
     const updatedReceipts = student.receipts ? [...student.receipts, receiptObj] : [receiptObj];
 
-    set(ref(db, `students/${currentStudentId}/receipts`), updatedReceipts).then(() => {
+    set(ref(db, `students/${window.currentStudentId}/receipts`), updatedReceipts).then(() => {
         alert("પહોંચ સફળતાપૂર્વક બની ગઈ છે!");
-        showReceiptModal(receiptObj, student);
+        if (typeof window.showReceiptModal === 'function') {
+            window.showReceiptModal(receiptObj, student);
+        }
     });
 };
 
-// 5. રસીદ પોપ-અપ પ્રીવ્યૂ
-function showReceiptModal(receipt, student) {
+// ૭. રસીદ ઈમેજ પોપ-અપ (Receipt Modal)
+window.showReceiptModal = function(receipt, student) {
     const modal = document.getElementById("receiptModal");
     if (!modal) return;
 
-    document.getElementById("modalStudentName").innerText = student.name;
-    document.getElementById("modalStdCourse").innerText = `ધોરણ: ${student.std} | કોર્સ: ${student.course} | જમા તારીખ: ${receipt.date}`;
-    document.getElementById("modalFeeAmount").innerText = receipt.autoFee;
-    document.getElementById("modalTotal").innerText = receipt.autoFee;
-    document.getElementById("modalPaid").innerText = receipt.paidAmount;
-    document.getElementById("modalDue").innerText = Math.max(0, receipt.dueAmount);
-    document.getElementById("modalDateRange").innerText = `સમયગાળો: ${receipt.fromDate} થી ${receipt.toDate}`;
-    document.getElementById("modalPayer").innerText = `ફી ભરનાર: ${receipt.payerName}`;
-    document.getElementById("modalFooterInfo").innerText = `${student.name} (${student.phone})`;
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = txt;
+    };
+
+    setTxt("modalStudentName", student.name);
+    setTxt("modalStdCourse", `ધોરણ: ${student.std} | કોર્સ: ${student.course} | જમા તારીખ: ${receipt.date}`);
+    setTxt("modalFeeAmount", receipt.autoFee);
+    setTxt("modalTotal", receipt.autoFee);
+    setTxt("modalPaid", receipt.paidAmount);
+    setTxt("modalDue", Math.max(0, receipt.dueAmount));
+    setTxt("modalDateRange", `સમયગાળો: ${receipt.fromDate} થી ${receipt.toDate}`);
+    setTxt("modalPayer", `ફી ભરનાર: ${receipt.payerName}`);
+    setTxt("modalFooterInfo", `${student.name} (${student.phone})`);
 
     modal.style.display = "block";
-}
+};
+
+window.closeReceiptModal = function() {
+    const modal = document.getElementById("receiptModal");
+    if (modal) modal.style.display = "none";
+};
