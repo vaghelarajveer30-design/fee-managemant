@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// ૧. Firebase સેટઅપ[cite: 1]
+// ૧. Firebase સેટઅપ
 const firebaseConfig = {
     apiKey: "AIzaSyCjboFcoWJmVrjC9J0Izi4ZgjMnau9czmU",
     authDomain: "fee-managemant.firebaseapp.com",
@@ -19,7 +19,7 @@ const db = getDatabase(app);
 window.studentsData = {};
 window.currentStudentId = null;
 
-// Firebase Realtime Synchronization[cite: 1]
+// Firebase Realtime Synchronization
 onValue(ref(db, 'students'), (snapshot) => {
     window.studentsData = snapshot.val() || {};
     if (typeof window.renderStudentList === 'function') {
@@ -30,14 +30,12 @@ onValue(ref(db, 'students'), (snapshot) => {
     }
 });
 
-// ૨. વિભાગો દર્શાવવા અને છુપાવવા (Section Navigation)[cite: 1]
+// ૨. વિભાગો દર્શાવવા અને છુપાવવા (Section Navigation)
 window.showSection = function(sectionId) {
     const sections = ['dashboardSection', 'addStudentSection', 'studentDetailsSection', 'stationerySection'];
     sections.forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            el.style.display = (id === sectionId) ? 'block' : 'none';
-        }
+        if (el) el.style.display = (id === sectionId) ? 'block' : 'none';
     });
 };
 
@@ -46,10 +44,9 @@ window.showDashboard = function() {
     window.showSection('dashboardSection');
 };
 
-// ૩. "નવો વિદ્યાર્થી ઉમેરો" બટન ફંક્શન[cite: 1]
+// ૩. "નવો વિદ્યાર્થી ઉમેરો" બટન ફંક્શન
 window.addStudent = function() {
     window.currentStudentId = null;
-    
     const form = document.getElementById("addStudentForm");
     if (form) form.reset();
     
@@ -61,7 +58,7 @@ window.addStudent = function() {
     window.showSection('addStudentSection');
 };
 
-// ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)[cite: 1]
+// ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)
 window.saveStudent = function(event) {
     if (event) event.preventDefault();
 
@@ -98,7 +95,7 @@ window.saveStudent = function(event) {
     });
 };
 
-// ૫. ઓટો ફી ગણતરી (Auto Fee Calculation)[cite: 1]
+// ૫. ઓટો ફી ગણતરી (Auto Fee Calculation)
 window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     if (!joinDateStr || !monthlyFee) return 0;
     const join = new Date(joinDateStr);
@@ -109,15 +106,29 @@ window.calculateAutoFee = function(joinDateStr, monthlyFee) {
     return Math.round(diffDays * dailyRate);
 };
 
-// ૬. રસીદ બનાવવાનું ફંક્શન (Generate Receipt)[cite: 1]
+// ૬. રસીદ ફી ગણતરી અને પેમેન્ટ (લાઇવ કેલ્ક્યુલેશન)
+window.calculateReceipt = function() {
+    const payAmt = parseFloat(document.getElementById("payAmount")?.value) || 0;
+    const discAmt = parseFloat(document.getElementById("discountAmount")?.value) || 0;
+    const calcPaid = document.getElementById("calcPaid");
+    if (calcPaid) calcPaid.innerText = payAmt;
+};
+
+window.addPayment = function() {
+    if (typeof window.generateReceipt === 'function') {
+        window.generateReceipt();
+    }
+};
+
+// ૭. રસીદ બનાવવાનું ફંક્શન (Generate Receipt)
 window.generateReceipt = function() {
     if (!window.currentStudentId) return;
 
     const fromDate = document.getElementById("fromDate")?.value;
     const toDate = document.getElementById("toDate")?.value;
     const autoFee = parseFloat(document.getElementById("autoFee")?.value) || 0;
-    const paidAmount = parseFloat(document.getElementById("paidAmount")?.value) || 0;
-    const discount = parseFloat(document.getElementById("discount")?.value) || 0;
+    const paidAmount = parseFloat(document.getElementById("payAmount")?.value) || 0;
+    const discount = parseFloat(document.getElementById("discountAmount")?.value) || 0;
     const paymentMode = document.getElementById("paymentMode")?.value || "રોકડ/ઓન લાઈન";
     const payerName = document.getElementById("payerName")?.value || "";
 
@@ -145,7 +156,7 @@ window.generateReceipt = function() {
     });
 };
 
-// ૭. રસીદ ઈમેજ પોપ-અપ (Receipt Modal)[cite: 1]
+// ૮. રસીદ ઈમેજ પોપ-અપ (Receipt Modal)
 window.showReceiptModal = function(receipt, student) {
     const modal = document.getElementById("receiptModal");
     if (!modal) return;
