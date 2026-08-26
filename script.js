@@ -3,10 +3,14 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 
 // ⚠️ અહીં તમારી સાચી Firebase વિગત ઉમેરવી
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_DATABASE_NAME.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID"
+    apiKey: "AIzaSyCjboFcoWJmVrjC9J0Izi4ZgjMnau9czmU",
+    authDomain: "fee-managemant.firebaseapp.com",
+    databaseURL: "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "fee-managemant",
+    storageBucket: "fee-managemant.firebasestorage.app",
+    messagingSenderId: "1029215490651",
+    appId: "1:1029215490651:web:2f4136fa77e93fc6f4a57e",
+    measurementId: "G-1GG5W5W7R6"
 };
 
 const app = initializeApp(firebaseConfig);
