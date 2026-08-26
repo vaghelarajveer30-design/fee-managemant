@@ -35,7 +35,9 @@ window.showSection = function(sectionId) {
     const sections = ['dashboardSection', 'addStudentSection', 'studentDetailsSection', 'stationerySection'];
     sections.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = (id === sectionId) ? 'block' : 'none';
+        if (el) {
+            el.style.display = (id === sectionId) ? 'block' : 'none';
+        }
     });
 };
 
@@ -60,9 +62,11 @@ window.addStudent = function() {
 };
 
 // ૪. વિદ્યાર્થી માહિતી સેવ કરવી (Save Student)
-window.saveStudent = function() {
-    const name = document.getElementById("studentName")?.value;
-    const phone = document.getElementById("phone")?.value;
+window.saveStudent = function(event) {
+    if (event) event.preventDefault(); // પેજ રીફ્રેશ થતું રોકવા માટે
+
+    const name = document.getElementById("studentName")?.value.trim();
+    const phone = document.getElementById("phone")?.value.trim();
     const std = document.getElementById("studentStd")?.value;
     const course = document.getElementById("course")?.value;
     const feeType = document.querySelector('input[name="feeType"]:checked')?.value || "માસિક";
@@ -168,3 +172,21 @@ window.closeReceiptModal = function() {
     const modal = document.getElementById("receiptModal");
     if (modal) modal.style.display = "none";
 };
+
+// ૮. DOM લોડ થાય એટલે Event Listeners બાઇન્ડ કરો
+document.addEventListener("DOMContentLoaded", () => {
+    // "નવો વિદ્યાર્થી ઉમેરો" બટન લિંક કરો
+    const addBtn = document.getElementById("addStudentBtn") || document.querySelector("[onclick='addStudent()']");
+    if (addBtn) {
+        addBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.addStudent();
+        });
+    }
+
+    // ફોર્મ સબમિટ પર saveStudent કોલ કરો
+    const addStudentForm = document.getElementById("addStudentForm");
+    if (addStudentForm) {
+        addStudentForm.addEventListener("submit", window.saveStudent);
+    }
+});
