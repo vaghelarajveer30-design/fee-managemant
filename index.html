@@ -379,6 +379,7 @@
                             <th>નંગ</th>
                             <th>કિંમત</th>
                             <th>પ્રકાર</th>
+                            <th>ક્રિયા</th>
                         </tr>
                     </thead>
                     <tbody id="studentStationeryList"></tbody>
@@ -396,27 +397,39 @@
                 <div class="grid-2">
                     <div class="form-group">
                         <label>🗓️ કઈ તારીખથી?</label>
-                        <input type="date" id="recFromDate" class="form-control">
+                        <input type="date" id="recFromDate" class="form-control" onchange="autoCalculateMonthsFee()">
                     </div>
                     <div class="form-group">
                         <label>🗓️ કઈ તારીખ સુધી?</label>
-                        <input type="date" id="recToDate" class="form-control">
+                        <input type="date" id="recToDate" class="form-control" onchange="autoCalculateMonthsFee()">
                     </div>
                 </div>
 
-                <!-- 3 BOXES FOR TOTAL, PAID, DUE -->
+                <!-- 3 BOXES FOR TUITION FEE, STATIONERY FEE, GRAND TOTAL -->
                 <div class="grid-3">
                     <div class="form-group">
-                        <label>કુલ રકમ (₹)</label>
+                        <label>ટ્યુશન ફી (₹)</label>
                         <input type="number" id="recAutoFee" class="form-control" value="350" oninput="calculateReceiptTotals()">
                     </div>
+                    <div class="form-group">
+                        <label>સ્ટેશનરી (₹)</label>
+                        <input type="number" id="recStationeryFee" class="form-control" value="0" readonly style="background-color: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>કુલ રકમ (₹)</label>
+                        <input type="number" id="recGrandTotal" class="form-control" value="350" readonly style="background-color: #e8f0fe; font-weight:bold;">
+                    </div>
+                </div>
+
+                <!-- PAID & DUE BOXES -->
+                <div class="grid-2">
                     <div class="form-group">
                         <label>જમા કરાવેલ રકમ (₹)</label>
                         <input type="number" id="recPaidInput" class="form-control" value="0" oninput="calculateReceiptTotals()">
                     </div>
                     <div class="form-group">
                         <label>બાકી રહેતી રકમ (₹)</label>
-                        <input type="number" id="recDueInput" class="form-control" value="350" readonly style="background-color: #f5f5f5;">
+                        <input type="number" id="recDueInput" class="form-control" value="350" readonly style="background-color: #ffebee; font-weight:bold; color:red;">
                     </div>
                 </div>
 
@@ -813,9 +826,7 @@
             document.getElementById('profPaid').innerText = '₹' + currentStudent.paid;
             document.getElementById('profDue').innerText = '₹' + currentStudent.due;
 
-            document.getElementById('recAutoFee').value = currentStudent.totalFeeWithStationery || currentStudent.fee;
-            document.getElementById('recPaidInput').value = 0; 
-            calculateReceiptTotals();
+            autoCalculateMonthsFee();
 
             const badge = document.getElementById('profStatusBadge');
             if (currentStudent.status === 'inactive') {
@@ -966,6 +977,7 @@
             if(!currentStudent.stationery) currentStudent.stationery = [];
 
             currentStudent.stationery.push({
+                id: Date.now().toString(),
                 date: new Date().toLocaleDateString('gu-IN'),
                 name: stockItem.name,
                 qty: qty,
@@ -983,20 +995,34 @@
             const tbody = document.getElementById('studentStationeryList');
             tbody.innerHTML = '';
             if (!currentStudent.stationery || currentStudent.stationery.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="color:#888;">કોઈ સ્ટેશનરી આપેલી નથી.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="color:#888;">કોઈ સ્ટેશનરી આપેલી નથી.</td></tr>';
                 return;
             }
 
-            currentStudent.stationery.forEach(st => {
+            currentStudent.stationery.forEach((st, idx) => {
                 tbody.innerHTML += `
                     <tr>
                         <td>${st.name}</td>
                         <td>${st.qty}</td>
                         <td>₹${st.price}</td>
                         <td><span style="color:${st.payType==='ઉધાર'?'red':'green'}; font-weight:bold;">${st.payType}</span></td>
+                        <td>
+                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="toggleStationeryPayType(${idx})">🔄 બદલો</button>
+                        </td>
                     </tr>
                 `;
             });
+        }
+
+        // TOGGLE STATIONERY PAY TYPE (ઉધાર / રોકડ)
+        function toggleStationeryPayType(index) {
+            if (currentStudent.stationery && currentStudent.stationery[index]) {
+                const currentType = currentStudent.stationery[index].payType;
+                currentStudent.stationery[index].payType = (currentType === 'ઉધાર') ? 'રોકડ' : 'ઉધાર';
+                saveLocalData();
+                updateStudentProfileUI();
+                renderDashboard();
+            }
         }
 
         function renderIssuedStationeryReport() {
@@ -1042,11 +1068,56 @@
             });
         }
 
-        // AUTO CALCULATE DUE AMOUNT FOR RECEIPT FORM
+        // AUTOMATICALLY CALCULATE MONTHS AND FEE ACCORDING TO DATE RANGE
+        function autoCalculateMonthsFee() {
+            const fromVal = document.getElementById('recFromDate').value;
+            const toVal = document.getElementById('recToDate').value;
+
+            let months = 1;
+            if (fromVal && toVal) {
+                const d1 = new Date(fromVal);
+                const d2 = new Date(toVal);
+
+                if (d2 >= d1) {
+                    let yearDiff = d2.getFullYear() - d1.getFullYear();
+                    let monthDiff = d2.getMonth() - d1.getMonth();
+                    let dayDiff = d2.getDate() - d1.getDate();
+
+                    months = (yearDiff * 12) + monthDiff;
+                    if (dayDiff > 10 || months === 0) {
+                        months += 1;
+                    }
+                }
+            }
+
+            const monthlyFee = parseFloat(currentStudent.fee) || 0;
+            const calculatedTuitionFee = months * monthlyFee;
+            document.getElementById('recAutoFee').value = calculatedTuitionFee;
+
+            // Calculate Credit Stationery Total
+            let creditStationeryTotal = 0;
+            if (currentStudent.stationery) {
+                currentStudent.stationery.forEach(st => {
+                    if (st.payType === 'ઉધાર') {
+                        creditStationeryTotal += st.price;
+                    }
+                });
+            }
+            document.getElementById('recStationeryFee').value = creditStationeryTotal;
+
+            calculateReceiptTotals();
+        }
+
+        // AUTO CALCULATE TOTAL, PAID, AND DUE AMOUNT FOR RECEIPT FORM
         function calculateReceiptTotals() {
-            const total = parseFloat(document.getElementById('recAutoFee').value) || 0;
+            const tuition = parseFloat(document.getElementById('recAutoFee').value) || 0;
+            const statFee = parseFloat(document.getElementById('recStationeryFee').value) || 0;
+            const grandTotal = tuition + statFee;
+
+            document.getElementById('recGrandTotal').value = grandTotal;
+
             const paid = parseFloat(document.getElementById('recPaidInput').value) || 0;
-            const due = total - paid;
+            const due = grandTotal - paid;
             document.getElementById('recDueInput').value = due > 0 ? due : 0;
         }
 
@@ -1067,7 +1138,6 @@
                 currentStudent.stationery.forEach((st, i) => {
                     if (st.payType === 'ઉધાર') {
                         creditStationeryTotal += st.price;
-                        // REMOVED "(ઉધાર સ્ટેશનરી)" TEXT FROM HERE
                         tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name}</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
                     }
                 });
