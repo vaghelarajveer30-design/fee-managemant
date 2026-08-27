@@ -28,7 +28,10 @@
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .stat-box { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 13px; }
+        
+        .stat-box { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 13px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+        .stat-box:active { transform: scale(0.98); }
+        .stat-box.active-filter { outline: 3px solid #1565c0; box-shadow: 0 0 8px rgba(0,0,0,0.3); }
         
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
@@ -75,11 +78,12 @@
                 <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
 
+            <!-- ACTIV / INACTIVE TOGGLE BUTTONS -->
             <div class="grid-2" style="margin-bottom: 12px;">
-                <div class="stat-box" style="background-color: #2e7d32;">
+                <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="filterStudents('active')">
                     🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">0</span>
                 </div>
-                <div class="stat-box" style="background-color: #d32f2f;">
+                <div id="btnFilterInactive" class="stat-box" style="background-color: #d32f2f;" onclick="filterStudents('inactive')">
                     🔴 ઇન-એક્ટિવ વિદ્યાર્થી<br><span id="countInactive" style="font-size: 20px;">0</span>
                 </div>
             </div>
@@ -94,9 +98,9 @@
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
                 <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</div>
                 <div class="grid-3">
-                    <div class="stat-box" style="background: #1976d2;">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
-                    <div class="stat-box" style="background: #388e3c;">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
-                    <div class="stat-box" style="background: #d32f2f;">કુલ બાકી<br><span id="sumDueFee">₹0</span></div>
+                    <div class="stat-box" style="background: #1976d2; cursor:default;">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
+                    <div class="stat-box" style="background: #388e3c; cursor:default;">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
+                    <div class="stat-box" style="background: #d32f2f; cursor:default;">કુલ બાકી<br><span id="sumDueFee">₹0</span></div>
                 </div>
             </div>
 
@@ -146,6 +150,13 @@
                             <label>ફી રકમ (₹)</label>
                             <input type="number" id="inpMonthlyFee" class="form-control" value="350">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>સ્ટેટસ</label>
+                        <select id="inpStatus" class="form-control">
+                            <option value="active">ચાલુ છે (Active)</option>
+                            <option value="inactive">બંધ છે (Inactive)</option>
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-blue" id="btnSaveStudent">સેવ કરો</button>
                 </form>
@@ -310,7 +321,7 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2 id="profName" style="color:#1565c0;">Ravi</h2>
-                    <span style="background:#2e7d32; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">ચાલુ છે</span>
+                    <span id="profStatusBadge" style="background:#2e7d32; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">ચાલુ છે</span>
                 </div>
                 <div style="margin-top:10px; font-size:13px; line-height:1.7; color:#333;">
                     <div><strong>મોબાઈલ નં:</strong> <span id="profPhone">9033197515</span></div>
@@ -326,9 +337,9 @@
                 </div>
 
                 <div class="grid-3" style="margin-top:12px;">
-                    <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span id="profFee">₹350</span></div>
-                    <div class="stat-box" style="background:#2e7d32;">જમા ફી<br><span id="profPaid">₹0</span></div>
-                    <div class="stat-box" style="background:#d32f2f;">બાકી ફી<br><span id="profDue">₹350</span></div>
+                    <div class="stat-box" style="background:#1976d2; cursor:default;">કુલ ફી<br><span id="profFee">₹350</span></div>
+                    <div class="stat-box" style="background:#2e7d32; cursor:default;">જમા ફી<br><span id="profPaid">₹0</span></div>
+                    <div class="stat-box" style="background:#d32f2f; cursor:default;">બાકી ફી<br><span id="profDue">₹350</span></div>
                 </div>
             </div>
 
@@ -480,12 +491,16 @@
                 <div id="imageResultContainer" style="margin-top: 15px; text-align: center; display: none;">
                     <h4 style="color: #2e7d32; margin-bottom: 6px;">✨ જનરેટ થયેલી પહોંચ ઈમેજ:</h4>
                     <img id="generatedImage" src="" style="max-width: 100%; border: 2px solid #1565c0; border-radius: 8px;" />
-                    <a id="downloadImgBtn" href="" download="Receipt.png" class="btn btn-green" style="margin-top: 8px;">📥 Download PNG Image</a>
+                    
+                    <div class="grid-2" style="margin-top: 8px;">
+                        <a id="downloadImgBtn" href="" download="Receipt.png" class="btn btn-green">📥 ડાઉનલોડ ઈમેજ</a>
+                        <button class="btn btn-whatsapp" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
+                    </div>
                 </div>
 
                 <div style="margin-top: 15px;">
                     <button class="btn btn-purple" onclick="generateReceiptImage()">🖼️ પહોંચ ઈમેજ બનાવો</button>
-                    <button class="btn btn-whatsapp" onclick="shareWhatsAppText()">📱 📄 વ્હોટ્સએપ પર મોકલો</button>
+                    <button class="btn btn-whatsapp" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
                     <button class="btn btn-cyan" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
                 </div>
             </div>
@@ -504,16 +519,18 @@
         };
 
         let stockList = [
-            { id: "s1", name: "નવોદય બુક", costPrice: 200, sellPrice: 300, qty: 50 },
+            { id: "s1", name: "Gyan sadhana", costPrice: 200, sellPrice: 350, qty: 41 },
             { id: "s2", name: "પરીક્ષા પેપર સેટ", costPrice: 90, sellPrice: 150, qty: 25 }
         ];
 
         let students = [
-            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "2026-06-01", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, stationery: [], receipts: [] }
+            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "2026-06-01", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, status: "active", stationery: [], receipts: [] }
         ];
 
         let expenses = [];
         let currentStudent = students[0];
+        let currentFilter = null; // 'active', 'inactive' or null (show none)
+        let generatedBlob = null;
 
         window.onload = function() {
             loadLocalData();
@@ -560,18 +577,65 @@
             }
         }
 
+        function filterStudents(type) {
+            if (currentFilter === type) {
+                currentFilter = null; // Toggle off if same clicked again
+            } else {
+                currentFilter = type;
+            }
+            renderDashboard();
+        }
+
         function renderDashboard() {
             const container = document.getElementById('studentListContainer');
             container.innerHTML = '';
+            
             let totalFeeSum = 0;
             let totalPaidSum = 0;
             let totalDueSum = 0;
+            let activeCount = 0;
+            let inactiveCount = 0;
 
             students.forEach(s => {
+                if(!s.status) s.status = 'active'; // Default active
+                
+                if (s.status === 'active') activeCount++;
+                else inactiveCount++;
+
                 totalFeeSum += s.fee;
                 totalPaidSum += s.paid;
                 totalDueSum += s.due;
+            });
 
+            document.getElementById('sumTotalFee').innerText = '₹' + totalFeeSum;
+            document.getElementById('sumPaidFee').innerText = '₹' + totalPaidSum;
+            document.getElementById('sumDueFee').innerText = '₹' + totalDueSum;
+            document.getElementById('countActive').innerText = activeCount;
+            document.getElementById('countInactive').innerText = inactiveCount;
+
+            // Highlight button styling
+            const btnAct = document.getElementById('btnFilterActive');
+            const btnInact = document.getElementById('btnFilterInactive');
+            btnAct.classList.remove('active-filter');
+            btnInact.classList.remove('active-filter');
+
+            if (currentFilter === 'active') btnAct.classList.add('active-filter');
+            if (currentFilter === 'inactive') btnInact.classList.add('active-filter');
+
+            // Render students list only if filter is selected
+            if (currentFilter === null) {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના એક્ટિવ અથવા ઇન-એક્ટિવ બટન પર ક્લિક કરો.</div>';
+                return;
+            }
+
+            const filteredStudents = students.filter(s => s.status === currentFilter);
+
+            if (filteredStudents.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+                return;
+            }
+
+            filteredStudents.forEach(s => {
                 container.innerHTML += `
                     <div class="student-item-card" onclick="openStudent('${s.id}')">
                         <div class="student-item-head">
@@ -586,11 +650,6 @@
                     </div>
                 `;
             });
-
-            document.getElementById('sumTotalFee').innerText = '₹' + totalFeeSum;
-            document.getElementById('sumPaidFee').innerText = '₹' + totalPaidSum;
-            document.getElementById('sumDueFee').innerText = '₹' + totalDueSum;
-            document.getElementById('countActive').innerText = students.length;
         }
 
         function openAddStudentModal() {
@@ -603,6 +662,7 @@
             document.getElementById('inpStd').value = masterSettings.defaultStd;
             document.getElementById('inpCourse').value = masterSettings.defaultCourse;
             document.getElementById('inpMonthlyFee').value = masterSettings.defaultFee;
+            document.getElementById('inpStatus').value = "active";
             navigateTo('pageAddStudent');
         }
 
@@ -615,9 +675,9 @@
             const course = document.getElementById('inpCourse').value;
             const feeType = document.getElementById('inpFeeType').value;
             const fee = parseFloat(document.getElementById('inpMonthlyFee').value) || 0;
+            const status = document.getElementById('inpStatus').value;
 
             if (editId) {
-                // EDIT EXISTING STUDENT
                 const st = students.find(s => s.id === editId);
                 if (st) {
                     st.name = name;
@@ -627,13 +687,13 @@
                     st.course = course;
                     st.feeType = feeType;
                     st.fee = fee;
+                    st.status = status;
                     st.due = st.fee - st.paid;
                     if(st.due < 0) st.due = 0;
                 }
                 alert('વિદ્યાર્થીની માહિતી સફળતાપૂર્વક સુધારાઈ ગઈ!');
             } else {
-                // ADD NEW STUDENT
-                students.push({ id: Date.now().toString(), name, phone, joinDate, std, course, feeType, fee, paid: 0, due: fee, stationery: [], receipts: [] });
+                students.push({ id: Date.now().toString(), name, phone, joinDate, std, course, feeType, fee, paid: 0, due: fee, status, stationery: [], receipts: [] });
                 alert('નવો વિદ્યાર્થી સફળતાપૂર્વક ઉમેરાઈ ગયો!');
             }
 
@@ -656,6 +716,7 @@
             document.getElementById('inpCourse').value = st.course;
             document.getElementById('inpFeeType').value = st.feeType;
             document.getElementById('inpMonthlyFee').value = st.fee;
+            document.getElementById('inpStatus').value = st.status || "active";
 
             navigateTo('pageAddStudent');
         }
@@ -691,6 +752,15 @@
             document.getElementById('profPaid').innerText = '₹' + currentStudent.paid;
             document.getElementById('profDue').innerText = '₹' + currentStudent.due;
             document.getElementById('recAutoFee').value = currentStudent.fee;
+
+            const badge = document.getElementById('profStatusBadge');
+            if (currentStudent.status === 'inactive') {
+                badge.innerText = 'બંધ છે';
+                badge.style.background = '#d32f2f';
+            } else {
+                badge.innerText = 'ચાલુ છે';
+                badge.style.background = '#2e7d32';
+            }
 
             renderStudentStationeryList();
             renderFeeHistoryTable();
@@ -816,13 +886,20 @@
             const payType = document.getElementById('givePayType').value;
             const stockItem = stockList.find(s => s.id === stkId);
 
-            if (!stockItem || stockItem.qty < qty) {
+            if (!stockItem) {
+                alert('કૃપા કરીને પહેલા સ્ટોકમાંથી વસ્તુ પસંદ કરો!');
+                return;
+            }
+
+            if (stockItem.qty < qty) {
                 alert('સ્ટોકમાં પુરતો જથ્થો નથી!');
                 return;
             }
 
             stockItem.qty -= qty;
             const totalAmt = stockItem.sellPrice * qty;
+
+            if(!currentStudent.stationery) currentStudent.stationery = [];
 
             currentStudent.stationery.push({
                 date: new Date().toLocaleDateString('gu-IN'),
@@ -843,7 +920,7 @@
             saveLocalData();
             renderStockTable();
             updateStudentProfileUI();
-            renderDashboard();
+            alert(`વિદ્યાર્થીને સફળતાપૂર્વક સ્ટેશનરી આપી દેવાઈ છે!`);
         }
 
         function renderStudentStationeryList() {
@@ -1014,9 +1091,36 @@
                 downBtn.href = imgData;
                 downBtn.download = `Receipt_${currentStudent.name}.png`;
 
+                canvas.toBlob(blob => {
+                    generatedBlob = blob;
+                });
+
                 document.getElementById('imageResultContainer').style.display = 'block';
                 document.getElementById('imageResultContainer').scrollIntoView({ behavior: 'smooth' });
             }).catch(() => alert("ઈમેજ બનાવવામાં ભૂલ થઈ."));
+        }
+
+        async function shareWhatsAppImage() {
+            if (!generatedBlob) {
+                alert('કૃપા કરીને પહેલાં "પહોંચ ઈમેજ બનાવો" બટન પર ક્લિક કરો!');
+                return;
+            }
+
+            const file = new File([generatedBlob], `Receipt_${currentStudent.name}.png`, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'ફી પહોંચ - નિર્મળા નવોદય ક્લાસિસ',
+                        text: `*નિર્મળા નવોદય ક્લાસિસ*\nવિદ્યાર્થી: ${currentStudent.name} ની ફી પહોંચ.`
+                    });
+                } catch (err) {
+                    console.log('Share canceled or failed', err);
+                }
+            } else {
+                alert('તમારા બ્રાઉઝરમાં ડાયરેક્ટ ઈમેજ શેર સપોર્ટ નથી. "ડાઉનલોડ ઈમેજ" બટનથી ઈમેજ સેવ કરીને વ્હોટ્સએપ પર મોકલો.');
+            }
         }
 
         function shareWhatsAppText() {
