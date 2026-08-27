@@ -404,14 +404,19 @@
                     </div>
                 </div>
 
-                <div class="grid-2">
+                <!-- 3 BOXES FOR TOTAL, PAID, DUE -->
+                <div class="grid-3">
                     <div class="form-group">
-                        <label>ટ્યુશન ફી રકમ (₹)</label>
+                        <label>કુલ રકમ (₹)</label>
                         <input type="number" id="recAutoFee" class="form-control" value="350" oninput="calculateReceiptTotals()">
                     </div>
                     <div class="form-group">
                         <label>જમા કરાવેલ રકમ (₹)</label>
                         <input type="number" id="recPaidInput" class="form-control" value="0" oninput="calculateReceiptTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label>બાકી રહેતી રકમ (₹)</label>
+                        <input type="number" id="recDueInput" class="form-control" value="350" readonly style="background-color: #f5f5f5;">
                     </div>
                 </div>
 
@@ -475,7 +480,7 @@
                         <tbody id="receiptTableBody"></tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="2" style="text-align: right; font-weight: bold; color: #1565c0;">કુલ રકમ (ટ્યુશન + સ્ટેશનરી)</td>
+                                <td colspan="2" style="text-align: right; font-weight: bold; color: #1565c0;">કુલ રકમ</td>
                                 <td style="font-weight: bold; color: #1565c0;" id="rTotalVal">350</td>
                             </tr>
                             <tr>
@@ -508,7 +513,7 @@
                     <img id="generatedImage" src="" style="max-width: 100%; border: 2px solid #1565c0; border-radius: 8px;" />
                     
                     <div class="grid-2" style="margin-top: 8px;">
-                        <a id="downloadImgBtn" href="" download="Receipt.png" class="btn btn-green">📥 ડાઉનલોડ ઈમેજ</a>
+                        <button class="btn btn-green" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
                         <button class="btn btn-whatsapp" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
                     </div>
                 </div>
@@ -808,8 +813,9 @@
             document.getElementById('profPaid').innerText = '₹' + currentStudent.paid;
             document.getElementById('profDue').innerText = '₹' + currentStudent.due;
 
-            document.getElementById('recAutoFee').value = currentStudent.fee;
-            document.getElementById('recPaidInput').value = currentStudent.due; 
+            document.getElementById('recAutoFee').value = currentStudent.totalFeeWithStationery || currentStudent.fee;
+            document.getElementById('recPaidInput').value = 0; 
+            calculateReceiptTotals();
 
             const badge = document.getElementById('profStatusBadge');
             if (currentStudent.status === 'inactive') {
@@ -1036,8 +1042,12 @@
             });
         }
 
+        // AUTO CALCULATE DUE AMOUNT FOR RECEIPT FORM
         function calculateReceiptTotals() {
-            // મદદરૂપ ફંક્શન
+            const total = parseFloat(document.getElementById('recAutoFee').value) || 0;
+            const paid = parseFloat(document.getElementById('recPaidInput').value) || 0;
+            const due = total - paid;
+            document.getElementById('recDueInput').value = due > 0 ? due : 0;
         }
 
         function buildReceiptPreview() {
@@ -1057,7 +1067,8 @@
                 currentStudent.stationery.forEach((st, i) => {
                     if (st.payType === 'ઉધાર') {
                         creditStationeryTotal += st.price;
-                        tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name} (ઉધાર સ્ટેશનરી)</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
+                        // REMOVED "(ઉધાર સ્ટેશનરી)" TEXT FROM HERE
+                        tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name}</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
                     }
                 });
             }
@@ -1129,10 +1140,23 @@
                         <td><span style="${badgeStyle} padding:2px 6px; border-radius:4px; font-weight:bold;">${r.status}</span></td>
                         <td>
                             <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="toggleReceiptStatus('${r.id}')">🔄 સ્ટેટસ બદલો</button>
+                            <button class="btn btn-red" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block; margin-top:2px;" onclick="deleteReceipt('${r.id}')">🗑️ ડિલીટ</button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        // FUNCTION TO DELETE RECEIPT
+        function deleteReceipt(recId) {
+            if (confirm("શું તમે આ પહોંચ ડિલીટ કરવા માંગો છો?")) {
+                currentStudent.receipts = currentStudent.receipts.filter(r => r.id !== recId);
+                recalculateStudentTotals();
+                saveLocalData();
+                updateStudentProfileUI();
+                renderDashboard();
+                alert("પહોંચ ડિલીટ થઈ ગઈ છે.");
+            }
         }
 
         function toggleReceiptStatus(recId) {
@@ -1161,11 +1185,8 @@
             html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const imgElem = document.getElementById('generatedImage');
-                const downBtn = document.getElementById('downloadImgBtn');
                 
                 imgElem.src = imgData;
-                downBtn.href = imgData;
-                downBtn.download = `Receipt_${currentStudent.name}.png`;
 
                 canvas.toBlob(blob => {
                     generatedBlob = blob;
@@ -1174,6 +1195,17 @@
                 document.getElementById('imageResultContainer').style.display = 'block';
                 document.getElementById('imageResultContainer').scrollIntoView({ behavior: 'smooth' });
             }).catch(() => alert("ઈમેજ બનાવવામાં ભૂલ થઈ."));
+        }
+
+        // DIRECT DOWNLOAD / OPEN IMAGE IN NEW SIDE-TAB FOR EASY DOWNLOAD
+        function downloadImageDirectly() {
+            const imgElem = document.getElementById('generatedImage');
+            if (!imgElem.src || imgElem.src === "") {
+                alert('પહેલાં ઈમેજ જનરેટ કરો!');
+                return;
+            }
+            const win = window.open();
+            win.document.write('<iframe src="' + imgElem.src + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
         }
 
         async function shareWhatsAppImage() {
