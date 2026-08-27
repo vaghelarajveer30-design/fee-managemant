@@ -51,6 +51,13 @@
         .receipt-user-info { background-color: #f0f4f8; padding: 8px 12px; font-size: 13px; color: #1a237e; border-bottom: 1px solid #dcdcdc; }
         .receipt-footer-bar { background-color: #e8f0fe; color: #1565c0; text-align: center; padding: 6px; font-weight: bold; font-size: 13px; border-top: 1px solid #dcdcdc; border-bottom: 1px solid #dcdcdc; }
         .receipt-details { padding: 8px 12px; font-size: 13px; color: #333; line-height: 1.6; }
+
+        /* Custom Modal Style */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal-box { background: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .modal-title { font-size: 16px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
+        .modal-body { font-size: 14px; color: #333; margin-bottom: 15px; line-height: 1.5; }
+        .modal-btn { background: #1565c0; color: white; padding: 8px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -517,6 +524,18 @@
 
     </div>
 
+    <!-- MODAL FOR WEBSHARE UNSUPPORTED ALERT -->
+    <div id="customModal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-title">સૂચના</div>
+            <div class="modal-body">
+                તમારા બ્રાઉઝરમાં ડાયરેક્ટ ઈમેજ શેર સપોર્ટ નથી.<br><br>
+                <strong>"ડાઉનલોડ ઈમેજ"</strong> બટનથી ઈમેજ સેવ કરીને વ્હોટ્સએપ પર મોકલો.
+            </div>
+            <button class="modal-btn" onclick="closeCustomModal()">OK</button>
+        </div>
+    </div>
+
     <script>
         let masterSettings = {
             apiKey: "AIzaSyCjboFcoWJmVrjC9JOIzi4ZgjMnau9czmU",
@@ -573,7 +592,6 @@
             if (localStorage.getItem('NNC_master')) masterSettings = JSON.parse(localStorage.getItem('NNC_master'));
         }
 
-        // ઓટો ગણતરી: વિદ્યાર્થીની સ્પેસિફિક કુલ, જમા અને બાકી ફી ફરીથી ગણવા માટે
         function recalculateStudentTotals() {
             students.forEach(st => {
                 let totalFee = parseFloat(st.fee) || 0;
@@ -615,7 +633,7 @@
 
         function filterStudents(type) {
             if (currentFilter === type) {
-                currentFilter = null; // Toggle off if same clicked again
+                currentFilter = null;
             } else {
                 currentFilter = type;
             }
@@ -634,7 +652,7 @@
             let inactiveCount = 0;
 
             students.forEach(s => {
-                if(!s.status) s.status = 'active'; // Default active
+                if(!s.status) s.status = 'active';
                 
                 if (s.status === 'active') activeCount++;
                 else inactiveCount++;
@@ -650,7 +668,6 @@
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
 
-            // Highlight button styling
             const btnAct = document.getElementById('btnFilterActive');
             const btnInact = document.getElementById('btnFilterInactive');
             btnAct.classList.remove('active-filter');
@@ -659,7 +676,6 @@
             if (currentFilter === 'active') btnAct.classList.add('active-filter');
             if (currentFilter === 'inactive') btnInact.classList.add('active-filter');
 
-            // Render students list only if filter is selected
             if (currentFilter === null) {
                 container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના એક્ટિવ અથવા ઇન-એક્ટિવ બટન પર ક્લિક કરો.</div>';
                 return;
@@ -1179,8 +1195,16 @@
                     console.log('Share canceled or failed', err);
                 }
             } else {
-                alert('તમારા બ્રાઉઝરમાં ડાયરેક્ટ ઈમેજ શેર સપોર્ટ નથી. "ડાઉનલોડ ઈમેજ" બટનથી ઈમેજ સેવ કરીને વ્હોટ્સએપ પર મોકલો.');
+                openCustomModal();
             }
+        }
+
+        function openCustomModal() {
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').style.display = 'none';
         }
 
         function shareWhatsAppText() {
