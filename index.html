@@ -58,19 +58,22 @@
         .modal-title { font-size: 16px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
         .modal-body { font-size: 14px; color: #333; margin-bottom: 15px; line-height: 1.5; }
         .modal-btn { background: #1565c0; color: white; padding: 8px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .net-status { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .net-online { background-color: #4caf50; color: white; }
+        .net-offline { background-color: #f44336; color: white; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <h1>FEE MANAGEMENT</h1>
-        <div style="background: white; padding: 2px 6px; border-radius: 4px; color: #1565c0; font-weight: bold; font-size: 11px;">N.N.C.</div>
+        <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
     </div>
     <div class="brand-subhead">નિર્મળા નવોદય ક્લાસિસ</div>
 
     <div class="container">
 
-        <!-- 1. DASHBOARD PAGE -->
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Drive / Firebase)</div>
@@ -85,7 +88,6 @@
                 <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
 
-            <!-- ACTIV / INACTIVE TOGGLE BUTTONS -->
             <div class="grid-2" style="margin-bottom: 12px;">
                 <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="filterStudents('active')">
                     🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">0</span>
@@ -114,7 +116,6 @@
             <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
-        <!-- 2. ADD / EDIT STUDENT PAGE -->
         <div id="pageAddStudent" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
@@ -170,7 +171,6 @@
             </div>
         </div>
 
-        <!-- 3. MASTER SETTINGS & API KEY PAGE -->
         <div id="pageMasterSettings" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -218,7 +218,6 @@
             </div>
         </div>
 
-        <!-- 4. STATIONERY REPORT PAGE -->
         <div id="pageStationeryReport" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -285,7 +284,6 @@
             </div>
         </div>
 
-        <!-- 5. ADMIN EXPENSE PAGE -->
         <div id="pageAdminExpense" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -319,7 +317,6 @@
             </div>
         </div>
 
-        <!-- 6. STUDENT PROFILE & RECEIPT GENERATOR -->
         <div id="pageStudentDetails" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
@@ -337,7 +334,6 @@
                     <div><strong>ફી નો પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
                 </div>
 
-                <!-- EDIT AND DELETE BUTTONS -->
                 <div class="grid-2" style="margin-top: 10px;">
                     <button class="btn btn-blue" onclick="editStudent(currentStudent.id)">✏️ વિગત સુધારો (Edit)</button>
                     <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
@@ -386,7 +382,6 @@
                 </table>
             </div>
 
-            <!-- RECEIPT FORM -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:10px;">💳 નવી પહોંચ બનાવો</h4>
                 <div class="form-group">
@@ -405,7 +400,6 @@
                     </div>
                 </div>
 
-                <!-- 3 BOXES FOR TUITION FEE, STATIONERY FEE, GRAND TOTAL -->
                 <div class="grid-3">
                     <div class="form-group">
                         <label>ટ્યુશન ફી (₹)</label>
@@ -421,7 +415,6 @@
                     </div>
                 </div>
 
-                <!-- PAID & DUE BOXES -->
                 <div class="grid-2">
                     <div class="form-group">
                         <label>જમા કરાવેલ રકમ (₹)</label>
@@ -450,7 +443,6 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()">🧾 પહોંચ જનરેટ કરો</button>
             </div>
 
-            <!-- FEE HISTORY -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -468,7 +460,6 @@
                 </table>
             </div>
 
-            <!-- RECEIPT PREVIEW -->
             <div class="card" id="previewContainer" style="display:none;">
                 <h3 style="color:#1565c0; text-align:center; margin-bottom:8px;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
 
@@ -542,7 +533,6 @@
 
     </div>
 
-    <!-- MODAL FOR WEBSHARE UNSUPPORTED ALERT -->
     <div id="customModal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-title">સૂચના</div>
@@ -574,15 +564,32 @@
 
         let expenses = [];
         let currentStudent = students[0];
-        let currentFilter = null; // 'active', 'inactive' or null (show none)
+        let currentFilter = null; // 'active', 'inactive' or null
         let generatedBlob = null;
 
+        // Monitor Network Status
+        function updateNetworkStatus() {
+            const badge = document.getElementById('netStatusBadge');
+            if (navigator.onLine) {
+                badge.innerText = "ONLINE";
+                badge.className = "net-status net-online";
+            } else {
+                badge.innerText = "OFFLINE";
+                badge.className = "net-status net-offline";
+            }
+        }
+
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
         window.onload = function() {
+            updateNetworkStatus();
             loadLocalData();
             recalculateStudentTotals();
             renderDashboard();
             renderStockTable();
             renderStockDropdown();
+            renderExpenses();
             
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('recDateVal').value = today;
@@ -856,8 +863,12 @@
 
         function backupDataToCloud() {
             saveLocalData();
+            if (!navigator.onLine) {
+                alert('⚠️ તમારું ઇન્ટરનેટ બંધ છે. ડેટા ફક્ત મોબાઇલ/સિસ્ટમ (Local Memory) માં સેવ થયો છે.');
+                return;
+            }
             if (!masterSettings.dbUrl) {
-                alert('ડેટા સ્થાનિક (Local Memory) માં સેવ થઈ ગયો છે!');
+                alert('ડેટા સ્થાનિક (Local Memory) માં સેવ થઈ ગયો છે! (Firebase સેટ કરેલ નથી)');
             } else {
                 fetch(masterSettings.dbUrl + '/backup.json?auth=' + masterSettings.apiKey, {
                     method: 'PUT',
@@ -870,6 +881,10 @@
         }
 
         function restoreDataFromCloud() {
+            if (!navigator.onLine) {
+                alert('⚠️ ઇન્ટરનેટ કનેક્શન નથી. ઓનલાઇન રીસ્ટોર કરવા માટે ઇન્ટરનેટ ચાલુ કરો.');
+                return;
+            }
             if (!masterSettings.dbUrl) {
                 alert('પહેલાં માસ્ટર સેટિંગ્સમાં Firebase Database URL સેટ કરો.');
                 return;
@@ -1014,7 +1029,6 @@
             });
         }
 
-        // TOGGLE STATIONERY PAY TYPE (ઉધાર / રોકડ)
         function toggleStationeryPayType(index) {
             if (currentStudent.stationery && currentStudent.stationery[index]) {
                 const currentType = currentStudent.stationery[index].payType;
@@ -1068,7 +1082,6 @@
             });
         }
 
-        // AUTOMATICALLY CALCULATE MONTHS AND FEE ACCORDING TO DATE RANGE
         function autoCalculateMonthsFee() {
             const fromVal = document.getElementById('recFromDate').value;
             const toVal = document.getElementById('recToDate').value;
@@ -1094,7 +1107,6 @@
             const calculatedTuitionFee = months * monthlyFee;
             document.getElementById('recAutoFee').value = calculatedTuitionFee;
 
-            // Calculate Credit Stationery Total
             let creditStationeryTotal = 0;
             if (currentStudent.stationery) {
                 currentStudent.stationery.forEach(st => {
@@ -1108,7 +1120,6 @@
             calculateReceiptTotals();
         }
 
-        // AUTO CALCULATE TOTAL, PAID, AND DUE AMOUNT FOR RECEIPT FORM
         function calculateReceiptTotals() {
             const tuition = parseFloat(document.getElementById('recAutoFee').value) || 0;
             const statFee = parseFloat(document.getElementById('recStationeryFee').value) || 0;
@@ -1217,7 +1228,6 @@
             });
         }
 
-        // FUNCTION TO DELETE RECEIPT
         function deleteReceipt(recId) {
             if (confirm("શું તમે આ પહોંચ ડિલીટ કરવા માંગો છો?")) {
                 currentStudent.receipts = currentStudent.receipts.filter(r => r.id !== recId);
@@ -1251,6 +1261,11 @@
         }
 
         function generateReceiptImage() {
+            if (typeof html2canvas === 'undefined') {
+                alert("⚠️ ઈમેજ જનરેટર લાઈબ્રેરી લોડ થઈ નથી. જો તમે ઓફલાઈન હોવ તો પહેલા 1 વખત ઓનલાઈન ખોલી આ પેજ સ્કેન કરી લો.");
+                return;
+            }
+
             const area = document.getElementById('receiptPrintArea');
             html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
@@ -1267,7 +1282,6 @@
             }).catch(() => alert("ઈમેજ બનાવવામાં ભૂલ થઈ."));
         }
 
-        // DIRECT DOWNLOAD / OPEN IMAGE IN NEW SIDE-TAB FOR EASY DOWNLOAD
         function downloadImageDirectly() {
             const imgElem = document.getElementById('generatedImage');
             if (!imgElem.src || imgElem.src === "") {
@@ -1275,7 +1289,14 @@
                 return;
             }
             const win = window.open();
-            win.document.write('<iframe src="' + imgElem.src + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+            if(win) {
+                win.document.write('<iframe src="' + imgElem.src + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+            } else {
+                const a = document.createElement('a');
+                a.href = imgElem.src;
+                a.download = `Receipt_${currentStudent.name}.png`;
+                a.click();
+            }
         }
 
         async function shareWhatsAppImage() {
