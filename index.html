@@ -3,38 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FEE MANAGEMENT - નિર્મળા નવોદય ક્લાસિસ</title>
-    
-    <!-- PWA / Offline Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'fee-manage-v1';
-                    const urlsToCache = ['/'];
-
-                    self.addEventListener('install', event => {
-                        event.waitUntil(
-                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-                        );
-                    });
-
-                    self.addEventListener('fetch', event => {
-                        event.respondWith(
-                            caches.match(event.request).then(response => {
-                                return response || fetch(event.request);
-                            })
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const blobURL = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(blobURL).catch(err => console.log('SW Fail:', err));
-            });
-        }
-    </script>
-
-    <!-- Online CDN for html2canvas with offline safe handling -->
+    <title>FEE MANAGEMENT - નિર્મળા નવોદય ક્લાિસિસ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
@@ -101,11 +70,10 @@
         <h1>FEE MANAGEMENT</h1>
         <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
     </div>
-    <div class="brand-subhead">નિર્મળા નવોદય ક્લાસિસ</div>
+    <div class="brand-subhead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
     <div class="container">
 
-        <!-- 1. DASHBOARD PAGE -->
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Drive / Firebase)</div>
@@ -120,7 +88,10 @@
                 <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
 
-            <!-- ACTIV / INACTIVE TOGGLE BUTTONS -->
+            <div class="form-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 નામ અથવા મોબાઈલ નં. શોધો..." oninput="renderDashboard()">
+            </div>
+
             <div class="grid-2" style="margin-bottom: 12px;">
                 <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="filterStudents('active')">
                     🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">0</span>
@@ -140,22 +111,24 @@
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
                 <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</div>
                 <div class="grid-3">
-                    <div class="stat-box" style="background: #1976d2; cursor:default;">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
-                    <div class="stat-box" style="background: #388e3c; cursor:default;">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
-                    <div class="stat-box" style="background: #d32f2f; cursor:default;">કુલ બાકી<br><span id="sumDueFee">₹0</span></div>
+                    <div id="btnFilterAll" class="stat-box" style="background: #1976d2;" onclick="filterStudents(null)">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
+                    <div id="btnFilterPaid" class="stat-box" style="background: #388e3c;" onclick="filterStudents('paid')">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
+                    <div id="btnFilterDue" class="stat-box" style="background: #d32f2f;" onclick="filterStudents('due')">કુલ બાકી<br><span id="sumDueFee">₹0</span></div>
                 </div>
             </div>
 
             <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
-        <!-- 2. ADD / EDIT STUDENT PAGE -->
         <div id="pageAddStudent" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
             </div>
             <div class="card">
                 <h3 id="formTitle">નવો વિદ્યાર્થી ઉમેરો</h3>
+                
+                <button type="button" class="btn btn-purple" style="margin: 10px 0;" onclick="selectContactFromPhone()">📱 કોન્ટેક્ટમાંથી પસંદ કરો</button>
+                
                 <form onsubmit="event.preventDefault(); saveStudent();">
                     <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
@@ -205,7 +178,6 @@
             </div>
         </div>
 
-        <!-- 3. MASTER SETTINGS & API KEY PAGE -->
         <div id="pageMasterSettings" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -253,15 +225,15 @@
             </div>
         </div>
 
-        <!-- 4. STATIONERY REPORT PAGE -->
         <div id="pageStationeryReport" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
             
             <div class="card">
-                <h3 style="color:#1565c0;">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
-                <form onsubmit="event.preventDefault(); addNewStock();" style="margin-top:8px;">
+                <h3 style="color:#1565c0;" id="stkFormTitle">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
+                <form onsubmit="event.preventDefault(); saveStockItem();" style="margin-top:8px;">
+                    <input type="hidden" id="editStockId">
                     <div class="form-group">
                         <label>વસ્તુનું નામ</label>
                         <input type="text" id="stkName" class="form-control" required placeholder="દા.ત. નવોદય બુક">
@@ -280,7 +252,7 @@
                             <input type="number" id="stkQty" class="form-control" required placeholder="50">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-green">+ સ્ટોક સેવ કરો</button>
+                    <button type="submit" class="btn btn-green" id="btnSaveStock">+ સ્ટોક સેવ કરો</button>
                 </form>
             </div>
 
@@ -294,6 +266,7 @@
                             <th>વેચાણ</th>
                             <th>નફો</th>
                             <th>સ્ટોક</th>
+                            <th>ક્રિયા</th>
                         </tr>
                     </thead>
                     <tbody id="stockTableBody"></tbody>
@@ -320,7 +293,6 @@
             </div>
         </div>
 
-        <!-- 5. ADMIN EXPENSE PAGE -->
         <div id="pageAdminExpense" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -354,7 +326,6 @@
             </div>
         </div>
 
-        <!-- 6. STUDENT PROFILE & RECEIPT GENERATOR -->
         <div id="pageStudentDetails" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
@@ -372,7 +343,6 @@
                     <div><strong>ફી નો પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
                 </div>
 
-                <!-- EDIT AND DELETE BUTTONS -->
                 <div class="grid-2" style="margin-top: 10px;">
                     <button class="btn btn-blue" onclick="editStudent(currentStudent.id)">✏️ વિગત સુધારો (Edit)</button>
                     <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
@@ -383,6 +353,8 @@
                     <div class="stat-box" style="background:#2e7d32; cursor:default;">જમા ફી<br><span id="profPaid">₹0</span></div>
                     <div class="stat-box" style="background:#d32f2f; cursor:default;">બાકી ફી<br><span id="profDue">₹350</span></div>
                 </div>
+
+                <button class="btn btn-whatsapp" style="margin-top:12px;" onclick="sendDueFeeAlertWhatsApp()">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
             </div>
 
             <div class="card">
@@ -421,9 +393,10 @@
                 </table>
             </div>
 
-            <!-- RECEIPT FORM -->
             <div class="card">
-                <h4 style="color:#333; margin-bottom:10px;">💳 નવી પહોંચ બનાવો</h4>
+                <h4 style="color:#333; margin-bottom:10px;" id="receiptFormHeading">💳 નવી પહોંચ બનાવો / સુધારો</h4>
+                <input type="hidden" id="editingReceiptId" value="">
+                
                 <div class="form-group">
                     <label>પહોંચ તારીખ</label>
                     <input type="date" id="recDateVal" class="form-control">
@@ -440,7 +413,6 @@
                     </div>
                 </div>
 
-                <!-- 3 BOXES FOR TUITION FEE, STATIONERY FEE, GRAND TOTAL -->
                 <div class="grid-3">
                     <div class="form-group">
                         <label>ટ્યુશન ફી (₹)</label>
@@ -456,7 +428,6 @@
                     </div>
                 </div>
 
-                <!-- PAID & DUE BOXES -->
                 <div class="grid-2">
                     <div class="form-group">
                         <label>જમા કરાવેલ રકમ (₹)</label>
@@ -482,10 +453,9 @@
                     <input type="text" id="recPayer" class="form-control" placeholder="દા.ત. રવિભાઈ">
                 </div>
 
-                <button class="btn btn-orange" onclick="buildReceiptPreview()">🧾 પહોંચ જનરેટ કરો</button>
+                <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
-            <!-- FEE HISTORY -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -503,12 +473,14 @@
                 </table>
             </div>
 
-            <!-- RECEIPT PREVIEW -->
             <div class="card" id="previewContainer" style="display:none;">
-                <h3 style="color:#1565c0; text-align:center; margin-bottom:8px;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="color:#1565c0;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
+                    <button class="btn btn-red" style="width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0;" onclick="closePreviewContainer()">❌ બંધ કરો</button>
+                </div>
 
                 <div class="receipt-card" id="receiptPrintArea">
-                    <div class="receipt-header">નિર્મળા નવોદય ક્લાસિસ</div>
+                    <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
                     <div class="receipt-user-info">
                         <div><strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="rName">Ravi</span></div>
                         <div style="margin-top: 4px;">
@@ -556,20 +528,14 @@
                     </div>
                 </div>
 
-                <div id="imageResultContainer" style="margin-top: 15px; text-align: center; display: none;">
-                    <h4 style="color: #2e7d32; margin-bottom: 6px;">✨ જનરેટ થયેલી પહોંચ ઈમેજ:</h4>
-                    <img id="generatedImage" src="" style="max-width: 100%; border: 2px solid #1565c0; border-radius: 8px;" />
-                    
-                    <div class="grid-2" style="margin-top: 8px;">
-                        <button class="btn btn-green" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
-                        <button class="btn btn-whatsapp" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
-                    </div>
-                </div>
-
                 <div style="margin-top: 15px;">
-                    <button class="btn btn-purple" onclick="generateReceiptImage()">🖼️ પહોંચ ઈમેજ બનાવો</button>
-                    <button class="btn btn-whatsapp" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
-                    <button class="btn btn-cyan" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
+                    <div class="grid-2">
+                        <button class="btn btn-green" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
+                        <button class="btn btn-blue" onclick="openImageInNewTab()">🌐 બીજા બ્રાઉઝર/નવી ટેબમાં ઓપન કરો</button>
+                    </div>
+                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
+                    <button class="btn btn-cyan" style="margin-top:6px;" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
                 </div>
             </div>
 
@@ -577,13 +543,12 @@
 
     </div>
 
-    <!-- MODAL FOR WEBSHARE UNSUPPORTED ALERT -->
     <div id="customModal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-title">સૂચના</div>
             <div class="modal-body">
-                તમારા બ્રાઉઝરમાં ડાયરેક્ટ ઈમેજ શેર સપોર્ટ નથી.<br><br>
-                <strong>"ડાઉનલોડ ઈમેજ"</strong> બટનથી ઈમેજ સેવ કરીને વ્હોટ્સએપ પર મોકલો.
+                ઈમેજ ઓટો ડાઉનલોડ થઈ રહી છે.<br><br>
+                હવે વ્હોટ્સએપ ખુલે ત્યારે ગેલેરીમાંથી પસંદ કરીને મોકલો.
             </div>
             <button class="modal-btn" onclick="closeCustomModal()">OK</button>
         </div>
@@ -609,10 +574,41 @@
 
         let expenses = [];
         let currentStudent = students[0];
-        let currentFilter = null; // 'active', 'inactive' or null
+        let currentFilter = null; // 'active', 'inactive', 'paid', 'due' or null
         let generatedBlob = null;
+        let generatedDataUrl = "";
 
-        // Monitor Network Status
+        // ઓટોમેટિક કોન્ટેક્ટ લિસ્ટમાંથી વિદ્યાર્થી પસંદ કરવાનું નવું ફંકશન
+        async function selectContactFromPhone() {
+            if ('contacts' in navigator && 'ContactsManager' in window) {
+                try {
+                    const props = ['name', 'tel'];
+                    const contacts = await navigator.contacts.select(props, { multiple: false });
+                    if (contacts && contacts.length > 0) {
+                        const contact = contacts[0];
+                        
+                        // નામ સેટ કરવું
+                        if (contact.name && contact.name.length > 0) {
+                            document.getElementById('inpName').value = contact.name[0];
+                        }
+                        
+                        // મોબાઈલ નંબર ફોર્મેટ કરવો (સ્પેસ અને ચિહ્નો દૂર કરવા)
+                        if (contact.tel && contact.tel.length > 0) {
+                            let phoneNum = contact.tel[0].replace(/[^0-9]/g, '');
+                            if (phoneNum.length > 10) {
+                                phoneNum = phoneNum.slice(-10);
+                            }
+                            document.getElementById('inpPhone').value = phoneNum;
+                        }
+                    }
+                } catch (ex) {
+                    alert('કોન્ટેક્ટ પસંદ કરવામાં ભૂલ થઈ અથવા રદ કરવામાં આવ્યું.');
+                }
+            } else {
+                alert('તમારા બ્રાઉઝર/ડિવાઈસમાં ડાયરેક્ટ કોન્ટેક્ટ સિલેક્શન ફીચર સપોર્ટ કરતું નથી. કૃપા કરીને મેન્યુઅલી લખો.');
+            }
+        }
+
         function updateNetworkStatus() {
             const badge = document.getElementById('netStatusBadge');
             if (navigator.onLine) {
@@ -628,6 +624,10 @@
         window.addEventListener('offline', updateNetworkStatus);
 
         window.onload = function() {
+            sessionStorage.removeItem('showReceiptPreview');
+            const previewBox = document.getElementById('previewContainer');
+            if(previewBox) previewBox.style.display = 'none';
+
             updateNetworkStatus();
             loadLocalData();
             recalculateStudentTotals();
@@ -663,17 +663,36 @@
         }
 
         function recalculateStudentTotals() {
-            students.forEach(st => {
-                let totalFee = parseFloat(st.fee) || 0;
-                let creditStatAmt = 0;
+            const today = new Date();
 
+            students.forEach(st => {
+                let monthlyFeeRate = parseFloat(st.fee) || 0;
+                let totalCalculatedTuition = monthlyFeeRate;
+
+                if (st.joinDate && st.feeType === "માસિક") {
+                    const join = new Date(st.joinDate);
+                    if (!isNaN(join) && today >= join) {
+                        let years = today.getFullYear() - join.getFullYear();
+                        let months = today.getMonth() - join.getMonth();
+                        let elapsedMonths = (years * 12) + months;
+                        
+                        if (today.getDate() >= join.getDate() || elapsedMonths === 0) {
+                            elapsedMonths += 1;
+                        }
+                        if (elapsedMonths <= 0) elapsedMonths = 1;
+
+                        totalCalculatedTuition = elapsedMonths * monthlyFeeRate;
+                    }
+                }
+
+                let creditStatAmt = 0;
                 if (st.stationery) {
                     st.stationery.forEach(s => {
                         if (s.payType === 'ઉધાર') creditStatAmt += parseFloat(s.price) || 0;
                     });
                 }
 
-                st.totalFeeWithStationery = totalFee + creditStatAmt;
+                st.totalFeeWithStationery = totalCalculatedTuition + creditStatAmt;
 
                 let paidFee = 0;
                 if (st.receipts) {
@@ -713,6 +732,7 @@
         function renderDashboard() {
             recalculateStudentTotals();
             const container = document.getElementById('studentListContainer');
+            const searchVal = document.getElementById('searchInput')?.value.toLowerCase().trim() || "";
             container.innerHTML = '';
             
             let totalFeeSum = 0;
@@ -740,18 +760,34 @@
 
             const btnAct = document.getElementById('btnFilterActive');
             const btnInact = document.getElementById('btnFilterInactive');
-            btnAct.classList.remove('active-filter');
-            btnInact.classList.remove('active-filter');
+            const btnAll = document.getElementById('btnFilterAll');
+            const btnPaid = document.getElementById('btnFilterPaid');
+            const btnDue = document.getElementById('btnFilterDue');
+
+            [btnAct, btnInact, btnAll, btnPaid, btnDue].forEach(b => b?.classList.remove('active-filter'));
 
             if (currentFilter === 'active') btnAct.classList.add('active-filter');
             if (currentFilter === 'inactive') btnInact.classList.add('active-filter');
+            if (currentFilter === 'paid') btnPaid.classList.add('active-filter');
+            if (currentFilter === 'due') btnDue.classList.add('active-filter');
 
-            if (currentFilter === null) {
-                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના એક્ટિવ અથવા ઇન-એક્ટિવ બટન પર ક્લિક કરો.</div>';
+            if (currentFilter === null && searchVal === "") {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના બટન (એક્ટિવ/ઇન-એક્ટિવ/જમા/બાકી) પર ક્લિક કરો અથવા શોધો.</div>';
                 return;
             }
 
-            const filteredStudents = students.filter(s => s.status === currentFilter);
+            let filteredStudents = students;
+            if (currentFilter === 'active' || currentFilter === 'inactive') {
+                filteredStudents = filteredStudents.filter(s => s.status === currentFilter);
+            } else if (currentFilter === 'paid') {
+                filteredStudents = filteredStudents.filter(s => s.paid > 0);
+            } else if (currentFilter === 'due') {
+                filteredStudents = filteredStudents.filter(s => s.due > 0);
+            }
+
+            if (searchVal !== "") {
+                filteredStudents = filteredStudents.filter(s => s.name.toLowerCase().includes(searchVal) || s.phone.includes(searchVal));
+            }
 
             if (filteredStudents.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
@@ -760,6 +796,13 @@
 
             filteredStudents.forEach(s => {
                 const totalDisp = s.totalFeeWithStationery || s.fee;
+
+                let historyHtml = '';
+                if (currentFilter === 'paid' && s.receipts && s.receipts.length > 0) {
+                    let receiptList = s.receipts.map(r => `📅 ${r.date}: ₹${r.paidVal}`).join(' | ');
+                    historyHtml = `<div style="margin-top: 6px; font-size: 11px; color: #2e7d32; background: #e8f5e9; padding: 4px; border-radius: 4px;"><strong>જમા વિગત:</strong> ${receiptList}</div>`;
+                }
+
                 container.innerHTML += `
                     <div class="student-item-card" onclick="openStudent('${s.id}')">
                         <div class="student-item-head">
@@ -768,9 +811,10 @@
                         </div>
                         <div style="margin-top: 6px; font-size: 13px; color: #555; display:flex; justify-content:space-between;">
                             <span>કુલ ફી: ₹${totalDisp}</span>
-                            <span style="color:green;">જમા: ₹${s.paid}</span>
+                            <span style="color:green; font-weight:bold;">જમા: ₹${s.paid}</span>
                             <span style="color:red; font-weight:bold;">બાકી: ₹${s.due}</span>
                         </div>
+                        ${historyHtml}
                     </div>
                 `;
             });
@@ -975,18 +1019,66 @@
             fileReader.readAsText(event.target.files[0]);
         }
 
-        function addNewStock() {
+        function saveStockItem() {
+            const editId = document.getElementById('editStockId').value;
             const name = document.getElementById('stkName').value;
             const costPrice = parseFloat(document.getElementById('stkCostPrice').value) || 0;
             const sellPrice = parseFloat(document.getElementById('stkSellPrice').value) || 0;
             const qty = parseInt(document.getElementById('stkQty').value) || 0;
 
-            stockList.push({ id: Date.now().toString(), name, costPrice, sellPrice, qty });
+            if (editId) {
+                const item = stockList.find(s => s.id === editId);
+                if (item) {
+                    item.name = name;
+                    item.costPrice = costPrice;
+                    item.sellPrice = sellPrice;
+                    item.qty = qty;
+                    alert('સ્ટોક સફળતાપૂર્વક અપડેટ થયો!');
+                }
+            } else {
+                stockList.push({ id: Date.now().toString(), name, costPrice, sellPrice, qty });
+                alert('સ્ટોકમાં નવી વસ્તુ સેવ થઈ ગઈ છે.');
+            }
+
+            document.getElementById('editStockId').value = "";
+            document.getElementById('stkName').value = "";
+            document.getElementById('stkCostPrice').value = "";
+            document.getElementById('stkSellPrice').value = "";
+            document.getElementById('stkQty').value = "";
+            document.getElementById('stkFormTitle').innerText = "📦 સ્ટોકમાં નવો માલ ઉમેરો";
+            document.getElementById('btnSaveStock').innerText = "+ સ્ટોક સેવ કરો";
+
             saveLocalData();
             renderStockTable();
             renderStockDropdown();
-            alert('સ્ટોકમાં નવી વસ્તુ સેવ થઈ ગઈ છે.');
-            document.getElementById('stkName').value = '';
+        }
+
+        function editStock(id) {
+            const item = stockList.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById('editStockId').value = item.id;
+            document.getElementById('stkName').value = item.name;
+            document.getElementById('stkCostPrice').value = item.costPrice;
+            document.getElementById('stkSellPrice').value = item.sellPrice;
+            document.getElementById('stkQty').value = item.qty;
+
+            document.getElementById('stkFormTitle').innerText = "✏️ સ્ટોક સુધારો (Edit)";
+            document.getElementById('btnSaveStock').innerText = "અપડેટ કરો";
+            window.scrollTo(0, 0);
+        }
+
+        function deleteStock(id) {
+            const item = stockList.find(s => s.id === id);
+            if (!item) return;
+
+            if (confirm(`શું તમે "${item.name}" સ્ટોકમાંથી ડિલીટ કરવા માંગો છો?`)) {
+                stockList = stockList.filter(s => s.id !== id);
+                saveLocalData();
+                renderStockTable();
+                renderStockDropdown();
+                alert('વસ્તુ સ્ટોકમાંથી ડિલીટ કરી દેવામાં આવી છે.');
+            }
         }
 
         function renderStockTable() {
@@ -1001,6 +1093,10 @@
                         <td>₹${s.sellPrice}</td>
                         <td style="color:green; font-weight:bold;">₹${profit}</td>
                         <td style="font-weight:bold; color:${s.qty < 5 ? 'red' : 'blue'};">${s.qty} નંગ</td>
+                        <td>
+                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="editStock('${s.id}')">✏️</button>
+                            <button class="btn btn-red" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="deleteStock('${s.id}')">🗑️</button>
+                        </td>
                     </tr>
                 `;
             });
@@ -1178,6 +1274,7 @@
         }
 
         function buildReceiptPreview() {
+            const editingId = document.getElementById('editingReceiptId').value;
             const payDate = formatDate(document.getElementById('recDateVal').value);
             const fDate = formatDate(document.getElementById('recFromDate').value);
             const tDate = formatDate(document.getElementById('recToDate').value);
@@ -1209,18 +1306,42 @@
                 statusText = '🔴 બાકી';
             }
 
-            const newReceipt = {
-                id: Date.now().toString(),
-                date: payDate,
-                totalVal: grandTotal,
-                paidVal: paidValInput,
-                dueVal: dueVal > 0 ? dueVal : 0,
-                status: statusText
-            };
-
             if(!currentStudent.receipts) currentStudent.receipts = [];
-            currentStudent.receipts.push(newReceipt);
-            
+
+            if (editingId) {
+                const r = currentStudent.receipts.find(item => item.id === editingId);
+                if (r) {
+                    r.date = payDate;
+                    r.totalVal = grandTotal;
+                    r.paidVal = paidValInput;
+                    r.dueVal = dueVal > 0 ? dueVal : 0;
+                    r.status = statusText;
+                    r.payMode = payMode;
+                    r.payer = payer;
+                    r.feeVal = feeVal;
+                    r.fromDate = document.getElementById('recFromDate').value;
+                    r.toDate = document.getElementById('recToDate').value;
+                }
+                document.getElementById('editingReceiptId').value = "";
+                document.getElementById('receiptFormHeading').innerText = "💳 નવી પહોંચ બનાવો";
+                alert("પહોંચની માહિતી સફળતાપૂર્વક અપડેટ થઈ ગઈ!");
+            } else {
+                const newReceipt = {
+                    id: Date.now().toString(),
+                    date: payDate,
+                    totalVal: grandTotal,
+                    paidVal: paidValInput,
+                    dueVal: dueVal > 0 ? dueVal : 0,
+                    status: statusText,
+                    payMode: payMode,
+                    payer: payer,
+                    feeVal: feeVal,
+                    fromDate: document.getElementById('recFromDate').value,
+                    toDate: document.getElementById('recToDate').value
+                };
+                currentStudent.receipts.push(newReceipt);
+            }
+
             recalculateStudentTotals();
             saveLocalData();
             renderFeeHistoryTable();
@@ -1241,7 +1362,55 @@
             document.getElementById('rPayer').innerText = payer;
 
             document.getElementById('previewContainer').style.display = 'block';
+            sessionStorage.setItem('showReceiptPreview', 'true');
             document.getElementById('previewContainer').scrollIntoView({ behavior: 'smooth' });
+            
+            generatedBlob = null;
+            generatedDataUrl = "";
+        }
+
+        function closePreviewContainer() {
+            document.getElementById('previewContainer').style.display = 'none';
+            sessionStorage.removeItem('showReceiptPreview');
+        }
+
+        function viewOldReceipt(recId) {
+            const r = currentStudent.receipts.find(item => item.id === recId);
+            if (!r) return;
+
+            document.getElementById('rName').innerText = currentStudent.name;
+            document.getElementById('rStd').innerText = currentStudent.std;
+            document.getElementById('rCourse').innerText = currentStudent.course;
+            document.getElementById('rPayDate').innerText = r.date;
+
+            const tbody = document.getElementById('receiptTableBody');
+            tbody.innerHTML = `<tr><td>1</td><td>ટ્યુશન ફી (${currentStudent.feeType})</td><td style="font-weight: bold;">₹${r.feeVal || r.totalVal}</td></tr>`;
+
+            let creditStationeryTotal = 0;
+            if(currentStudent.stationery) {
+                currentStudent.stationery.forEach((st, i) => {
+                    if (st.payType === 'ઉધાર') {
+                        creditStationeryTotal += st.price;
+                        tbody.innerHTML += `<tr><td>${i + 2}</td><td>${st.name}</td><td style="font-weight: bold;">₹${st.price}</td></tr>`;
+                    }
+                });
+            }
+
+            document.getElementById('rTotalVal').innerText = r.totalVal || r.feeVal;
+            document.getElementById('rPaidVal').innerText = r.paidVal || 0;
+            document.getElementById('rDueVal').innerText = r.dueVal !== undefined ? r.dueVal : 0;
+
+            document.getElementById('rPeriodFrom').innerText = formatDate(r.fromDate) || r.date;
+            document.getElementById('rPeriodTo').innerText = formatDate(r.toDate) || r.date;
+            document.getElementById('rMode').innerText = r.payMode || 'રોકડા/ઓન લાઈન';
+            document.getElementById('rPayer').innerText = r.payer || currentStudent.name;
+
+            document.getElementById('previewContainer').style.display = 'block';
+            sessionStorage.setItem('showReceiptPreview', 'true');
+            document.getElementById('previewContainer').scrollIntoView({ behavior: 'smooth' });
+            
+            generatedBlob = null;
+            generatedDataUrl = "";
         }
 
         function renderFeeHistoryTable() {
@@ -1265,12 +1434,33 @@
                         <td style="color:red; font-weight:bold;">₹${r.dueVal !== undefined ? r.dueVal : r.feeVal}</td>
                         <td><span style="${badgeStyle} padding:2px 6px; border-radius:4px; font-weight:bold;">${r.status}</span></td>
                         <td>
-                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="toggleReceiptStatus('${r.id}')">🔄 સ્ટેટસ બદલો</button>
-                            <button class="btn btn-red" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block; margin-top:2px;" onclick="deleteReceipt('${r.id}')">🗑️ ડિલીટ</button>
+                            <button class="btn btn-green" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block;" onclick="viewOldReceipt('${r.id}')">👁️ જુઓ</button>
+                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block; margin-top:2px;" onclick="editReceipt('${r.id}')">✏️ Edit</button>
+                            <button class="btn btn-blue" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block; margin-top:2px;" onclick="toggleReceiptStatus('${r.id}')">🔄 સ્ટેટસ</button>
+                            <button class="btn btn-red" style="padding:2px 6px; font-size:11px; width:auto; display:inline-block; margin-top:2px;" onclick="deleteReceipt('${r.id}')">🗑️</button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        function editReceipt(recId) {
+            const r = currentStudent.receipts.find(item => item.id === recId);
+            if (!r) return;
+
+            document.getElementById('editingReceiptId').value = r.id;
+            document.getElementById('receiptFormHeading').innerText = "✏️ ફી પહોંચ સુધારો (Edit)";
+            
+            if (r.fromDate) document.getElementById('recFromDate').value = r.fromDate;
+            if (r.toDate) document.getElementById('recToDate').value = r.toDate;
+            
+            document.getElementById('recAutoFee').value = r.feeVal || r.totalVal || 0;
+            document.getElementById('recPaidInput').value = r.paidVal || 0;
+            if(r.payMode) document.getElementById('recPayMode').value = r.payMode;
+            if(r.payer) document.getElementById('recPayer').value = r.payer;
+
+            calculateReceiptTotals();
+            alert("પહોંચની માહિતી ફોર્મમાં લોડ થઈ ગઈ છે. સુધારો કરીને 'પહોંચ જનરેટ / સેવ કરો' પર ક્લિક કરો.");
         }
 
         function deleteReceipt(recId) {
@@ -1305,66 +1495,107 @@
             }
         }
 
-        function generateReceiptImage() {
+        function processReceiptImage(callback) {
             if (typeof html2canvas === 'undefined') {
-                alert("⚠️ ઈમેજ જનરેટર લાઈબ્રેરી લોડ થઈ નથી. જો તમે ઓફલાઈન હોવ તો પહેલા 1 વખત ઓનલાઈન ખોલી આ પેજ સ્કેન કરી લો.");
+                alert("⚠️ ઈમેજ જનરેટર લાઈબ્રેરી લોડ થઈ નથી.");
+                return;
+            }
+
+            if (generatedDataUrl && generatedBlob) {
+                if (callback) callback();
                 return;
             }
 
             const area = document.getElementById('receiptPrintArea');
             html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const imgElem = document.getElementById('generatedImage');
-                
-                imgElem.src = imgData;
-
+                generatedDataUrl = canvas.toDataURL('image/png');
                 canvas.toBlob(blob => {
                     generatedBlob = blob;
-                });
-
-                document.getElementById('imageResultContainer').style.display = 'block';
-                document.getElementById('imageResultContainer').scrollIntoView({ behavior: 'smooth' });
+                    if (callback) callback();
+                }, 'image/png');
             }).catch(() => alert("ઈમેજ બનાવવામાં ભૂલ થઈ."));
         }
 
+        function openImageInNewTab() {
+            processReceiptImage(() => {
+                if (!generatedDataUrl) {
+                    alert('ઈમેજ બનાવવામાં નિષ્ફળતા મળી.');
+                    return;
+                }
+                
+                const newWindow = window.open('');
+                if (newWindow) {
+                    newWindow.document.write(`
+                        <html>
+                            <head><title>Receipt Image - ${currentStudent.name}</title></head>
+                            <body style="margin:0; display:flex; justify-content:center; align-items:center; background:#f4f6f9; min-height:100vh;">
+                                <img src="${generatedDataUrl}" style="max-width:90%; border:2px solid #1565c0; border-radius:8px;" />
+                            </body>
+                        </html>
+                    `);
+                } else {
+                    alert('પોપ-અપ બ્લોક થયેલ છે. બ્રાઉઝરમાં પોપ-અપ એલાઉ (Allow) કરો.');
+                }
+            });
+        }
+
         function downloadImageDirectly() {
-            const imgElem = document.getElementById('generatedImage');
-            if (!imgElem.src || imgElem.src === "") {
-                alert('પહેલાં ઈમેજ જનરેટ કરો!');
-                return;
-            }
-            const win = window.open();
-            if(win) {
-                win.document.write('<iframe src="' + imgElem.src + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
-            } else {
-                const a = document.createElement('a');
-                a.href = imgElem.src;
-                a.download = `Receipt_${currentStudent.name}.png`;
-                a.click();
-            }
+            processReceiptImage(() => {
+                if (!generatedDataUrl) {
+                    alert('ઈમેજ બનાવવામાં નિષ્ફળતા મળી.');
+                    return;
+                }
+
+                const fileName = `Receipt_${currentStudent.name.replace(/\s+/g, '_')}.png`;
+
+                if (generatedBlob) {
+                    const blobUrl = URL.createObjectURL(generatedBlob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = generatedDataUrl;
+                    a.download = fileName;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            });
         }
 
         async function shareWhatsAppImage() {
-            if (!generatedBlob) {
-                alert('કૃપા કરીને પહેલાં "પહોંચ ઈમેજ બનાવો" બટન પર ક્લિક કરો!');
-                return;
-            }
-
-            const file = new File([generatedBlob], `Receipt_${currentStudent.name}.png`, { type: 'image/png' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'ફી પહોંચ - નિર્મળા નવોદય ક્લાસિસ',
-                        text: `*નિર્મળા નવોદય ક્લાસિસ*\nવિદ્યાર્થી: ${currentStudent.name} ની ફી પહોંચ.`
-                    });
-                } catch (err) {
-                    console.log('Share canceled or failed', err);
+            processReceiptImage(async () => {
+                if (!generatedBlob) {
+                    alert('ઈમેજ પ્રોસેસ થવામાં સમસ્યા આવી.');
+                    return;
                 }
-            } else {
-                openCustomModal();
-            }
+
+                const file = new File([generatedBlob], `Receipt_${currentStudent.name}.png`, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'ફી પહોંચ - નિર્મળા નવોદય ક્લાિસિસ',
+                            text: `*નિર્મળા નવોદય ક્લાિસિસ*\nવિદ્યાર્થી: ${currentStudent.name} ની ફી પહોંચ.`
+                        });
+                    } catch (err) {
+                        console.log('Share canceled or failed', err);
+                    }
+                } else {
+                    downloadImageDirectly();
+                    openCustomModal();
+                    setTimeout(() => {
+                        shareWhatsAppText();
+                    }, 1500);
+                }
+            });
         }
 
         function openCustomModal() {
@@ -1376,12 +1607,53 @@
         }
 
         function shareWhatsAppText() {
-            const text = `*નિર્મળા નવોદય ક્લાસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n📅 *દાખલ તારીખ:* ${formatDate(currentStudent.joinDate) || 'N/A'}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.totalFeeWithStationery || currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            const text = `*નિર્મળા નવોદય ક્લાિસિસ*\n-----------------------\n👤 *વિદ્યાર્થી:* ${currentStudent.name}\n📅 *દાખલ તારીખ:* ${formatDate(currentStudent.joinDate) || 'N/A'}\n💰 *કુલ ફી રકમ:* ₹${currentStudent.totalFeeWithStationery || currentStudent.fee}\n✅ *જમા રકમ:* ₹${currentStudent.paid}\n❗ *બાકી રકમ:* ₹${currentStudent.due}\n📞 *સંપર્ક:* ${currentStudent.phone}\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             window.open(`https://api.whatsapp.com/send?phone=91${currentStudent.phone}&text=${encodeURIComponent(text)}`, '_blank');
         }
 
+        function sendDueFeeAlertWhatsApp() {
+            recalculateStudentTotals();
+
+            let fromMonthStr = formatDate(currentStudent.joinDate) || 'જૂન 2026';
+            let toMonthStr = new Date().toLocaleDateString('gu-IN', { month: 'long', year: 'numeric' });
+
+            if (currentStudent.receipts && currentStudent.receipts.length > 0) {
+                const lastRec = currentStudent.receipts[currentStudent.receipts.length - 1];
+                if (lastRec.toDate) {
+                    fromMonthStr = formatDate(lastRec.toDate);
+                }
+            }
+
+            let stationeryListStr = "";
+            let statCount = 0;
+            if (currentStudent.stationery && currentStudent.stationery.length > 0) {
+                currentStudent.stationery.forEach(st => {
+                    if (st.payType === 'ઉધાર') {
+                        statCount++;
+                        stationeryListStr += `   • ${st.name} (${st.qty} નંગ) - ₹${st.price}\n`;
+                    }
+                });
+            }
+
+            if (statCount === 0) {
+                stationeryListStr = "   • કોઈ ઉધાર સ્ટેશનરી નથી\n";
+            }
+
+            let alertMsg = `નમસ્તે વાલીશ્રી, 🙏\n\n`;
+            alertMsg += `*નિર્મળા નવોદય ક્લાિસિસ* તરફથી નમ્ર વિનંતી.\n\n`;
+            alertMsg += `વિદ્યાર્થી *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી અંગેની બાકી વિગત નીચે મુજબ છે:\n\n`;
+            alertMsg += `🗓️ *બાકી ફી સમયગાળો:* ${fromMonthStr} થી ${toMonthStr}\n`;
+            alertMsg += `📚 *આપેલી સ્ટેશનરી (ઉધાર):*\n${stationeryListStr}`;
+            alertMsg += `\n💰 *કુલ બાકી રકમ:* *₹${currentStudent.due}*\n\n`;
+            alertMsg += `કૃપા કરીને આ બાકી ફી સમયસર જમા કરાવી આપવા નમ્ર વિનંતી છે. આપના સહકાર બદલ આભાર! 💐\n\n`;
+            alertMsg += `લિ. *વાઘેલા રવિ વિનોદભાઈ*\n📲 *સંપર્ક:* 9033197515`;
+
+            const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
+            window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(alertMsg)}`, '_blank');
+        }
+
         function copyTextReceipt() {
-            const text = `નિર્મળા નવોદય ક્લાસિસ - વિદ્યાર્થી: ${currentStudent.name}, દાખલ તારીખ: ${formatDate(currentStudent.joinDate) || 'N/A'}, બાકી ફી: ₹${currentStudent.due} - વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            const text = `નિર્મળા નવોદય ક્લાિસિસ - વિદ્યાર્થી: ${currentStudent.name}, દાખલ તારીખ: ${formatDate(currentStudent.joinDate) || 'N/A'}, બાકી ફી: ₹${currentStudent.due} - વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             navigator.clipboard.writeText(text).then(() => alert("લખાણ કોપી થઈ ગયું છે!"));
         }
 
