@@ -52,7 +52,6 @@
         .receipt-footer-bar { background-color: #e8f0fe; color: #1565c0; text-align: center; padding: 6px; font-weight: bold; font-size: 13px; border-top: 1px solid #dcdcdc; border-bottom: 1px solid #dcdcdc; }
         .receipt-details { padding: 8px 12px; font-size: 13px; color: #333; line-height: 1.6; }
 
-        /* Custom Modal Style */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal-box { background: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .modal-title { font-size: 16px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
@@ -354,7 +353,25 @@
                     <div class="stat-box" style="background:#d32f2f; cursor:default;">બાકી ફી<br><span id="profDue">₹350</span></div>
                 </div>
 
-                <button class="btn btn-whatsapp" style="margin-top:12px;" onclick="sendDueFeeAlertWhatsApp()">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
+                <!-- ફી એલર્ટ માટે કસ્ટમ તારીખ પસંદગી -->
+                <div style="background:#fff3e0; padding:10px; border-radius:8px; margin-top:12px; border:1px solid #ffe0b2;">
+                    <div style="font-weight:bold; font-size:13px; color:#e65100; margin-bottom:6px;">📲 બાકી ફી એલર્ટ તારીખ ફિલ્ટર:</div>
+                    <div class="grid-2">
+                        <div>
+                            <label style="font-size:11px; font-weight:bold;">કઈ તારીખથી?</label>
+                            <input type="date" id="alertFromDate" class="form-control" style="padding:4px; font-size:12px;" onchange="calculateAlertDueFee()">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; font-weight:bold;">કઈ તારીખ સુધી?</label>
+                            <input type="date" id="alertToDate" class="form-control" style="padding:4px; font-size:12px;" onchange="calculateAlertDueFee()">
+                        </div>
+                    </div>
+                    <div style="font-size:12px; color:#333; margin-top:6px;">
+                        ગણતરી કરેલ બાકી રકમ: <strong id="calculatedAlertAmt" style="color:red;">₹0</strong>
+                    </div>
+                    <button class="btn btn-whatsapp" style="margin-top:8px;" onclick="sendDueFeeAlertWhatsApp()">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
+                    <button class="btn btn-green" style="margin-top:6px;" onclick="sendThankYouWhatsApp()">💐 ફી ભર્યા બદલ આભાર પત્ર મોકલો</button>
+                </div>
             </div>
 
             <div class="card">
@@ -530,8 +547,9 @@
 
                 <div style="margin-top: 15px;">
                     <div class="grid-2">
-                        <button class="btn btn-green" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
-                        <button class="btn btn-blue" onclick="openImageInNewTab()">🌐 બીજા બ્રાઉઝર/નવી ટેબમાં ઓપન કરો</button>
+                        <!-- બ્રાઉઝરમાં ખુલીને ડાઉનલોડ થાય તે માટે ટેગ લિંક બનાવ્યું -->
+                        <a id="btnDownloadImageLink" class="btn btn-green" download="" href="#" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</a>
+                        <a id="btnOpenBrowserLink" class="btn btn-blue" target="_blank" href="#" onclick="openImageInNewTab()">🌐 બીજા બ્રાઉઝરમાં ઓપન કરો</a>
                     </div>
                     <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
                     <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
@@ -574,11 +592,10 @@
 
         let expenses = [];
         let currentStudent = students[0];
-        let currentFilter = null; // 'active', 'inactive', 'paid', 'due' or null
+        let currentFilter = null;
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // ઓટોમેટિક કોન્ટેક્ટ લિસ્ટમાંથી વિદ્યાર્થી પસંદ કરવાનું નવું ફંકશન
         async function selectContactFromPhone() {
             if ('contacts' in navigator && 'ContactsManager' in window) {
                 try {
@@ -586,18 +603,12 @@
                     const contacts = await navigator.contacts.select(props, { multiple: false });
                     if (contacts && contacts.length > 0) {
                         const contact = contacts[0];
-                        
-                        // નામ સેટ કરવું
                         if (contact.name && contact.name.length > 0) {
                             document.getElementById('inpName').value = contact.name[0];
                         }
-                        
-                        // મોબાઈલ નંબર ફોર્મેટ કરવો (સ્પેસ અને ચિહ્નો દૂર કરવા)
                         if (contact.tel && contact.tel.length > 0) {
                             let phoneNum = contact.tel[0].replace(/[^0-9]/g, '');
-                            if (phoneNum.length > 10) {
-                                phoneNum = phoneNum.slice(-10);
-                            }
+                            if (phoneNum.length > 10) phoneNum = phoneNum.slice(-10);
                             document.getElementById('inpPhone').value = phoneNum;
                         }
                     }
@@ -743,7 +754,6 @@
 
             students.forEach(s => {
                 if(!s.status) s.status = 'active';
-                
                 if (s.status === 'active') activeCount++;
                 else inactiveCount++;
 
@@ -796,7 +806,6 @@
 
             filteredStudents.forEach(s => {
                 const totalDisp = s.totalFeeWithStationery || s.fee;
-
                 let historyHtml = '';
                 if (currentFilter === 'paid' && s.receipts && s.receipts.length > 0) {
                     let receiptList = s.receipts.map(r => `📅 ${r.date}: ₹${r.paidVal}`).join(' | ');
@@ -903,7 +912,14 @@
 
         function openStudent(id) {
             currentStudent = students.find(s => s.id === id) || students[0];
+            
+            // ડિફોલ્ટ ઓટો તારીખો એલર્ટ ફિલ્ટરમાં પણ લોડ કરો
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('alertFromDate').value = currentStudent.joinDate || todayStr;
+            document.getElementById('alertToDate').value = todayStr;
+
             updateStudentProfileUI();
+            calculateAlertDueFee();
             navigateTo('pageStudentDetails');
         }
 
@@ -936,6 +952,43 @@
             renderStudentStationeryList();
             renderFeeHistoryTable();
             renderStockDropdown();
+        }
+
+        // નવી તારીખ પસંદગી પરથી એલર્ટ માટેની ફી ઓટોમેટિક ગણવાનું ફંકશન
+        function calculateAlertDueFee() {
+            const fVal = document.getElementById('alertFromDate').value;
+            const tVal = document.getElementById('alertToDate').value;
+
+            let months = 1;
+            if (fVal && tVal) {
+                const d1 = new Date(fVal);
+                const d2 = new Date(tVal);
+                if (d2 >= d1) {
+                    let yDiff = d2.getFullYear() - d1.getFullYear();
+                    let mDiff = d2.getMonth() - d1.getMonth();
+                    let dayDiff = d2.getDate() - d1.getDate();
+                    months = (yDiff * 12) + mDiff;
+                    if (dayDiff > 10 || months === 0) months += 1;
+                }
+            }
+            if (months <= 0) months = 1;
+
+            const monthlyFee = parseFloat(currentStudent.fee) || 0;
+            let tuitionTotal = (currentStudent.feeType === 'માસિક') ? (months * monthlyFee) : monthlyFee;
+
+            let statCreditTotal = 0;
+            if (currentStudent.stationery) {
+                currentStudent.stationery.forEach(s => {
+                    if (s.payType === 'ઉધાર') statCreditTotal += parseFloat(s.price) || 0;
+                });
+            }
+
+            let calcTotal = tuitionTotal + statCreditTotal;
+            let dueCalc = calcTotal - (currentStudent.paid || 0);
+            if (dueCalc < 0) dueCalc = 0;
+
+            document.getElementById('calculatedAlertAmt').innerText = '₹' + dueCalc;
+            return { months, dueCalc };
         }
 
         function saveMasterSettings() {
@@ -1245,7 +1298,7 @@
             }
 
             const monthlyFee = parseFloat(currentStudent.fee) || 0;
-            const calculatedTuitionFee = months * monthlyFee;
+            const calculatedTuitionFee = (currentStudent.feeType === "માસિક") ? (months * monthlyFee) : monthlyFee;
             document.getElementById('recAutoFee').value = calculatedTuitionFee;
 
             let creditStationeryTotal = 0;
@@ -1367,6 +1420,9 @@
             
             generatedBlob = null;
             generatedDataUrl = "";
+            
+            // પહોંચ ઈમેજ અગાઉથી લિંક્સમાં સેટ કરો
+            processReceiptImage();
         }
 
         function closePreviewContainer() {
@@ -1411,6 +1467,7 @@
             
             generatedBlob = null;
             generatedDataUrl = "";
+            processReceiptImage();
         }
 
         function renderFeeHistoryTable() {
@@ -1501,14 +1558,23 @@
                 return;
             }
 
-            if (generatedDataUrl && generatedBlob) {
-                if (callback) callback();
-                return;
-            }
-
             const area = document.getElementById('receiptPrintArea');
             html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
                 generatedDataUrl = canvas.toDataURL('image/png');
+                
+                // બટન ની લિંક્સ માં ડેટા યુઆરએલ સેટ કરો જેથી ડાઉનલોડ/ઓપન ઈન બીજા બ્રાઉઝર પરફેક્ટ કામ કરે
+                const fileName = `Receipt_${currentStudent.name.replace(/\s+/g, '_')}.png`;
+                const dLink = document.getElementById('btnDownloadImageLink');
+                const oLink = document.getElementById('btnOpenBrowserLink');
+                
+                if(dLink) {
+                    dLink.href = generatedDataUrl;
+                    dLink.setAttribute('download', fileName);
+                }
+                if(oLink) {
+                    oLink.href = generatedDataUrl;
+                }
+
                 canvas.toBlob(blob => {
                     generatedBlob = blob;
                     if (callback) callback();
@@ -1517,56 +1583,18 @@
         }
 
         function openImageInNewTab() {
-            processReceiptImage(() => {
-                if (!generatedDataUrl) {
-                    alert('ઈમેજ બનાવવામાં નિષ્ફળતા મળી.');
-                    return;
-                }
-                
-                const newWindow = window.open('');
-                if (newWindow) {
-                    newWindow.document.write(`
-                        <html>
-                            <head><title>Receipt Image - ${currentStudent.name}</title></head>
-                            <body style="margin:0; display:flex; justify-content:center; align-items:center; background:#f4f6f9; min-height:100vh;">
-                                <img src="${generatedDataUrl}" style="max-width:90%; border:2px solid #1565c0; border-radius:8px;" />
-                            </body>
-                        </html>
-                    `);
-                } else {
-                    alert('પોપ-અપ બ્લોક થયેલ છે. બ્રાઉઝરમાં પોપ-અપ એલાઉ (Allow) કરો.');
-                }
-            });
+            if (!generatedDataUrl) {
+                processReceiptImage(() => {
+                    const newWindow = window.open(generatedDataUrl, '_blank');
+                    if (!newWindow) alert('પોપ-અપ બ્લોક થયેલ છે. બ્રાઉઝરમાં પોપ-અપ એલાઉ (Allow) કરો.');
+                });
+            }
         }
 
         function downloadImageDirectly() {
-            processReceiptImage(() => {
-                if (!generatedDataUrl) {
-                    alert('ઈમેજ બનાવવામાં નિષ્ફળતા મળી.');
-                    return;
-                }
-
-                const fileName = `Receipt_${currentStudent.name.replace(/\s+/g, '_')}.png`;
-
-                if (generatedBlob) {
-                    const blobUrl = URL.createObjectURL(generatedBlob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                } else {
-                    const a = document.createElement('a');
-                    a.href = generatedDataUrl;
-                    a.download = fileName;
-                    a.target = '_blank';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }
-            });
+            if (!generatedDataUrl) {
+                processReceiptImage();
+            }
         }
 
         async function shareWhatsAppImage() {
@@ -1611,18 +1639,12 @@
             window.open(`https://api.whatsapp.com/send?phone=91${currentStudent.phone}&text=${encodeURIComponent(text)}`, '_blank');
         }
 
+        // તારીખ મુજબ ઓટો ગણતરી સાથે એલર્ટ મોકલવાનું સેટઅપ
         function sendDueFeeAlertWhatsApp() {
-            recalculateStudentTotals();
-
-            let fromMonthStr = formatDate(currentStudent.joinDate) || 'જૂન 2026';
-            let toMonthStr = new Date().toLocaleDateString('gu-IN', { month: 'long', year: 'numeric' });
-
-            if (currentStudent.receipts && currentStudent.receipts.length > 0) {
-                const lastRec = currentStudent.receipts[currentStudent.receipts.length - 1];
-                if (lastRec.toDate) {
-                    fromMonthStr = formatDate(lastRec.toDate);
-                }
-            }
+            const calcRes = calculateAlertDueFee();
+            const fromMonthStr = formatDate(document.getElementById('alertFromDate').value) || 'શરૂઆત';
+            const toMonthStr = formatDate(document.getElementById('alertToDate').value) || 'આજ સુધી';
+            const alertAmt = calcRes.dueCalc;
 
             let stationeryListStr = "";
             let statCount = 0;
@@ -1642,14 +1664,37 @@
             let alertMsg = `નમસ્તે વાલીશ્રી, 🙏\n\n`;
             alertMsg += `*નિર્મળા નવોદય ક્લાિસિસ* તરફથી નમ્ર વિનંતી.\n\n`;
             alertMsg += `વિદ્યાર્થી *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી અંગેની બાકી વિગત નીચે મુજબ છે:\n\n`;
-            alertMsg += `🗓️ *બાકી ફી સમયગાળો:* ${fromMonthStr} થી ${toMonthStr}\n`;
+            alertMsg += `🗓️ *બાકી ફી સમયગાળો:* ${fromMonthStr} થી ${toMonthStr} (${calcRes.months} મહિના)\n`;
             alertMsg += `📚 *આપેલી સ્ટેશનરી (ઉધાર):*\n${stationeryListStr}`;
-            alertMsg += `\n💰 *કુલ બાકી રકમ:* *₹${currentStudent.due}*\n\n`;
+            alertMsg += `\n💰 *કુલ બાકી રકમ:* *₹${alertAmt}*\n\n`;
             alertMsg += `કૃપા કરીને આ બાકી ફી સમયસર જમા કરાવી આપવા નમ્ર વિનંતી છે. આપના સહકાર બદલ આભાર! 💐\n\n`;
             alertMsg += `લિ. *વાઘેલા રવિ વિનોદભાઈ*\n📲 *સંપર્ક:* 9033197515`;
 
             const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
             window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(alertMsg)}`, '_blank');
+        }
+
+        // ફી ભર્યા પછીનો મસ્ત આભાર વ્યક્ત કરતો પત્ર મેસેજ (Thank You Message)
+        function sendThankYouWhatsApp() {
+            const paidAmount = currentStudent.paid || 0;
+            const remainingDue = currentStudent.due || 0;
+            const todayStr = new Date().toLocaleDateString('gu-IN');
+
+            let thankMsg = `આભાર પત્ર 💐\n\n`;
+            thankMsg += `આદરણીય વાલીશ્રી, 🙏\n\n`;
+            thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી સફળતાપૂર્વક જમા થઈ ગઈ છે.\n\n`;
+            thankMsg += `💳 *જમા કરાવેલ ફી રકમ:* *₹${paidAmount}*\n`;
+            thankMsg += `📅 *જમા તારીખ:* ${todayStr}\n`;
+            if (remainingDue > 0) {
+                thankMsg += `❗ *બાકી રહેતી રકમ:* ₹${remainingDue}\n`;
+            } else {
+                thankMsg += `✅ *બાકી સ્ટેટસ:* કોઈ ફી બાકી નથી (પૂર્ણ જમા)\n`;
+            }
+            thankMsg += `\nઅમારા પર વિશ્વાસ મૂકવા અને સમયસર ફી ભરવા બદલ આપનો ખૂબ ખૂબ આભાર! 🌸\n\n`;
+            thankMsg += `શુભેચ્છક,\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ\n📲 *સંપર્ક:* 9033197515`;
+
+            const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
+            window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(thankMsg)}`, '_blank');
         }
 
         function copyTextReceipt() {
