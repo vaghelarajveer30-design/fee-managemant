@@ -1931,7 +1931,7 @@ function downloadJSONBackup() {
     }
 }
 
-// ૨. ડેટા રિસ્ટોર કરવાનું ફંક્શન
+// ૨. ડેટા રિસ્ટોર કરવાનું સાચું ફંકશન
 function restoreJSONBackup() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1946,15 +1946,35 @@ function restoreJSONBackup() {
             try {
                 const data = JSON.parse(event.target.result);
 
+                if (!data.students && !data.stockList && !data.expenses && !data.masterSettings) {
+                    alert("આ ફાઈલમાં કોઈ સાચો બેકઅપ ડેટા મળ્યો નથી!");
+                    return;
+                }
+
+                // ૧. localstorage માં ડેટા સેવ કરો
                 if (data.students) localStorage.setItem('NNC_students', JSON.stringify(data.students));
                 if (data.stockList) localStorage.setItem('NNC_stock', JSON.stringify(data.stockList));
                 if (data.expenses) localStorage.setItem('NNC_expenses', JSON.stringify(data.expenses));
                 if (data.masterSettings) localStorage.setItem('NNC_master', JSON.stringify(data.masterSettings));
 
-                alert("ડેટા સફળતાપૂર્વક રિસ્ટોર થઈ ગયો છે! પેજ રીફ્રેશ થશે.");
-                location.reload();
+                // ૨. મેમરીના વેરીએબલ્સ પણ તરત અપડેટ કરો
+                if (data.students && typeof students !== 'undefined') students = data.students;
+                if (data.stockList && typeof stockList !== 'undefined') stockList = data.stockList;
+                if (data.expenses && typeof expenses !== 'undefined') expenses = data.expenses;
+                if (data.masterSettings && typeof masterSettings !== 'undefined') masterSettings = data.masterSettings;
+
+                alert("ડેટા સફળતાપૂર્વક રિસ્ટોર થઈ ગયો છે!");
+
+                // ૩. રીલોડ અને પેજ રીફ્રેશ કરો
+                if (typeof loadLocalData === 'function') {
+                    loadLocalData();
+                }
+
+                window.location.reload();
+
             } catch (err) {
-                alert("ખોટી ફાઈલ સિલેક્ટ થઈ છે અથવા ફાઈલ ડેમેજ છે.");
+                console.error(err);
+                alert("ફાઈલ વાંચવામાં ભૂલ આવી! કૃપા કરીને સાચી બેકઅપ ફાઈલ પસંદ કરો.");
             }
         };
         reader.readAsText(file);
