@@ -23,17 +23,8 @@ if ('caches' in window) {
 }
 </script>
     <style> 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #f4f6f9; }
-        
-        /* App Header Style based on image */
-        .app-top-bar { background: #111; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .app-top-bar h2 { font-size: 18px; font-weight: normal; }
-        .app-top-title { display: flex; justify-content: space-between; align-items: center; background: #0d47a1; color: white; padding: 10px 16px; font-weight: bold; font-size: 16px; }
-        .brand-banner { background: #1976d2; color: white; text-align: center; padding: 12px; font-size: 20px; font-weight: bold; }
-
         .container { max-width: 480px; margin: 0 auto; padding: 12px; }
-        .card { background: #ffffff; border-radius: 12px; padding: 14px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card { background: #ffffff; border-radius: 10px; padding: 14px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
         .btn { border: none; border-radius: 8px; padding: 10px 14px; font-weight: bold; font-size: 14px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; text-decoration: none; margin-top: 6px; }
         .btn-blue { background-color: #1976d2; }
@@ -48,13 +39,13 @@ if ('caches' in window) {
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         
-        .stat-box { padding: 12px 8px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 13px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+        .stat-box { padding: 10px; border-radius: 8px; text-align: center; color: white; font-weight: bold; font-size: 13px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
         .stat-box:active { transform: scale(0.98); }
         .stat-box.active-filter { outline: 3px solid #1565c0; box-shadow: 0 0 8px rgba(0,0,0,0.3); }
         
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
-        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fff; }
+        .form-control { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
         
         .student-item-card { background: white; border-radius: 8px; padding: 12px; border-left: 5px solid #1565c0; margin-bottom: 10px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
         .student-item-head { display: flex; justify-content: space-between; align-items: center; }
@@ -77,7 +68,7 @@ if ('caches' in window) {
         .modal-body { font-size: 14px; color: #333; margin-bottom: 15px; line-height: 1.5; }
         .modal-btn { background: #1565c0; color: white; padding: 8px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         
-        .net-status { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .net-status { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .net-online { background-color: #4caf50; color: white; }
         .net-offline { background-color: #f44336; color: white; }
 
@@ -87,16 +78,13 @@ if ('caches' in window) {
 </head>
 <body>
 
-    <div class="app-top-bar">
-        <h2>fee status</h2>
-    </div>
-    <div class="app-top-title">
-        <span>FEE MANAGEMENT</span>
+    <div class="navbar">
+        <h1>FEE MANAGEMENT</h1>
         <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
     </div>
-    <div class="brand-banner">નિર્મળા નવોદય ક્લાિસિસ</div>
+    <div class="brand-subhead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- રસીદ ઓપન કરવા માટેનું સ્ટેન્ડઅલોન વ્યુ -->
+    <!-- જ્યારે લીંકથી પહોંચ ઓપન થાય ત્યારે જોવા માટેનું સ્ટેન્ડઅલોન વ્યુ -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
             <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
@@ -155,8 +143,8 @@ if ('caches' in window) {
     <div class="container" id="mainAppContainer">
 
         <div id="pageDashboard">
-            <div class="card" style="background: #e8f5e9; border-color: #c8e6c9; text-align: center;">
-                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 8px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Firebase)</div>
+            <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
+                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ / ફાઈલ બેકઅપ સિસ્ટમ</div>
                 <div class="grid-2">
                     <button class="btn btn-green" onclick="downloadJSONBackup()">📥 બેકઅપ ડેટા લેવો</button>
                     <button class="btn btn-blue" onclick="restoreJSONBackup()">🔄 ડેટા રીસ્ટોર કરવો</button>
@@ -164,8 +152,8 @@ if ('caches' in window) {
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px 0;">
-                <h3 style="font-size: 18px; color: #222; font-weight: bold;">વિદ્યાર્થીઓની યાદી</h3>
-                <button class="btn btn-blue" style="width: auto; padding: 6px 14px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
+                <h3 style="font-size: 17px; color: #333;">વિદ્યાર્થીઓની યાદી</h3>
+                <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
 
             <div class="form-group">
@@ -174,7 +162,7 @@ if ('caches' in window) {
 
             <div class="grid-2" style="margin-bottom: 12px;">
                 <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="filterStudents('active')">
-                    🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">1</span>
+                    🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">0</span>
                 </div>
                 <div id="btnFilterInactive" class="stat-box" style="background-color: #d32f2f;" onclick="filterStudents('inactive')">
                     🔴 ઇન-એક્ટિવ વિદ્યાર્થી<br><span id="countInactive" style="font-size: 20px;">0</span>
@@ -188,8 +176,8 @@ if ('caches' in window) {
                 <button class="btn btn-orange" onclick="navigateTo('pageAdminExpense')">💸 Admin ખર્ચ વિગત</button>
             </div>
 
-            <div class="card" style="background: #2e7d32; color: white; margin-top: 12px; border: none;">
-                <div style="text-align: center; font-weight: bold; margin-bottom: 8px; font-size: 15px;">📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</div>
+            <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
+                <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</div>
                 <div class="grid-3">
                     <div id="btnFilterAll" class="stat-box" style="background: #1976d2;" onclick="filterStudents(null)">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
                     <div id="btnFilterPaid" class="stat-box" style="background: #388e3c;" onclick="filterStudents('paid')">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
@@ -978,6 +966,11 @@ if ('caches' in window) {
             if (currentFilter === 'inactive') btnInact.classList.add('active-filter');
             if (currentFilter === 'paid') btnPaid.classList.add('active-filter');
             if (currentFilter === 'due') btnDue.classList.add('active-filter');
+
+            if (currentFilter === null && searchVal === "") {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના બટન (એક્ટિવ/ઇન-એક્ટિવ/જમા/બાકી) પર ક્લિક કરો અથવા શોધો.</div>';
+                return;
+            }
 
             let filteredStudents = students;
 
@@ -1907,8 +1900,8 @@ if ('caches' in window) {
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
         }
 
-        // 📥 બેકઅપ ફાઈલ ડાઉનલોડ કરવાનું સક્રિય ફંક્શન
-        function downloadJSONBackup() {
+        // ૧. બેકઅપ ફાઈલ ડાઉનલોડ કરવાનો સાચો કોડ
+        async function downloadJSONBackup() {
             try {
                 const backupData = {
                     students: students || [],
@@ -1925,13 +1918,32 @@ if ('caches' in window) {
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
                 downloadAnchor.remove();
+
+                // જો Firebase કનેક્ટેડ હોય તો ક્લાઉડ બેકઅપ
+                if (masterSettings && masterSettings.dbUrl) {
+                    try {
+                        let firebaseUrl = masterSettings.dbUrl.replace(/\/$/, "") + "/backup.json";
+                        if (masterSettings.apiKey) {
+                            firebaseUrl += `?auth=${masterSettings.apiKey}`;
+                        }
+                        await fetch(firebaseUrl, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(backupData)
+                        });
+                    } catch(e) {
+                        console.log("Cloud backup error:", e);
+                    }
+                }
+
                 alert("બેકઅપ ફાઈલ સફળતાપૂર્વક ડાઉનલોડ થઈ ગઈ છે!");
             } catch (error) {
+                console.error(error);
                 alert("બેકઅપ લેવામાં ભૂલ આવી: " + error.message);
             }
         }
 
-        // 🔄 ડેટા રીસ્ટોર/અપલોડ કરવાનું સક્રિય ફંક્શન
+        // ૨. ડેટા રીસ્ટોર કરવા માટેનું ફંક્શન
         function restoreJSONBackup() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -1946,23 +1958,52 @@ if ('caches' in window) {
                     try {
                         const data = JSON.parse(event.target.result);
 
-                        if (data.students) students = data.students;
-                        if (data.stockList) stockList = data.stockList;
-                        if (data.expenses) expenses = data.expenses;
-                        if (data.masterSettings) masterSettings = data.masterSettings;
+                        if (!data.students && !Array.isArray(data)) {
+                            alert("આ ફાઈલમાં કોઈ સાચો બેકઅપ ડેટા મળ્યો નથી!");
+                            return;
+                        }
 
-                        saveLocalData();
+                        const studentsList = data.students || (Array.isArray(data) ? data : []);
+                        const stock = data.stockList || [];
+                        const exp = data.expenses || [];
+                        const master = data.masterSettings || {};
+
+                        localStorage.setItem('NNC_students', JSON.stringify(studentsList));
+                        if (stock.length) localStorage.setItem('NNC_stock', JSON.stringify(stock));
+                        if (exp.length) localStorage.setItem('NNC_expenses', JSON.stringify(exp));
+                        if (Object.keys(master).length) localStorage.setItem('NNC_master', JSON.stringify(master));
+
+                        students = studentsList;
+                        stockList = stock;
+                        expenses = exp;
+                        masterSettings = master;
+
+                        alert("ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
+
                         recalculateStudentTotals();
                         renderDashboard();
-                        alert("ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
+                        renderStockTable();
+                        renderExpenses();
+
+                        setTimeout(() => { window.location.reload(); }, 500);
+
                     } catch (err) {
-                        alert("ફાઈલ રીડ કરવામાં ભૂલ આવી. કૃપા કરીને સાચી .json ફાઈલ પસંદ કરો.");
+                        console.error(err);
+                        alert("ફાઈલ રીડ કરવામાં ભૂલ આવી. કૃપા કરીને સાચી .json બેકઅપ ફાઈલ પસંદ કરો.");
                     }
                 };
                 reader.readAsText(file);
             };
 
             fileInput.click();
+        }
+
+        function backupDataToCloud() {
+            downloadJSONBackup();
+        }
+
+        function restoreDataFromCloud() {
+            restoreJSONBackup();
         }
 
         function formatDate(dateStr) {
