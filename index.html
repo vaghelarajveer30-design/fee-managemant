@@ -23,7 +23,15 @@ if ('caches' in window) {
 }
 </script>
     <style> 
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #f4f6f9; }
         .container { max-width: 480px; margin: 0 auto; padding: 12px; }
+        
+        /* Header Style */
+        .app-header { background: #1565c0; color: white; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .app-header h1 { font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
+        .brand-subhead { background: #0d47a1; color: white; text-align: center; padding: 10px; font-size: 20px; font-weight: bold; }
+
         .card { background: #ffffff; border-radius: 10px; padding: 14px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
         .btn { border: none; border-radius: 8px; padding: 10px 14px; font-weight: bold; font-size: 14px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; text-decoration: none; margin-top: 6px; }
@@ -68,8 +76,8 @@ if ('caches' in window) {
         .modal-body { font-size: 14px; color: #333; margin-bottom: 15px; line-height: 1.5; }
         .modal-btn { background: #1565c0; color: white; padding: 8px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         
-        .net-status { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .net-online { background-color: #4caf50; color: white; }
+        .net-status { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .net-online { background-color: #2e7d32; color: white; }
         .net-offline { background-color: #f44336; color: white; }
 
         .short-link-card { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 12px; margin-top: 12px; }
@@ -78,7 +86,7 @@ if ('caches' in window) {
 </head>
 <body>
 
-    <div class="navbar">
+    <div class="app-header">
         <h1>FEE MANAGEMENT</h1>
         <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
     </div>
@@ -144,7 +152,7 @@ if ('caches' in window) {
 
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
-                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ / ફાઈલ બેકઅપ સિસ્ટમ</div>
+                <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ડેટા બેકઅપ અને રીસ્ટોર સિસ્ટમ</div>
                 <div class="grid-2">
                     <button class="btn btn-green" onclick="downloadJSONBackup()">📥 બેકઅપ ડેટા લેવો</button>
                     <button class="btn btn-blue" onclick="restoreJSONBackup()">🔄 ડેટા રીસ્ટોર કરવો</button>
@@ -612,6 +620,7 @@ if ('caches' in window) {
                     </div>
                 </div>
 
+                <!-- ઓન-ધ-ફ્લાય લિંક જનરેશન બોક્સ -->
                 <div class="short-link-card">
                     <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
                     <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
@@ -622,13 +631,7 @@ if ('caches' in window) {
                 </div>
 
                 <div style="margin-top: 15px;">
-                    <div class="grid-2">
-                        <a id="btnDownloadImageLink" class="btn btn-green" download="" href="#" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</a>
-                        <a id="btnOpenBrowserLink" class="btn btn-blue" target="_blank" href="#" onclick="openImageInNewTab()">🌐 બીજા બ્રાઉઝરમાં ઓપન કરો</a>
-                    </div>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
-                    <button class="btn btn-cyan" style="margin-top:6px;" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
+                    <a id="btnDownloadImageLink" class="btn btn-green" download="" href="#" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</a>
                 </div>
             </div>
 
@@ -671,6 +674,7 @@ if ('caches' in window) {
         let generatedBlob = null;
         let generatedDataUrl = "";
 
+        // ઓનલાઈન ઓટોમેટિક રસીદ લિંક ચેક ઈન ઈનિશિયલાઈઝેશન
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const receiptDataParam = urlParams.get('receipt');
@@ -747,6 +751,7 @@ if ('caches' in window) {
             document.getElementById('sRPayer').innerText = data.payer || "-";
         }
 
+        // સ્ટેન્ડઅલોન વ્યુ પરથી રસીદ ઈમેજ ડાઉનલોડ કરવા માટેનું ફંક્શન
         function downloadStandaloneImage() {
             const printArea = document.getElementById('standalonePrintArea');
             html2canvas(printArea, { scale: 2 }).then(canvas => {
@@ -1447,9 +1452,6 @@ if ('caches' in window) {
                     const downloadBtn = document.getElementById('btnDownloadImageLink');
                     downloadBtn.href = generatedDataUrl;
                     downloadBtn.download = `Receipt_${currentStudent.name}_${Date.now()}.png`;
-
-                    const openBtn = document.getElementById('btnOpenBrowserLink');
-                    openBtn.href = generatedDataUrl;
                 }, 'image/png');
             });
         }
@@ -1464,74 +1466,8 @@ if ('caches' in window) {
             }
         }
 
-        function openImageInNewTab() {
-            if (!generatedDataUrl) {
-                alert("ઈમેજ જનરેટ થઈ રહી છે, કૃપા કરીને 1-2 સેકન્ડ પછી પ્રયાસ કરો.");
-            }
-        }
-
-        async function shareWhatsAppImage() {
-            if (navigator.share && generatedBlob) {
-                try {
-                    const file = new File([generatedBlob], `Fee_Receipt_${currentStudent.name}.png`, { type: 'image/png' });
-                    await navigator.share({
-                        title: 'ફી પહોંચ - નિર્મળા નવોદય ક્લાિસિસ',
-                        text: `*નિર્મળા નવોદય ક્લાિસિસ*\nવિદ્યાર્થી: ${currentStudent.name}\nફી પહોંચ નીચે મુજબ છે:`,
-                        files: [file]
-                    });
-                    return;
-                } catch (err) {
-                    console.log("Web share not supported or cancelled.", err);
-                }
-            }
-
-            document.getElementById('customModal').style.display = 'flex';
-            downloadImageDirectly();
-        }
-
         function closeCustomModal() {
             document.getElementById('customModal').style.display = 'none';
-            shareWhatsAppText();
-        }
-
-        function shareWhatsAppText() {
-            const tuitionFee = document.getElementById('rTotalVal').innerText;
-            const paidVal = document.getElementById('rPaidVal').innerText;
-            const dueVal = document.getElementById('rDueVal').innerText;
-            const payDate = document.getElementById('rPayDate').innerText;
-            const pFrom = document.getElementById('rPeriodFrom').innerText;
-            const pTo = document.getElementById('rPeriodTo').innerText;
-            const mode = document.getElementById('rMode').innerText;
-
-            let msg = `🧾 *ફી પહોંચ / રસીદ*\n`;
-            msg += `*નિર્મળા નવોદય ક્લાિસિસ*\n`;
-            msg += `---------------------\n`;
-            msg += `👤 *નામ:* ${currentStudent.name} (ધો: ${currentStudent.std})\n`;
-            msg += `📅 *તારીખ:* ${payDate}\n`;
-            msg += `🗓️ *સમયગાળો:* ${pFrom} થી ${pTo}\n`;
-            msg += `---------------------\n`;
-            msg += `💰 *કુલ ફી:* ${tuitionFee}\n`;
-            msg += `✅ *જમા ફી:* ${paidVal}\n`;
-            msg += `❗ *બાકી ફી:* ${dueVal}\n`;
-            msg += `💳 *મોડ:* ${mode}\n\n`;
-            msg += `આભાર! 🌸\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ (9033197515)`;
-
-            openWhatsAppUrl(currentStudent.phone, msg);
-        }
-
-        function copyTextReceipt() {
-            const tuitionFee = document.getElementById('rTotalVal').innerText;
-            const paidVal = document.getElementById('rPaidVal').innerText;
-            const dueVal = document.getElementById('rDueVal').innerText;
-            const payDate = document.getElementById('rPayDate').innerText;
-            const pFrom = document.getElementById('rPeriodFrom').innerText;
-            const pTo = document.getElementById('rPeriodTo').innerText;
-
-            const text = `નિર્મળા નવોદય ક્લાિસિસ - વિદ્યાર્થી: ${currentStudent.name}, ધોરણ: ${currentStudent.std}, રસીદ તારીખ: ${payDate}, સમયગાળો: ${pFrom} થી ${pTo}, કુલ ફી: ${tuitionFee}, જમા ફી: ${paidVal}, બાકી ફી: ${dueVal} - સંપર્ક: વાઘેલા રવિ વિનોદભાઈ (9033197515)`;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                alert("રસીદની વિગત કોપી થઈ ગઈ છે!");
-            });
         }
 
         function renderFeeHistoryTable() {
@@ -1900,8 +1836,8 @@ if ('caches' in window) {
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
         }
 
-        // ૧. બેકઅપ ફાઈલ ડાઉનલોડ કરવાનો સાચો કોડ
-        async function downloadJSONBackup() {
+        // 📥 સુધારેલું બેકઅપ ડાઉનલોડ ફંક્શન
+        function downloadJSONBackup() {
             try {
                 const backupData = {
                     students: students || [],
@@ -1911,30 +1847,21 @@ if ('caches' in window) {
                     exportDate: new Date().toISOString()
                 };
 
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
                 const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `FeeManager_Backup_${new Date().toISOString().slice(0,10)}.json`);
+                downloadAnchor.href = url;
+                downloadAnchor.download = `FeeManager_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
-                downloadAnchor.remove();
-
-                // જો Firebase કનેક્ટેડ હોય તો ક્લાઉડ બેકઅપ
-                if (masterSettings && masterSettings.dbUrl) {
-                    try {
-                        let firebaseUrl = masterSettings.dbUrl.replace(/\/$/, "") + "/backup.json";
-                        if (masterSettings.apiKey) {
-                            firebaseUrl += `?auth=${masterSettings.apiKey}`;
-                        }
-                        await fetch(firebaseUrl, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(backupData)
-                        });
-                    } catch(e) {
-                        console.log("Cloud backup error:", e);
-                    }
-                }
+                
+                setTimeout(() => {
+                    document.body.removeChild(downloadAnchor);
+                    URL.revokeObjectURL(url);
+                }, 100);
 
                 alert("બેકઅપ ફાઈલ સફળતાપૂર્વક ડાઉનલોડ થઈ ગઈ છે!");
             } catch (error) {
@@ -1943,11 +1870,11 @@ if ('caches' in window) {
             }
         }
 
-        // ૨. ડેટા રીસ્ટોર કરવા માટેનું ફંક્શન
+        // 🔄 સુધારેલું ડેટા રીસ્ટોર ફંક્શન
         function restoreJSONBackup() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.json';
+            fileInput.accept = '.json,application/json';
 
             fileInput.onchange = function(e) {
                 const file = e.target.files[0];
@@ -1968,24 +1895,15 @@ if ('caches' in window) {
                         const exp = data.expenses || [];
                         const master = data.masterSettings || {};
 
-                        localStorage.setItem('NNC_students', JSON.stringify(studentsList));
-                        if (stock.length) localStorage.setItem('NNC_stock', JSON.stringify(stock));
-                        if (exp.length) localStorage.setItem('NNC_expenses', JSON.stringify(exp));
-                        if (Object.keys(master).length) localStorage.setItem('NNC_master', JSON.stringify(master));
-
                         students = studentsList;
                         stockList = stock;
                         expenses = exp;
-                        masterSettings = master;
+                        if (Object.keys(master).length) masterSettings = master;
+
+                        saveLocalData();
 
                         alert("ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
-
-                        recalculateStudentTotals();
-                        renderDashboard();
-                        renderStockTable();
-                        renderExpenses();
-
-                        setTimeout(() => { window.location.reload(); }, 500);
+                        window.location.reload();
 
                     } catch (err) {
                         console.error(err);
@@ -1996,14 +1914,6 @@ if ('caches' in window) {
             };
 
             fileInput.click();
-        }
-
-        function backupDataToCloud() {
-            downloadJSONBackup();
-        }
-
-        function restoreDataFromCloud() {
-            restoreJSONBackup();
         }
 
         function formatDate(dateStr) {
