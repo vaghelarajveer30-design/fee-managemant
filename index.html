@@ -61,6 +61,9 @@
         .net-status { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .net-online { background-color: #4caf50; color: white; }
         .net-offline { background-color: #f44336; color: white; }
+
+        .short-link-card { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 12px; margin-top: 12px; }
+        .short-link-title { color: #1565c0; font-weight: bold; font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -71,7 +74,63 @@
     </div>
     <div class="brand-subhead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <div class="container">
+    <!-- જ્યારે લીંકથી પહોંચ ઓપન થાય ત્યારે જોવા માટેનું મોડ મોડલ -->
+    <div id="standaloneReceiptView" class="container" style="display: none;">
+        <div class="card">
+            <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
+            <div class="receipt-card" id="standalonePrintArea">
+                <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
+                <div class="receipt-user-info">
+                    <div><strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="sRName">-</span></div>
+                    <div style="margin-top: 4px;">
+                        <strong>ધોરણ:</strong> <span id="sRStd">-</span> | 
+                        <strong>કોર્સ:</strong> <span id="sRCourse">-</span> | 
+                        📅 <strong>તારીખ:</strong> <span id="sRPayDate">-</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ક્રમ</th>
+                            <th>વિગત</th>
+                            <th>ફી (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sRTableBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="text-align: right; font-weight: bold; color: #1565c0;">કુલ રકમ</td>
+                            <td style="font-weight: bold; color: #1565c0;" id="sRTotalVal">₹0</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: right; font-weight: bold; color: green;">જમા કરેલ ફી</td>
+                            <td style="font-weight: bold; color: green;" id="sRPaidVal">₹0</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: right; font-weight: bold; color: red;">બાકી રહેતી ફી</td>
+                            <td style="font-weight: bold; color: red;" id="sRDueVal">₹0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="receipt-footer-bar">
+                    📅 સમયગાળો: <span id="sRPeriodFrom">-</span> થી <span id="sRPeriodTo">-</span>
+                </div>
+                <div class="receipt-details">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>💳 <strong>મોડ:</strong> <span id="sRMode">-</span></span>
+                        <span>✍️ <strong>ભરનાર:</strong> <span id="sRPayer">-</span></span>
+                    </div>
+                    <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #ccc;">
+                    <div style="text-align: center; font-weight: bold; color: #1565c0; font-size:14px;">
+                        વાઘેલા રવિ વિનોદભાઈ (9033197515)
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-blue" style="margin-top:15px;" onclick="window.location.href = window.location.pathname">🏠 મુખ્ય ડેશબોર્ડ ખોલો</button>
+        </div>
+    </div>
+
+    <div class="container" id="mainAppContainer">
 
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
@@ -544,6 +603,16 @@
                     </div>
                 </div>
 
+                <!-- ઓન-ધ-ફ્લાય લિંક જનરેશન બોક્સ -->
+                <div class="short-link-card">
+                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
+                    <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
+                    <div class="grid-2">
+                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
+                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર લિંક મોકલો</button>
+                    </div>
+                </div>
+
                 <div style="margin-top: 15px;">
                     <div class="grid-2">
                         <a id="btnDownloadImageLink" class="btn btn-green" download="" href="#" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</a>
@@ -594,7 +663,100 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // શોર્ટ વૉટ્સએપ લિંક ઓપન કરવા માટેનું હેલ્પર ફંક્શન
+        // ઓનલાઈન ઓટોમેટિક રસીદ લિંક ચેક ઈન ઈનિશિયલાઈઝેશન
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const receiptDataParam = urlParams.get('receipt');
+
+            if (receiptDataParam) {
+                try {
+                    const jsonStr = decodeURIComponent(atob(receiptDataParam));
+                    const data = JSON.parse(jsonStr);
+                    renderStandaloneReceipt(data);
+                    return;
+                } catch(e) {
+                    console.error("લિંકમાંથી રસીદ ઓપન કરવામાં ભૂલ થઈ", e);
+                }
+            }
+
+            sessionStorage.removeItem('showReceiptPreview');
+            const previewBox = document.getElementById('previewContainer');
+            if(previewBox) previewBox.style.display = 'none';
+
+            updateNetworkStatus();
+            loadLocalData();
+            recalculateStudentTotals();
+            renderDashboard();
+            renderStockTable();
+            renderStockDropdown();
+            renderExpenses();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('recDateVal').value = today;
+            document.getElementById('recFromDate').value = today;
+            document.getElementById('recToDate').value = today;
+
+            document.getElementById('mApiKey').value = masterSettings.apiKey || "";
+            document.getElementById('mDbUrl').value = masterSettings.dbUrl || "";
+            document.getElementById('mDefaultFee').value = masterSettings.defaultFee;
+            document.getElementById('mDefaultStd').value = masterSettings.defaultStd;
+            document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
+        };
+
+        function renderStandaloneReceipt(data) {
+            document.getElementById('mainAppContainer').style.display = 'none';
+            document.getElementById('standaloneReceiptView').style.display = 'block';
+
+            document.getElementById('sRName').innerText = data.name || "-";
+            document.getElementById('sRStd').innerText = data.std || "-";
+            document.getElementById('sRCourse').innerText = data.course || "-";
+            document.getElementById('sRPayDate').innerText = formatDate(data.date);
+            document.getElementById('sRPeriodFrom').innerText = formatDate(data.fromDate);
+            document.getElementById('sRPeriodTo').innerText = formatDate(data.toDate);
+
+            const tbody = document.getElementById('sRTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td>1</td>
+                    <td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td>
+                    <td>₹${data.tuitionFee}</td>
+                </tr>
+            `;
+
+            if (data.statFee > 0) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>2</td>
+                        <td>સ્ટેશનરી ચાર્જ</td>
+                        <td>₹${data.statFee}</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
+            document.getElementById('sRPaidVal').innerText = '₹' + data.paidVal;
+            document.getElementById('sRDueVal').innerText = '₹' + data.dueVal;
+            document.getElementById('sRMode').innerText = data.payMode || "-";
+            document.getElementById('sRPayer').innerText = data.payer || "-";
+        }
+
+        function copyReceiptLink() {
+            const linkInput = document.getElementById('receiptGeneratedUrl');
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
+            }).catch(() => {
+                linkInput.select();
+                document.execCommand('copy');
+                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
+            });
+        }
+
+        function shareReceiptLinkWhatsApp() {
+            const linkVal = document.getElementById('receiptGeneratedUrl').value;
+            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*`;
+            openWhatsAppUrl(currentStudent.phone, text);
+        }
+
         function openWhatsAppUrl(phone, text) {
             let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
@@ -640,31 +802,6 @@
 
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
-
-        window.onload = function() {
-            sessionStorage.removeItem('showReceiptPreview');
-            const previewBox = document.getElementById('previewContainer');
-            if(previewBox) previewBox.style.display = 'none';
-
-            updateNetworkStatus();
-            loadLocalData();
-            recalculateStudentTotals();
-            renderDashboard();
-            renderStockTable();
-            renderStockDropdown();
-            renderExpenses();
-            
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('recDateVal').value = today;
-            document.getElementById('recFromDate').value = today;
-            document.getElementById('recToDate').value = today;
-
-            document.getElementById('mApiKey').value = masterSettings.apiKey || "";
-            document.getElementById('mDbUrl').value = masterSettings.dbUrl || "";
-            document.getElementById('mDefaultFee').value = masterSettings.defaultFee;
-            document.getElementById('mDefaultStd').value = masterSettings.defaultStd;
-            document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
-        };
 
         function saveLocalData() {
             localStorage.setItem('NNC_students', JSON.stringify(students));
@@ -1147,6 +1284,30 @@
             document.getElementById('recDueInput').value = due;
         }
 
+        function generateReceiptShareableLink(receiptObj) {
+            const dataToEncode = {
+                name: currentStudent.name,
+                std: currentStudent.std,
+                course: currentStudent.course,
+                phone: currentStudent.phone,
+                date: receiptObj.date,
+                fromDate: receiptObj.fromDate,
+                toDate: receiptObj.toDate,
+                tuitionFee: receiptObj.tuitionFee,
+                statFee: receiptObj.statFee,
+                grandTotal: receiptObj.grandTotal,
+                paidVal: receiptObj.paidVal,
+                dueVal: receiptObj.dueVal,
+                payMode: receiptObj.payMode,
+                payer: receiptObj.payer
+            };
+
+            const jsonStr = JSON.stringify(dataToEncode);
+            const encodedData = btoa(encodeURIComponent(jsonStr));
+            const baseUrl = window.location.origin + window.location.pathname;
+            return `${baseUrl}?receipt=${encodedData}`;
+        }
+
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -1223,6 +1384,10 @@
             document.getElementById('rPeriodTo').innerText = formatDate(toDate);
             document.getElementById('rMode').innerText = payMode;
             document.getElementById('rPayer').innerText = payer;
+
+            // ડાયનેમિક લિંક જનરેટ કરીને બોક્સમાં સેટ કરવી
+            const generatedLink = generateReceiptShareableLink(receiptObj);
+            document.getElementById('receiptGeneratedUrl').value = generatedLink;
 
             document.getElementById('previewContainer').style.display = 'block';
             window.scrollTo(0, document.getElementById('previewContainer').offsetTop);
@@ -1392,6 +1557,9 @@
             document.getElementById('rPeriodTo').innerText = formatDate(r.toDate);
             document.getElementById('rMode').innerText = r.payMode;
             document.getElementById('rPayer').innerText = r.payer;
+
+            const generatedLink = generateReceiptShareableLink(r);
+            document.getElementById('receiptGeneratedUrl').value = generatedLink;
 
             document.getElementById('previewContainer').style.display = 'block';
             window.scrollTo(0, document.getElementById('previewContainer').offsetTop);
