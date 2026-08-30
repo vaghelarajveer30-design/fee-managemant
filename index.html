@@ -1421,29 +1421,33 @@
         }
 
         function generateReceiptShareableLink(receiptObj) {
-            const dataToEncode = {
-                name: currentStudent.name,
-                std: currentStudent.std,
-                course: currentStudent.course,
-                phone: currentStudent.phone,
-                date: receiptObj.date,
-                fromDate: receiptObj.fromDate,
-                toDate: receiptObj.toDate,
-                tuitionFee: receiptObj.tuitionFee,
-                statFee: receiptObj.statFee,
-                grandTotal: receiptObj.grandTotal,
-                paidVal: receiptObj.paidVal,
-                dueVal: receiptObj.dueVal,
-                payMode: receiptObj.payMode,
-                payer: receiptObj.payer
-            };
+    const dataToEncode = {
+        name: currentStudent.name,
+        std: currentStudent.std,
+        course: currentStudent.course,
+        phone: currentStudent.phone,
+        date: receiptObj.date,
+        fromDate: receiptObj.fromDate,
+        toDate: receiptObj.toDate,
+        tuitionFee: receiptObj.tuitionFee,
+        statFee: receiptObj.statFee,
+        grandTotal: receiptObj.grandTotal,
+        paidVal: receiptObj.paidVal,
+        dueVal: receiptObj.dueVal,
+        payMode: receiptObj.payMode,
+        payer: receiptObj.payer
+    };
 
-            const jsonStr = JSON.stringify(dataToEncode);
-            const encodedData = utf8ToBase64(jsonStr);
-            
-            let baseUrl = window.location.href.split('?')[0];
-            return `${baseUrl}?receipt=${encodedData}`;
-        }
+    const jsonStr = JSON.stringify(dataToEncode);
+    const encodedData = btoa(encodeURIComponent(jsonStr));
+
+    // અહિયાં લિંકના છેડે &view=receipt_only ઉમેરેલું છે
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareableUrl = `${baseUrl}?data=${encodedData}&view=receipt_only`;
+
+    document.getElementById('receiptGeneratedUrl').value = shareableUrl;
+    return shareableUrl;
+}
 
         // પહોંચ જનરેટ થાય ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
         function buildReceiptPreview() {
