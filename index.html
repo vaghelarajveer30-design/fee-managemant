@@ -74,10 +74,10 @@
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ -->
+    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (માત્ર રસીદ જ દેખાશે) -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
-            <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
+            <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ફી રસીદ</h3>
             <div class="receipt-card" id="standalonePrintArea">
                 <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
                 <div class="receipt-user-info">
@@ -532,6 +532,7 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
+            <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -663,6 +664,7 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
+        // ઓપ્ટીમાઇઝ્ડ ટૂંકું Base64 ફોર્મેટ
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
@@ -675,23 +677,9 @@
             }).join(''));
         }
 
-        // 1. અપડેટ: TinyURL API ની મદદથી WhatsApp લિંક ટૂંકી કરવાનું ફંક્શન
-        async function getShortUrl(longUrl) {
-            try {
-                const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-                if (res.ok) {
-                    const shortUrl = await res.text();
-                    return shortUrl.trim();
-                }
-            } catch (e) {
-                console.error("Link Shortening Error:", e);
-            }
-            return longUrl;
-        }
-
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const receiptDataParam = urlParams.get('receipt');
+            const receiptDataParam = urlParams.get('rcpt') || urlParams.get('receipt');
 
             if (receiptDataParam) {
                 try {
@@ -734,37 +722,43 @@
             document.getElementById('appBrandHead').style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
-            document.getElementById('sRName').innerText = data.name || "-";
-            document.getElementById('sRStd').innerText = data.std || "-";
-            document.getElementById('sRCourse').innerText = data.course || "-";
-            document.getElementById('sRPayDate').innerText = formatDate(data.date);
-            document.getElementById('sRPeriodFrom').innerText = formatDate(data.fromDate);
-            document.getElementById('sRPeriodTo').innerText = formatDate(data.toDate);
+            document.getElementById('sRName').innerText = data.n || data.name || "-";
+            document.getElementById('sRStd').innerText = data.s || data.std || "-";
+            document.getElementById('sRCourse').innerText = data.c || data.course || "-";
+            document.getElementById('sRPayDate').innerText = formatDate(data.d || data.date);
+            document.getElementById('sRPeriodFrom').innerText = formatDate(data.f || data.fromDate);
+            document.getElementById('sRPeriodTo').innerText = formatDate(data.t || data.toDate);
+
+            const tuitionFee = data.tf !== undefined ? data.tf : data.tuitionFee;
+            const statFee = data.sf !== undefined ? data.sf : data.statFee;
+            const grandTotal = data.gt !== undefined ? data.gt : data.grandTotal;
+            const paidVal = data.p !== undefined ? data.p : data.paidVal;
+            const dueVal = data.dv !== undefined ? data.dv : data.dueVal;
 
             const tbody = document.getElementById('sRTableBody');
             tbody.innerHTML = `
                 <tr>
                     <td>1</td>
-                    <td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td>
-                    <td>₹${data.tuitionFee}</td>
+                    <td>ટ્યુશન ફી (${formatDate(data.f || data.fromDate)} થી ${formatDate(data.t || data.toDate)})</td>
+                    <td>₹${tuitionFee}</td>
                 </tr>
             `;
 
-            if (data.statFee > 0) {
+            if (statFee > 0) {
                 tbody.innerHTML += `
                     <tr>
                         <td>2</td>
                         <td>સ્ટેશનરી ચાર્જ</td>
-                        <td>₹${data.statFee}</td>
+                        <td>₹${statFee}</td>
                     </tr>
                 `;
             }
 
-            document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
-            document.getElementById('sRPaidVal').innerText = '₹' + data.paidVal;
-            document.getElementById('sRDueVal').innerText = '₹' + data.dueVal;
-            document.getElementById('sRMode').innerText = data.payMode || "-";
-            document.getElementById('sRPayer').innerText = data.payer || "-";
+            document.getElementById('sRTotalVal').innerText = '₹' + grandTotal;
+            document.getElementById('sRPaidVal').innerText = '₹' + paidVal;
+            document.getElementById('sRDueVal').innerText = '₹' + dueVal;
+            document.getElementById('sRMode').innerText = data.pm || data.payMode || "-";
+            document.getElementById('sRPayer').innerText = data.py || data.payer || "-";
         }
 
         function downloadStandaloneImage() {
@@ -792,9 +786,10 @@
             });
         }
 
+        // સુધારેલું WhatsApp લિંક શેરિંગ - માત્ર લિંક જ મોકલવા માટે
         function shareReceiptLinkWhatsApp() {
             const linkVal = document.getElementById('receiptGeneratedUrl').value;
-            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચે આપેલી લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
@@ -1407,33 +1402,33 @@
             document.getElementById('recDueInput').value = due;
         }
 
+        // લિંક શોર્ટ કરવા માટે કમ્પ્રેશ કરેલ શોર્ટ ઓબ્જેક્ટ કીઝ
         function generateReceiptShareableLink(receiptObj) {
             const dataToEncode = {
-                name: currentStudent.name,
-                std: currentStudent.std,
-                course: currentStudent.course,
-                phone: currentStudent.phone,
-                date: receiptObj.date,
-                fromDate: receiptObj.fromDate,
-                toDate: receiptObj.toDate,
-                tuitionFee: receiptObj.tuitionFee,
-                statFee: receiptObj.statFee,
-                grandTotal: receiptObj.grandTotal,
-                paidVal: receiptObj.paidVal,
-                dueVal: receiptObj.dueVal,
-                payMode: receiptObj.payMode,
-                payer: receiptObj.payer
+                n: currentStudent.name,
+                s: currentStudent.std,
+                c: currentStudent.course,
+                ph: currentStudent.phone,
+                d: receiptObj.date,
+                f: receiptObj.fromDate,
+                t: receiptObj.toDate,
+                tf: receiptObj.tuitionFee,
+                sf: receiptObj.statFee,
+                gt: receiptObj.grandTotal,
+                p: receiptObj.paidVal,
+                dv: receiptObj.dueVal,
+                pm: receiptObj.payMode,
+                py: receiptObj.payer
             };
 
             const jsonStr = JSON.stringify(dataToEncode);
             const encodedData = utf8ToBase64(jsonStr);
             
             let baseUrl = window.location.href.split('?')[0];
-            return `${baseUrl}?receipt=${encodedData}`;
+            return `${baseUrl}?rcpt=${encodedData}`;
         }
 
-        // પહોંચ જનરેટ થાય ત્યારે ઈમેજ સેન્ડ કરવાનો ફંકશન કૉલ થશે
-        async function buildReceiptPreview() {
+        function buildReceiptPreview() {
             if (!currentStudent) return;
 
             const dateVal = document.getElementById('recDateVal').value;
@@ -1476,13 +1471,13 @@
             recalculateStudentTotals();
             renderFeeHistoryTable();
 
-            await displayReceiptDataInPreview(newReceipt);
+            displayReceiptDataInPreview(newReceipt);
             
-            // 2. અપડેટ: આખી એપ નહીં પરંતુ માત્ર પહોંચની ઈમેજ શેર થશે
-            shareWhatsAppImage();
+            // રસીદ તૈયાર થતાં જ ડાયરેક્ટ રસીદ જોવા માટેની લિંક WhatsApp પર શેર થશે
+            shareReceiptLinkWhatsApp();
         }
 
-        async function displayReceiptDataInPreview(receiptObj) {
+        function displayReceiptDataInPreview(receiptObj) {
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
@@ -1515,35 +1510,30 @@
             document.getElementById('rMode').innerText = receiptObj.payMode;
             document.getElementById('rPayer').innerText = receiptObj.payer;
 
-            const rawLink = generateReceiptShareableLink(receiptObj);
-            // 1. અપડેટ: શોર્ટ લિંક જનરેટ કરીને ઈનપુટમાં સેટ કરવી
-            const shortLink = await getShortUrl(rawLink);
-            document.getElementById('receiptGeneratedUrl').value = shortLink;
+            const onlineLink = generateReceiptShareableLink(receiptObj);
+            document.getElementById('receiptGeneratedUrl').value = onlineLink;
 
             const previewContainer = document.getElementById('previewContainer');
             previewContainer.style.display = 'block';
             previewContainer.scrollIntoView({ behavior: 'smooth' });
 
-            await generateReceiptCanvas();
+            generateReceiptCanvas();
         }
 
         function generateReceiptCanvas() {
-            return new Promise((resolve) => {
-                const printArea = document.getElementById('receiptPrintArea');
-                html2canvas(printArea, { scale: 2 }).then(canvas => {
-                    generatedDataUrl = canvas.toDataURL('image/png');
-                    canvas.toBlob(blob => {
-                        generatedBlob = blob;
-                        resolve();
-                    }, 'image/png');
+            const printArea = document.getElementById('receiptPrintArea');
+            html2canvas(printArea, { scale: 2 }).then(canvas => {
+                generatedDataUrl = canvas.toDataURL('image/png');
+                canvas.toBlob(blob => {
+                    generatedBlob = blob;
+                }, 'image/png');
 
-                    const btnDownload = document.getElementById('btnDownloadImageLink');
-                    btnDownload.href = generatedDataUrl;
-                    btnDownload.download = `Fee_Receipt_${currentStudent.name}.png`;
+                const btnDownload = document.getElementById('btnDownloadImageLink');
+                btnDownload.href = generatedDataUrl;
+                btnDownload.download = `Fee_Receipt_${currentStudent.name}.png`;
 
-                    const btnOpen = document.getElementById('btnOpenBrowserLink');
-                    btnOpen.href = generatedDataUrl;
-                });
+                const btnOpen = document.getElementById('btnOpenBrowserLink');
+                btnOpen.href = generatedDataUrl;
             });
         }
 
@@ -1567,26 +1557,9 @@
             newTab.document.write(`<img src="${generatedDataUrl}" style="max-width:100%;"/>`);
         }
 
-        // 2. અપડેટ: પહોંચની માત્ર ઈમેજ સેન્ડ થશે (Web Share API વડે ડાયરેક્ટ ઈમેજ ફાઈલ જશે)
-        async function shareWhatsAppImage() {
-            if (!generatedBlob) await generateReceiptCanvas();
-
-            const file = new File([generatedBlob], `Fee_Receipt_${currentStudent.name}.png`, { type: 'image/png' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'ફી પહોંચ',
-                        text: `*નિર્મળા નવોદય ક્લાિસિસ* - ${currentStudent.name} ની ફી પહોંચ`
-                    });
-                } catch (err) {
-                    console.log("Share cancelled or failed:", err);
-                }
-            } else {
-                document.getElementById('customModal').style.display = 'flex';
-                downloadImageDirectly();
-            }
+        function shareWhatsAppImage() {
+            document.getElementById('customModal').style.display = 'flex';
+            downloadImageDirectly();
         }
 
         function closeCustomModal() {
