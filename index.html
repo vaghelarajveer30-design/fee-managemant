@@ -2021,27 +2021,27 @@
     </script>
 </body>
 </html>
-// વાલી જ્યારે લિંક ખોલે ત્યારે આખી એપ છુપાવી માત્ર પહોંચ જ બતાવવા માટે
-    window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const viewMode = urlParams.get('view');
-        const encodedData = urlParams.get('data');
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewMode = urlParams.get('view');
+    const encodedData = urlParams.get('data');
 
-        if (viewMode === 'receipt_only' || encodedData) {
-            const mainElements = document.querySelectorAll('body > *:not(#receiptModal):not(#receiptPrintArea):not(#standaloneReceiptArea)');
-            mainElements.forEach(el => {
-                if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
-                    el.style.display = 'none';
-                }
-            });
-
-            const receiptBox = document.getElementById('receiptPrintArea') || document.getElementById('standaloneReceiptArea') || document.querySelector('.receipt-card');
-            if (receiptBox) {
-                receiptBox.style.display = 'block';
-                receiptBox.style.margin = '20px auto';
+    if (viewMode === 'receipt_only' || encodedData) {
+        const mainElements = document.querySelectorAll('body > *:not(#receiptModal):not(#receiptPrintArea):not(#standaloneReceiptArea)');
+        mainElements.forEach(el => {
+            if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+                el.style.display = 'none';
             }
+        });
+
+        const receiptBox = document.getElementById('receiptPrintArea') || document.getElementById('standaloneReceiptArea') || document.querySelector('.receipt-card');
+        if (receiptBox) {
+            receiptBox.style.display = 'block';
+            receiptBox.style.margin = '20px auto';
         }
-    });
-    </script>
+    }
+});
+</script>
 </body>
 </html>
