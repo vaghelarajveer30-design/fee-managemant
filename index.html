@@ -68,13 +68,13 @@
 </head>
 <body>
 
-    <div class="navbar">
+    <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
         <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
     </div>
-    <div class="brand-subhead">નિર્મળા નવોદય ક્લાિસિસ</div>
+    <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- જ્યારે લીંકથી પહોંચ ઓપન થાય ત્યારે જોવા માટેનું સ્ટેન્ડઅલોન વ્યુ -->
+    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (અન્ય બધું છુપાઈ જશે) -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
             <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
@@ -126,10 +126,11 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ઇમેજ</button>
+            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
 
+    <!-- મેઈન એપ્લિકેશન કન્ટેનર -->
     <div class="container" id="mainAppContainer">
 
         <div id="pageDashboard">
@@ -506,7 +507,7 @@
                 <div class="grid-2">
                     <div class="form-group">
                         <label>જમા કરાવેલ રકમ (₹)</label>
-                        <input type="number" id="recPaidInput" class="form-control" value="0" oninput="calculateReceiptTotals()">
+                        <input type="number" id="recPaidInput" class="form-control" value="0" oninput="calculateReceiptTotals()" placeholder="0">
                     </div>
                     <div class="form-group">
                         <label>બાકી રહેતી રકમ (₹)</label>
@@ -531,6 +532,7 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
+            <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક (જેમાં i બટન ઉમેરેલ છે) -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -662,7 +664,7 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // Unicode safe Base64 helper (zip ફાઇલ અને લીંક બંનેમાં સુસંગત રહેવા માટે)
+        // યુનિકોડ સપોર્ટ ધરાવતું Base64 એન્કોડિંગ (Zip એપ્લિકેશન કે બ્રાઉઝરમાં લિંક તૂટશે નહિ)
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
@@ -679,6 +681,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const receiptDataParam = urlParams.get('receipt');
 
+            // ઓનલાઈન લિંક ખોલવા પર માત્ર રસીદ જ દેખાશે
             if (receiptDataParam) {
                 try {
                     const jsonStr = base64ToUtf8(receiptDataParam);
@@ -716,6 +719,8 @@
 
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
+            document.getElementById('appNavbar').style.display = 'none';
+            document.getElementById('appBrandHead').style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
             document.getElementById('sRName').innerText = data.name || "-";
@@ -782,12 +787,15 @@
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
+        // Zip અને બ્રાઉઝર બંનેમાં કામ કરે તેવા વ્હોટ્સએપ ઓપનર
         function openWhatsAppUrl(phone, text) {
             let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
             const encodedText = encodeURIComponent(text);
-            const url = `https://wa.me/91${cleanPhone}?text=${encodedText}`;
-            window.open(url, '_blank');
+            
+            // Zip App / App View મા યોગ્ય રીતે ચાલવા માટે fallback સેટિંગ
+            const waWebUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedText}`;
+            window.open(waWebUrl, '_blank');
         }
 
         async function selectContactFromPhone() {
@@ -842,7 +850,6 @@
             if (localStorage.getItem('NNC_master')) masterSettings = JSON.parse(localStorage.getItem('NNC_master'));
         }
 
-        // --- સુધારેલ ક્લાઉડ બેકઅપ અને રિસ્ટોર ફંક્શન્સ ---
         async function backupDataToCloud() {
             if (!navigator.onLine) {
                 alert("ઇન્ટરનેટ જોડાણ નથી. કૃપા કરીને ઓનલાઇન થાઓ.");
@@ -921,7 +928,6 @@
                 alert("❌ ક્લાઉડ રીસ્ટોર કનેક્શન નિષ્ફળ: " + err.message);
             }
         }
-        // -----------------------------------------------------
 
         function recalculateStudentTotals() {
             const today = new Date();
@@ -1340,6 +1346,8 @@
 
             document.getElementById('recPayMode').value = "રોકડા/ઓન લાઈન";
             document.getElementById('recPayer').value = currentStudent ? currentStudent.name + " ના વાલી" : "";
+            
+            document.getElementById('recPaidInput').value = "0";
 
             calculateReceiptTotals();
         }
@@ -1410,7 +1418,8 @@
 
             const jsonStr = JSON.stringify(dataToEncode);
             const encodedData = utf8ToBase64(jsonStr);
-            const baseUrl = window.location.origin + window.location.pathname;
+            
+            let baseUrl = window.location.href.split('?')[0];
             return `${baseUrl}?receipt=${encodedData}`;
         }
 
@@ -1457,39 +1466,44 @@
             recalculateStudentTotals();
             renderFeeHistoryTable();
 
+            displayReceiptDataInPreview(newReceipt);
+        }
+
+        // પ્રીવ્યૂ વિન્ડોમાં રસીદ લોડ કરવાનું યુનિવર્સલ ફંક્શન
+        function displayReceiptDataInPreview(receiptObj) {
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
-            document.getElementById('rPayDate').innerText = formatDate(dateVal);
-            document.getElementById('rPeriodFrom').innerText = formatDate(fromDate);
-            document.getElementById('rPeriodTo').innerText = formatDate(toDate);
+            document.getElementById('rPayDate').innerText = formatDate(receiptObj.date);
+            document.getElementById('rPeriodFrom').innerText = formatDate(receiptObj.fromDate);
+            document.getElementById('rPeriodTo').innerText = formatDate(receiptObj.toDate);
 
             const tbody = document.getElementById('receiptTableBody');
             tbody.innerHTML = `
                 <tr>
                     <td>1</td>
-                    <td>ટ્યુશન ફી (${formatDate(fromDate)} થી ${formatDate(toDate)})</td>
-                    <td>₹${tuitionFee}</td>
+                    <td>ટ્યુશન ફી (${formatDate(receiptObj.fromDate)} થી ${formatDate(receiptObj.toDate)})</td>
+                    <td>₹${receiptObj.tuitionFee}</td>
                 </tr>
             `;
 
-            if (statFee > 0) {
+            if (receiptObj.statFee > 0) {
                 tbody.innerHTML += `
                     <tr>
                         <td>2</td>
                         <td>સ્ટેશનરી ચાર્જ</td>
-                        <td>₹${statFee}</td>
+                        <td>₹${receiptObj.statFee}</td>
                     </tr>
                 `;
             }
 
-            document.getElementById('rTotalVal').innerText = '₹' + grandTotal;
-            document.getElementById('rPaidVal').innerText = '₹' + paidVal;
-            document.getElementById('rDueVal').innerText = '₹' + dueVal;
-            document.getElementById('rMode').innerText = payMode;
-            document.getElementById('rPayer').innerText = payer;
+            document.getElementById('rTotalVal').innerText = '₹' + receiptObj.grandTotal;
+            document.getElementById('rPaidVal').innerText = '₹' + receiptObj.paidVal;
+            document.getElementById('rDueVal').innerText = '₹' + receiptObj.dueVal;
+            document.getElementById('rMode').innerText = receiptObj.payMode;
+            document.getElementById('rPayer').innerText = receiptObj.payer;
 
-            const onlineLink = generateReceiptShareableLink(newReceipt);
+            const onlineLink = generateReceiptShareableLink(receiptObj);
             document.getElementById('receiptGeneratedUrl').value = onlineLink;
 
             const previewContainer = document.getElementById('previewContainer');
@@ -1597,6 +1611,7 @@
             });
         }
 
+        // ફી પોચ હિસ્ટ્રી ટેબલમાં ℹ️ બટન ઉમેરેલ છે
         function renderFeeHistoryTable() {
             const tbody = document.getElementById('feeHistoryTableBody');
             tbody.innerHTML = '';
@@ -1616,12 +1631,21 @@
                         <td>₹${r.dueVal}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')">✏️</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')">🗑️</button>
+                            <button title="પહોંચ જુઓ" style="padding:2px 6px; font-size:11px; background:#0097a7; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="viewReceiptInfo('${r.id}')">ℹ️</button>
+                            <button title="સુધારો" style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')">✏️</button>
+                            <button title="ડિલીટ કરો" style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')">🗑️</button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        // ℹ️ બટન પર ક્લિક કરવાથી જૂની ફી જોવા માટે
+        function viewReceiptInfo(receiptId) {
+            if (!currentStudent || !currentStudent.receipts) return;
+            const r = currentStudent.receipts.find(item => item.id === receiptId);
+            if (!r) return;
+            displayReceiptDataInPreview(r);
         }
 
         function editReceipt(receiptId) {
