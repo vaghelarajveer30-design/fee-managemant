@@ -74,7 +74,7 @@
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (અન્ય બધું છુપાઈ જશે) -->
+    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
             <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
@@ -532,7 +532,7 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
-            <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક (જેમાં i બટન ઉમેરેલ છે) -->
+            <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -664,7 +664,7 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // યુનિકોડ સપોર્ટ ધરાવતું Base64 એન્કોડિંગ (Zip એપ્લિકેશન કે બ્રાઉઝરમાં લિંક તૂટશે નહિ)
+        // ગુજરાતી અક્ષરો (Unicode) સાચવીને Base64 એન્કોડ કરવા માટે
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
@@ -681,7 +681,6 @@
             const urlParams = new URLSearchParams(window.location.search);
             const receiptDataParam = urlParams.get('receipt');
 
-            // ઓનલાઈન લિંક ખોલવા પર માત્ર રસીદ જ દેખાશે
             if (receiptDataParam) {
                 try {
                     const jsonStr = base64ToUtf8(receiptDataParam);
@@ -787,13 +786,10 @@
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
-        // Zip અને બ્રાઉઝર બંનેમાં કામ કરે તેવા વ્હોટ્સએપ ઓપનર
         function openWhatsAppUrl(phone, text) {
             let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
             const encodedText = encodeURIComponent(text);
-            
-            // Zip App / App View મા યોગ્ય રીતે ચાલવા માટે fallback સેટિંગ
             const waWebUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedText}`;
             window.open(waWebUrl, '_blank');
         }
@@ -1469,7 +1465,6 @@
             displayReceiptDataInPreview(newReceipt);
         }
 
-        // પ્રીવ્યૂ વિન્ડોમાં રસીદ લોડ કરવાનું યુનિવર્સલ ફંક્શન
         function displayReceiptDataInPreview(receiptObj) {
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
@@ -1611,7 +1606,6 @@
             });
         }
 
-        // ફી પોચ હિસ્ટ્રી ટેબલમાં ℹ️ બટન ઉમેરેલ છે
         function renderFeeHistoryTable() {
             const tbody = document.getElementById('feeHistoryTableBody');
             tbody.innerHTML = '';
@@ -1640,7 +1634,6 @@
             });
         }
 
-        // ℹ️ બટન પર ક્લિક કરવાથી જૂની ફી જોવા માટે
         function viewReceiptInfo(receiptId) {
             if (!currentStudent || !currentStudent.receipts) return;
             const r = currentStudent.receipts.find(item => item.id === receiptId);
