@@ -74,10 +74,10 @@
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (માત્ર રસીદ જ દેખાશે) -->
+    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (અન્ય બધું છુપાઈ જશે) -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
-            <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ફી રસીદ</h3>
+            <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
             <div class="receipt-card" id="standalonePrintArea">
                 <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
                 <div class="receipt-user-info">
@@ -664,7 +664,6 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // ઓપ્ટીમાઇઝ્ડ ટૂંકું Base64 ફોર્મેટ
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
@@ -677,13 +676,27 @@
             }).join(''));
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const receiptDataParam = urlParams.get('rcpt') || urlParams.get('receipt');
+            const receiptIdParam = urlParams.get('r');
+            const legacyReceiptDataParam = urlParams.get('receipt');
 
-            if (receiptDataParam) {
+            // નવી ટૂંકી receipt link: ?r=XXXXXXXX
+            if (receiptIdParam) {
                 try {
-                    const jsonStr = base64ToUtf8(receiptDataParam);
+                    await loadPublicReceipt(receiptIdParam);
+                    return;
+                } catch(e) {
+                    console.error("ટૂંકી પહોંચ લિંક ખોલવામાં ભૂલ:", e);
+                    alert("❌ આ ફી પહોંચની લિંક મળી નથી અથવા ઈન્ટરનેટ ઉપલબ્ધ નથી.");
+                    return;
+                }
+            }
+
+            // જૂની receipt link પણ ચાલુ રહેશે
+            if (legacyReceiptDataParam) {
+                try {
+                    const jsonStr = base64ToUtf8(legacyReceiptDataParam);
                     const data = JSON.parse(jsonStr);
                     renderStandaloneReceipt(data);
                     return;
@@ -716,49 +729,55 @@
             document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
         };
 
+        async function loadPublicReceipt(receiptId) {
+            let dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
+            if (!dbUrl) throw new Error("Firebase Database URL સેટ નથી.");
+
+            const response = await fetch(`${dbUrl}/publicReceipts/${encodeURIComponent(receiptId)}.json`);
+            if (!response.ok) throw new Error("Receipt not found");
+            const data = await response.json();
+
+            if (!data || !data.name || !data.date) throw new Error("Invalid receipt");
+            renderStandaloneReceipt(data);
+        }
+
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
             document.getElementById('appNavbar').style.display = 'none';
             document.getElementById('appBrandHead').style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
-            document.getElementById('sRName').innerText = data.n || data.name || "-";
-            document.getElementById('sRStd').innerText = data.s || data.std || "-";
-            document.getElementById('sRCourse').innerText = data.c || data.course || "-";
-            document.getElementById('sRPayDate').innerText = formatDate(data.d || data.date);
-            document.getElementById('sRPeriodFrom').innerText = formatDate(data.f || data.fromDate);
-            document.getElementById('sRPeriodTo').innerText = formatDate(data.t || data.toDate);
-
-            const tuitionFee = data.tf !== undefined ? data.tf : data.tuitionFee;
-            const statFee = data.sf !== undefined ? data.sf : data.statFee;
-            const grandTotal = data.gt !== undefined ? data.gt : data.grandTotal;
-            const paidVal = data.p !== undefined ? data.p : data.paidVal;
-            const dueVal = data.dv !== undefined ? data.dv : data.dueVal;
+            document.getElementById('sRName').innerText = data.name || "-";
+            document.getElementById('sRStd').innerText = data.std || "-";
+            document.getElementById('sRCourse').innerText = data.course || "-";
+            document.getElementById('sRPayDate').innerText = formatDate(data.date);
+            document.getElementById('sRPeriodFrom').innerText = formatDate(data.fromDate);
+            document.getElementById('sRPeriodTo').innerText = formatDate(data.toDate);
 
             const tbody = document.getElementById('sRTableBody');
             tbody.innerHTML = `
                 <tr>
                     <td>1</td>
-                    <td>ટ્યુશન ફી (${formatDate(data.f || data.fromDate)} થી ${formatDate(data.t || data.toDate)})</td>
-                    <td>₹${tuitionFee}</td>
+                    <td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td>
+                    <td>₹${data.tuitionFee}</td>
                 </tr>
             `;
 
-            if (statFee > 0) {
+            if (data.statFee > 0) {
                 tbody.innerHTML += `
                     <tr>
                         <td>2</td>
                         <td>સ્ટેશનરી ચાર્જ</td>
-                        <td>₹${statFee}</td>
+                        <td>₹${data.statFee}</td>
                     </tr>
                 `;
             }
 
-            document.getElementById('sRTotalVal').innerText = '₹' + grandTotal;
-            document.getElementById('sRPaidVal').innerText = '₹' + paidVal;
-            document.getElementById('sRDueVal').innerText = '₹' + dueVal;
-            document.getElementById('sRMode').innerText = data.pm || data.payMode || "-";
-            document.getElementById('sRPayer').innerText = data.py || data.payer || "-";
+            document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
+            document.getElementById('sRPaidVal').innerText = '₹' + data.paidVal;
+            document.getElementById('sRDueVal').innerText = '₹' + data.dueVal;
+            document.getElementById('sRMode').innerText = data.payMode || "-";
+            document.getElementById('sRPayer').innerText = data.payer || "-";
         }
 
         function downloadStandaloneImage() {
@@ -786,10 +805,16 @@
             });
         }
 
-        // સુધારેલું WhatsApp લિંક શેરિંગ - માત્ર લિંક જ મોકલવા માટે
+        // સુધારેલું WhatsApp લિંક શેરિંગ ફંક્શન - જેમાં માત્ર પહોંચની જ લિંક જશે
         function shareReceiptLinkWhatsApp() {
             const linkVal = document.getElementById('receiptGeneratedUrl').value;
-            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચે આપેલી લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            if (!linkVal || linkVal === "લિંક બની રહી છે...") {
+                alert("પહોંચની લિંક હજુ તૈયાર થઈ રહી છે. થોડીવાર પછી ફરી પ્રયાસ કરો.");
+                return;
+            }
+
+            // WhatsAppમાં માત્ર ફી પહોંચની લિંક મોકલાય છે; આખી એપની લિંક નહીં.
+            const text = `🧾 *ફી પહોંચ*\n\nવિદ્યાર્થી: *${currentStudent.name}*\n🔗 ${linkVal}`;
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
@@ -1402,32 +1427,81 @@
             document.getElementById('recDueInput').value = due;
         }
 
-        // લિંક શોર્ટ કરવા માટે કમ્પ્રેશ કરેલ શોર્ટ ઓબ્જેક્ટ કીઝ
-        function generateReceiptShareableLink(receiptObj) {
-            const dataToEncode = {
-                n: currentStudent.name,
-                s: currentStudent.std,
-                c: currentStudent.course,
-                ph: currentStudent.phone,
-                d: receiptObj.date,
-                f: receiptObj.fromDate,
-                t: receiptObj.toDate,
-                tf: receiptObj.tuitionFee,
-                sf: receiptObj.statFee,
-                gt: receiptObj.grandTotal,
-                p: receiptObj.paidVal,
-                dv: receiptObj.dueVal,
-                pm: receiptObj.payMode,
-                py: receiptObj.payer
-            };
-
-            const jsonStr = JSON.stringify(dataToEncode);
-            const encodedData = utf8ToBase64(jsonStr);
-            
-            let baseUrl = window.location.href.split('?')[0];
-            return `${baseUrl}?rcpt=${encodedData}`;
+        // ટૂંકી ઓનલાઈન ફી પહોંચ લિંક:
+        // સંપૂર્ણ એપ/ડેટા URLમાં મૂકવાને બદલે માત્ર receipt ID મૂકાય છે.
+        // પહોંચ Firebase માં /publicReceipts/<id> પર સેવ થાય છે.
+        function generateShortReceiptId() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            let id = "";
+            const bytes = new Uint8Array(8);
+            if (window.crypto && crypto.getRandomValues) {
+                crypto.getRandomValues(bytes);
+                for (let i = 0; i < bytes.length; i++) id += chars[bytes[i] % chars.length];
+            } else {
+                for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return id;
         }
 
+        async function savePublicReceiptAndGetLink(receiptObj) {
+            const dataToStore = {
+                name: currentStudent.name,
+                std: currentStudent.std,
+                course: currentStudent.course,
+                date: receiptObj.date,
+                fromDate: receiptObj.fromDate,
+                toDate: receiptObj.toDate,
+                tuitionFee: receiptObj.tuitionFee,
+                statFee: receiptObj.statFee,
+                grandTotal: receiptObj.grandTotal,
+                paidVal: receiptObj.paidVal,
+                dueVal: receiptObj.dueVal,
+                payMode: receiptObj.payMode,
+                payer: receiptObj.payer
+            };
+
+            let dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
+            if (!dbUrl) throw new Error("Firebase Database URL સેટ નથી.");
+
+            const receiptId = generateShortReceiptId();
+            const saveUrl = `${dbUrl}/publicReceipts/${receiptId}.json`;
+
+            const response = await fetch(saveUrl, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dataToStore)
+            });
+
+            if (!response.ok) throw new Error("ફી પહોંચ Firebase પર સેવ થઈ નથી.");
+
+            // URLમાં માત્ર receipt ID જાય છે — આખી એપ અથવા receipt JSON નહીં.
+            const baseUrl = window.location.href.split("?")[0].split("#")[0];
+            return `${baseUrl}?r=${receiptId}`;
+        }
+
+        // જૂની embedded receipt link માટે backward compatibility
+        function generateLegacyReceiptLink(receiptObj) {
+            const dataToEncode = {
+                name: currentStudent.name,
+                std: currentStudent.std,
+                course: currentStudent.course,
+                date: receiptObj.date,
+                fromDate: receiptObj.fromDate,
+                toDate: receiptObj.toDate,
+                tuitionFee: receiptObj.tuitionFee,
+                statFee: receiptObj.statFee,
+                grandTotal: receiptObj.grandTotal,
+                paidVal: receiptObj.paidVal,
+                dueVal: receiptObj.dueVal,
+                payMode: receiptObj.payMode,
+                payer: receiptObj.payer
+            };
+            const baseUrl = window.location.href.split("?")[0].split("#")[0];
+            return `${baseUrl}?receipt=${utf8ToBase64(JSON.stringify(dataToEncode))}`;
+        }
+
+        // પહોંચ જનરેટ થાય ત્યારે ટૂંકી, માત્ર પહોંચની જ લિંક તૈયાર થશે
+//         ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -1473,11 +1547,11 @@
 
             displayReceiptDataInPreview(newReceipt);
             
-            // રસીદ તૈયાર થતાં જ ડાયરેક્ટ રસીદ જોવા માટેની લિંક WhatsApp પર શેર થશે
+            // ફી પહોંચ જનરેટ થતાં જ સીધી તેની ઓનલાઈન લિંક સેટ થઈને WhatsApp પર શેર થશે
             shareReceiptLinkWhatsApp();
         }
 
-        function displayReceiptDataInPreview(receiptObj) {
+        async function displayReceiptDataInPreview(receiptObj) {
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
@@ -1510,8 +1584,17 @@
             document.getElementById('rMode').innerText = receiptObj.payMode;
             document.getElementById('rPayer').innerText = receiptObj.payer;
 
-            const onlineLink = generateReceiptShareableLink(receiptObj);
-            document.getElementById('receiptGeneratedUrl').value = onlineLink;
+            // ટૂંકી receipt-only link Firebase પર સેવ થયા પછી મળશે.
+            document.getElementById('receiptGeneratedUrl').value = "લિંક બની રહી છે...";
+            try {
+                const onlineLink = await savePublicReceiptAndGetLink(receiptObj);
+                document.getElementById('receiptGeneratedUrl').value = onlineLink;
+            } catch (e) {
+                // Firebase ઉપલબ્ધ ન હોય તો જૂની link પદ્ધતિથી receipt ચાલુ રહેશે.
+                const fallbackLink = generateLegacyReceiptLink(receiptObj);
+                document.getElementById('receiptGeneratedUrl').value = fallbackLink;
+                console.warn("Short link unavailable, using fallback receipt link:", e);
+            }
 
             const previewContainer = document.getElementById('previewContainer');
             previewContainer.style.display = 'block';
