@@ -1846,14 +1846,21 @@ if ('caches' in window) {
                     exportDate: new Date().toISOString()
                 };
 
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
                 const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `FeeManager_Backup_${new Date().toISOString().slice(0,10)}.json`);
+                downloadAnchor.href = url;
+                downloadAnchor.download = `FeeManager_Backup_${new Date().toISOString().slice(0,10)}.json`;
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
-                downloadAnchor.remove();
-                alert("બેકઅપ ફાઈલ સફળતાપૂર્વક ડાઉનલોડ થઈ ગઈ છે!");
+                
+                setTimeout(() => {
+                    document.body.removeChild(downloadAnchor);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
             } catch (error) {
                 console.error(error);
                 alert("બેકઅપ લેવામાં ભૂલ આવી: " + error.message);
@@ -1863,11 +1870,16 @@ if ('caches' in window) {
         function restoreJSONBackup() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.json';
+            fileInput.accept = '.json,application/json';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
 
             fileInput.onchange = function(e) {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    document.body.removeChild(fileInput);
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = function(event) {
@@ -1876,6 +1888,7 @@ if ('caches' in window) {
 
                         if (!data.students && !Array.isArray(data)) {
                             alert("આ ફાઈલમાં કોઈ સાચો બેકઅપ ડેટા મળ્યો નથી!");
+                            document.body.removeChild(fileInput);
                             return;
                         }
 
@@ -1912,6 +1925,10 @@ if ('caches' in window) {
                     } catch (err) {
                         console.error(err);
                         alert("ફાઈલ રીડ કરવામાં ભૂલ આવી. કૃપા કરીને સાચી .json બેકઅપ ફાઈલ પસંદ કરો.");
+                    } finally {
+                        if(document.body.contains(fileInput)) {
+                            document.body.removeChild(fileInput);
+                        }
                     }
                 };
                 reader.readAsText(file);
