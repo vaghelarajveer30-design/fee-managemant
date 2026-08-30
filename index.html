@@ -2022,27 +2022,25 @@
             }
             return dateStr;
         }
-    </script>
-</body>
-</html>
-<script>
+   <script>
 window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const viewMode = urlParams.get('view');
-    const encodedData = urlParams.get('data');
 
-    if (viewMode === 'receipt_only' || encodedData) {
-        const mainElements = document.querySelectorAll('body > *:not(#receiptModal):not(#receiptPrintArea):not(#standaloneReceiptArea)');
-        mainElements.forEach(el => {
-            if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
-                el.style.display = 'none';
-            }
-        });
+    // માત્ર અને માત્ર જો લિંકમાં view=receipt_only લખેલું હોય તો જ છુપાવો
+    if (viewMode === 'receipt_only') {
+        // ૧. આખી એપનો મુખ્ય ભાગ છુપાવો
+        const container = document.querySelector('.container') || document.getElementById('mainApp');
+        if (container) {
+            container.style.display = 'none';
+        }
 
-        const receiptBox = document.getElementById('receiptPrintArea') || document.getElementById('standaloneReceiptArea') || document.querySelector('.receipt-card');
-        if (receiptBox) {
-            receiptBox.style.display = 'block';
-            receiptBox.style.margin = '20px auto';
+        // ૨. રસીદનું મોડલ/બોક્સ ઓપન રાખો
+        const receiptModal = document.getElementById('receiptModal') || document.getElementById('receiptPrintArea');
+        if (receiptModal) {
+            receiptModal.style.display = 'block';
+            receiptModal.style.position = 'static';
+            receiptModal.style.margin = '20px auto';
         }
     }
 });
