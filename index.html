@@ -768,16 +768,17 @@
             });
         }
 
-        function copyReceiptLink() {
-            const linkInput = document.getElementById('receiptGeneratedUrl');
-            navigator.clipboard.writeText(linkInput.value).then(() => {
-                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
-            }).catch(() => {
-                linkInput.select();
-                document.execCommand('copy');
-                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
-            });
-        }
+        // આ જૂનો કોડ લાઇન 771 થી 780 પર છે:
+function copyReceiptLink() {
+    const linkInput = document.getElementById('receiptGeneratedUrl');
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+        alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
+    }).catch(() => {
+        linkInput.select();
+        document.execCommand('copy');
+        alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
+    });
+}
 
         // સુધારેલું WhatsApp લિંક શેરિંગ ફંક્શન - જેમાં માત્ર પહોંચની જ લિંક જશે
        async function shareReceiptLinkWhatsApp() {
