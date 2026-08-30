@@ -594,6 +594,15 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
+        // શોર્ટ વૉટ્સએપ લિંક ઓપન કરવા માટેનું હેલ્પર ફંક્શન
+        function openWhatsAppUrl(phone, text) {
+            let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
+            if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
+            const encodedText = encodeURIComponent(text);
+            const url = `https://wa.me/91${cleanPhone}?text=${encodedText}`;
+            window.open(url, '_blank');
+        }
+
         async function selectContactFromPhone() {
             if ('contacts' in navigator && 'ContactsManager' in window) {
                 try {
@@ -1027,15 +1036,14 @@
             const fromStr = formatDate(document.getElementById('alertFromDate').value);
             const toStr = formatDate(document.getElementById('alertToDate').value);
 
-            let msg = `🙏🏻 *નમસ્તે વાલીશ્રી,*\\n\\n`;
-            msg += `*નિર્મળા નવોદય ક્લાિસિસ* માં ભણતા આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ટ્યુશન ફી બાકી રહેતી હોવાથી આ નમ્ર યાદી મોકલેલ છે.\\n\\n`;
-            msg += `🗓️ *સમયગાળો:* ${fromStr} થી ${toStr}\\n`;
-            msg += `❗ *કુલ બાકી ફી રકમ:* *₹${dueAmt}*\\n\\n`;
-            msg += `કૃપા કરીને આ ફી વહેલી તકે જમા કરાવવા વિનંતી છે. જો ફી જમા કરાવી દીધી હોય તો આ મેસેજ અવગણવો. 🌸\\n\\n`;
-            msg += `આભાર,\\n*નિર્મળા નવોદય ક્લાિસિસ*\\nવાઘેલા રવિ વિનોદભાઈ\\n📲 *સંપર્ક:* 9033197515`;
+            let msg = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n`;
+            msg += `*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ટ્યુશન ફી બાકી રહેતી હોવાથી આ યાદી મોકલેલ છે.\n\n`;
+            msg += `🗓️ *સમયગાળો:* ${fromStr} થી ${toStr}\n`;
+            msg += `❗ *બાકી ફી રકમ:* *₹${dueAmt}*\n\n`;
+            msg += `આ ફી વહેલી તકે જમા કરાવવા વિનંતી છે. 🌸\n\n`;
+            msg += `અભિનંદન,\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
 
-            const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
-            window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+            openWhatsAppUrl(currentStudent.phone, msg);
         }
 
         function sendThankYouWhatsApp() {
@@ -1052,20 +1060,19 @@
             const todayStr = formatDate(new Date().toISOString().split('T')[0]);
             let remainingDue = currentStudent.due;
 
-            let thankMsg = `🙏🏻 *આભાર પત્ર - ફી રસીદ*\\n\\n`;
-            thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી સફળતાપૂર્વક જમા થઈ ગઈ છે.\\n\\n`;
-            thankMsg += `💳 *જમા કરાવેલ ફી રકમ:* *₹${paidAmount}*\\n`;
-            thankMsg += `📅 *જમા તારીખ:* ${todayStr}\\n`;
+            let thankMsg = `🙏🏻 *આભાર પત્ર - ફી રસીદ*\n\n`;
+            thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી જમા થયેલ છે.\n\n`;
+            thankMsg += `💳 *જમા રકમ:* *₹${paidAmount}*\n`;
+            thankMsg += `📅 *તારીખ:* ${todayStr}\n`;
             if (remainingDue > 0) {
-                thankMsg += `❗ *બાકી રહેતી રકમ:* ₹${remainingDue}\\n`;
+                thankMsg += `❗ *બાકી રકમ:* ₹${remainingDue}\n`;
             } else {
-                thankMsg += `✅ *બાકી સ્ટેટસ:* કોઈ ફી બાકી નથી (પૂર્ણ જમા)\\n`;
+                thankMsg += `✅ *બાકી સ્ટેટસ:* પૂર્ણ જમા\n`;
             }
-            thankMsg += `\\nઅમારા પર વિશ્વાસ મૂકવા અને સમયસર ફી ભરવા બદલ આપનો ખૂબ ખૂબ આભાર! 🌸\\n\\n`;
-            thankMsg += `શુભેચ્છક,\\n*નિર્મળા નવોદય ક્લાિસિસ*\\nવાઘેલા રવિ વિનોદભાઈ\\n📲 *સંપર્ક:* 9033197515`;
+            thankMsg += `\nસમયસર ફી ભરવા બદલ આપનો ખૂબ ખૂબ આભાર! 🌸\n\n`;
+            thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
 
-            const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
-            window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(thankMsg)}`, '_blank');
+            openWhatsAppUrl(currentStudent.phone, thankMsg);
         }
 
         function resetReceiptForm() {
@@ -1263,7 +1270,7 @@
                     const file = new File([generatedBlob], `Fee_Receipt_${currentStudent.name}.png`, { type: 'image/png' });
                     await navigator.share({
                         title: 'ફી પહોંચ - નિર્મળા નવોદય ક્લાિસિસ',
-                        text: `*નિર્મળા નવોદય ક્લાિસિસ*\\nવિદ્યાર્થી: ${currentStudent.name}\\nફી પહોંચ નીચે મુજબ છે:`,
+                        text: `*નિર્મળા નવોદય ક્લાિસિસ*\nવિદ્યાર્થી: ${currentStudent.name}\nફી પહોંચ નીચે મુજબ છે:`,
                         files: [file]
                     });
                     return;
@@ -1289,25 +1296,21 @@
             const pFrom = document.getElementById('rPeriodFrom').innerText;
             const pTo = document.getElementById('rPeriodTo').innerText;
             const mode = document.getElementById('rMode').innerText;
-            const payer = document.getElementById('rPayer').innerText;
 
-            let msg = `🧾 *ફી પહોંચ / રસીદ*\\n`;
-            msg += `*નિર્મળા નવોદય ક્લાિસિસ*\\n`;
-            msg += `----------------------------------\\n`;
-            msg += `👤 *વિદ્યાર્થી:* ${currentStudent.name} (ધોરણ: ${currentStudent.std})\\n`;
-            msg += `📅 *રસીદ તારીખ:* ${payDate}\\n`;
-            msg += `🗓️ *સમયગાળો:* ${pFrom} થી ${pTo}\\n`;
-            msg += `----------------------------------\\n`;
-            msg += `💰 *કુલ ફી રકમ:* ${tuitionFee}\\n`;
-            msg += `✅ *જમા કરેલ ફી:* ${paidVal}\\n`;
-            msg += `❗ *બાકી રહેતી ફી:* ${dueVal}\\n`;
-            msg += `----------------------------------\\n`;
-            msg += `💳 *મોડ:* ${mode} | ✍️ *ભરનાર:* ${payer}\\n\\n`;
-            msg += `સમયસર ફી ભરવા બદલ આપનો ખૂબ ખૂબ આભાર! 🌸\\n\\n`;
-            msg += `શુભેચ્છક,\\n*નિર્મળા નવોદય ક્લાિસિસ*\\nવાઘેલા રવિ વિનોદભાઈ\\n📲 *સંપર્ક:* 9033197515`;
+            let msg = `🧾 *ફી પહોંચ / રસીદ*\n`;
+            msg += `*નિર્મળા નવોદય ક્લાિસિસ*\n`;
+            msg += `---------------------\n`;
+            msg += `👤 *નામ:* ${currentStudent.name} (ધો: ${currentStudent.std})\n`;
+            msg += `📅 *તારીખ:* ${payDate}\n`;
+            msg += `🗓️ *સમયગાળો:* ${pFrom} થી ${pTo}\n`;
+            msg += `---------------------\n`;
+            msg += `💰 *કુલ ફી:* ${tuitionFee}\n`;
+            msg += `✅ *જમા ફી:* ${paidVal}\n`;
+            msg += `❗ *બાકી ફી:* ${dueVal}\n`;
+            msg += `💳 *મોડ:* ${mode}\n\n`;
+            msg += `આભાર! 🌸\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ (9033197515)`;
 
-            const targetPhone = currentStudent.phone ? currentStudent.phone.trim() : "";
-            window.open(`https://api.whatsapp.com/send?phone=91${targetPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+            openWhatsAppUrl(currentStudent.phone, msg);
         }
 
         function copyTextReceipt() {
