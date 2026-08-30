@@ -2021,3 +2021,27 @@
     </script>
 </body>
 </html>
+// વાલી જ્યારે લિંક ખોલે ત્યારે આખી એપ છુપાવી માત્ર પહોંચ જ બતાવવા માટે
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewMode = urlParams.get('view');
+    const encodedData = urlParams.get('data');
+
+    // જો લિંકમાં view=receipt_only અથવા ડેટા હોય તો આખી એપ છુપાવો
+    if (viewMode === 'receipt_only' || encodedData) {
+        // ૧. આખી એપના મુખ્ય સેક્શન/બટન છુપાવો
+        const mainElements = document.querySelectorAll('body > *:not(#receiptModal):not(#receiptPrintArea):not(#standaloneReceiptArea)');
+        mainElements.forEach(el => {
+            if (el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') {
+                el.style.display = 'none';
+            }
+        });
+
+        // ૨. માત્ર રસીદ બતાવતું બોક્સ ખુલ્લું રાખો
+        const receiptBox = document.getElementById('receiptPrintArea') || document.getElementById('standaloneReceiptArea') || document.querySelector('.receipt-card');
+        if (receiptBox) {
+            receiptBox.style.display = 'block';
+            receiptBox.style.margin = '20px auto';
+        }
+    }
+});
