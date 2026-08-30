@@ -532,7 +532,6 @@
                 <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
-            <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક -->
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📊 ફી પહોંચ હિસ્ટ્રી & સ્ટેટસ</h4>
                 <table>
@@ -606,11 +605,11 @@
                 </div>
 
                 <div class="short-link-card">
-                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની ફી પહોંચ ઓનલાઈન જોવા માટેની શોર્ટ લિંક:</div>
+                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
                     <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
                     <div class="grid-2">
-                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 શોર્ટ લિંક કોપી કરો</button>
-                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર પહોંચ મોકલો</button>
+                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
+                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર લિંક મોકલો</button>
                     </div>
                 </div>
 
@@ -674,6 +673,20 @@
             return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
+        }
+
+        // 1. અપડેટ: TinyURL API ની મદદથી WhatsApp લિંક ટૂંકી કરવાનું ફંક્શન
+        async function getShortUrl(longUrl) {
+            try {
+                const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                if (res.ok) {
+                    const shortUrl = await res.text();
+                    return shortUrl.trim();
+                }
+            } catch (e) {
+                console.error("Link Shortening Error:", e);
+            }
+            return longUrl;
         }
 
         window.onload = function() {
@@ -771,35 +784,17 @@
         function copyReceiptLink() {
             const linkInput = document.getElementById('receiptGeneratedUrl');
             navigator.clipboard.writeText(linkInput.value).then(() => {
-                alert("શોર્ટ ફી લિંક કોપી થઈ ગઈ છે!");
+                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
             }).catch(() => {
                 linkInput.select();
                 document.execCommand('copy');
-                alert("શોર્ટ ફી લિંક કોપી થઈ ગઈ છે!");
+                alert("પહોંચ ઓનલાઈન લિંક કોપી થઈ ગઈ છે!");
             });
         }
 
-        // સુધારેલું WhatsApp શેરિંગ: આખી એપ નહીં પણ ફક્ત ફી ની પહોંચ અને લિંક શેર કરશે
         function shareReceiptLinkWhatsApp() {
-            const shortLink = document.getElementById('receiptGeneratedUrl').value;
-            const paid = document.getElementById('rPaidVal').innerText;
-            const due = document.getElementById('rDueVal').innerText;
-            const total = document.getElementById('rTotalVal').innerText;
-            const fromDate = document.getElementById('rPeriodFrom').innerText;
-            const toDate = document.getElementById('rPeriodTo').innerText;
-
-            let text = `🧾 *નિર્મળા નવોદય ક્લાિસિસ - ફી પહોંચ*\n\n`;
-            text += `👤 *વિદ્યાર્થીનું નામ:* ${currentStudent.name}\n`;
-            text += `📚 *ધોરણ:* ${currentStudent.std} | *કોર્સ:* ${currentStudent.course}\n`;
-            text += `🗓️ *સમયગાળો:* ${fromDate} થી ${toDate}\n`;
-            text += `--------------------------\n`;
-            text += `💰 *કુલ ફી રકમ:* ${total}\n`;
-            text += `✅ *જમા કરેલ ફી:* ${paid}\n`;
-            text += `❗ *બાકી રહેતી ફી:* ${due}\n`;
-            text += `--------------------------\n`;
-            text += `🔗 *ઓનલાઈન રસીદ જોવા માટે:* ${shortLink}\n\n`;
-            text += `આભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
-
+            const linkVal = document.getElementById('receiptGeneratedUrl').value;
+            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
@@ -1437,20 +1432,7 @@
             return `${baseUrl}?receipt=${encodedData}`;
         }
 
-        // 1. શોર્ટ લિંક જનરેટર વિજેટ કાર્યપદ્ધતિ
-        async function generateShortenerLink(longUrl) {
-            try {
-                const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-                if(res.ok) {
-                    const shortUrl = await res.text();
-                    return shortUrl;
-                }
-            } catch(e) {
-                console.log("TinyURL સેવા કામ નથી કરી રહી, મૂળ લિંક રાખવામાં આવશે.");
-            }
-            return longUrl;
-        }
-
+        // પહોંચ જનરેટ થાય ત્યારે ઈમેજ સેન્ડ કરવાનો ફંકશન કૉલ થશે
         async function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -1496,8 +1478,8 @@
 
             await displayReceiptDataInPreview(newReceipt);
             
-            // 2. પહોંચ લિંક જનરેટ થયા બાદ સીધું વોટ્સએપ પર સેન્ડ કરવું
-            shareReceiptLinkWhatsApp();
+            // 2. અપડેટ: આખી એપ નહીં પરંતુ માત્ર પહોંચની ઈમેજ શેર થશે
+            shareWhatsAppImage();
         }
 
         async function displayReceiptDataInPreview(receiptObj) {
@@ -1533,34 +1515,35 @@
             document.getElementById('rMode').innerText = receiptObj.payMode;
             document.getElementById('rPayer').innerText = receiptObj.payer;
 
-            const onlineLink = generateReceiptShareableLink(receiptObj);
-            
-            // ઓટોમેટીક શોર્ટ લિંક જનરેટ થશે
-            document.getElementById('receiptGeneratedUrl').value = "લિંક શોર્ટ થઈ રહી છે...";
-            const shortUrl = await generateShortenerLink(onlineLink);
-            document.getElementById('receiptGeneratedUrl').value = shortUrl;
+            const rawLink = generateReceiptShareableLink(receiptObj);
+            // 1. અપડેટ: શોર્ટ લિંક જનરેટ કરીને ઈનપુટમાં સેટ કરવી
+            const shortLink = await getShortUrl(rawLink);
+            document.getElementById('receiptGeneratedUrl').value = shortLink;
 
             const previewContainer = document.getElementById('previewContainer');
             previewContainer.style.display = 'block';
             previewContainer.scrollIntoView({ behavior: 'smooth' });
 
-            generateReceiptCanvas();
+            await generateReceiptCanvas();
         }
 
         function generateReceiptCanvas() {
-            const printArea = document.getElementById('receiptPrintArea');
-            html2canvas(printArea, { scale: 2 }).then(canvas => {
-                generatedDataUrl = canvas.toDataURL('image/png');
-                canvas.toBlob(blob => {
-                    generatedBlob = blob;
-                }, 'image/png');
+            return new Promise((resolve) => {
+                const printArea = document.getElementById('receiptPrintArea');
+                html2canvas(printArea, { scale: 2 }).then(canvas => {
+                    generatedDataUrl = canvas.toDataURL('image/png');
+                    canvas.toBlob(blob => {
+                        generatedBlob = blob;
+                        resolve();
+                    }, 'image/png');
 
-                const btnDownload = document.getElementById('btnDownloadImageLink');
-                btnDownload.href = generatedDataUrl;
-                btnDownload.download = `Fee_Receipt_${currentStudent.name}.png`;
+                    const btnDownload = document.getElementById('btnDownloadImageLink');
+                    btnDownload.href = generatedDataUrl;
+                    btnDownload.download = `Fee_Receipt_${currentStudent.name}.png`;
 
-                const btnOpen = document.getElementById('btnOpenBrowserLink');
-                btnOpen.href = generatedDataUrl;
+                    const btnOpen = document.getElementById('btnOpenBrowserLink');
+                    btnOpen.href = generatedDataUrl;
+                });
             });
         }
 
@@ -1584,9 +1567,26 @@
             newTab.document.write(`<img src="${generatedDataUrl}" style="max-width:100%;"/>`);
         }
 
-        function shareWhatsAppImage() {
-            document.getElementById('customModal').style.display = 'flex';
-            downloadImageDirectly();
+        // 2. અપડેટ: પહોંચની માત્ર ઈમેજ સેન્ડ થશે (Web Share API વડે ડાયરેક્ટ ઈમેજ ફાઈલ જશે)
+        async function shareWhatsAppImage() {
+            if (!generatedBlob) await generateReceiptCanvas();
+
+            const file = new File([generatedBlob], `Fee_Receipt_${currentStudent.name}.png`, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'ફી પહોંચ',
+                        text: `*નિર્મળા નવોદય ક્લાિસિસ* - ${currentStudent.name} ની ફી પહોંચ`
+                    });
+                } catch (err) {
+                    console.log("Share cancelled or failed:", err);
+                }
+            } else {
+                document.getElementById('customModal').style.display = 'flex';
+                downloadImageDirectly();
+            }
         }
 
         function closeCustomModal() {
