@@ -1931,7 +1931,6 @@ function downloadJSONBackup() {
     }
 }
 
-// ૨. ડેટા રિસ્ટોર કરવાનું સાચું ફંકશન
 function restoreJSONBackup() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1946,35 +1945,53 @@ function restoreJSONBackup() {
             try {
                 const data = JSON.parse(event.target.result);
 
-                if (!data.students && !data.stockList && !data.expenses && !data.masterSettings) {
+                if (!data.students && !Array.isArray(data)) {
                     alert("આ ફાઈલમાં કોઈ સાચો બેકઅપ ડેટા મળ્યો નથી!");
                     return;
                 }
 
-                // ૧. localstorage માં ડેટા સેવ કરો
-                if (data.students) localStorage.setItem('NNC_students', JSON.stringify(data.students));
-                if (data.stockList) localStorage.setItem('NNC_stock', JSON.stringify(data.stockList));
-                if (data.expenses) localStorage.setItem('NNC_expenses', JSON.stringify(data.expenses));
-                if (data.masterSettings) localStorage.setItem('NNC_master', JSON.stringify(data.masterSettings));
+                // ૧. જો બેકઅપમાં સીધું array હોય કે object હોય, બંને હેન્ડલ થશે
+                const studentsList = data.students || (Array.isArray(data) ? data : []);
+                const stock = data.stockList || [];
+                const exp = data.expenses || [];
+                const master = data.masterSettings || {};
 
-                // ૨. મેમરીના વેરીએબલ્સ પણ તરત અપડેટ કરો
-                if (data.students && typeof students !== 'undefined') students = data.students;
-                if (data.stockList && typeof stockList !== 'undefined') stockList = data.stockList;
-                if (data.expenses && typeof expenses !== 'undefined') expenses = data.expenses;
-                if (data.masterSettings && typeof masterSettings !== 'undefined') masterSettings = data.masterSettings;
+                // ૨. બધી શક્ય Storage Keys માં સેવ કરી દો (જેથી કોઈ પણ Key વાપરતી હોય તો લોડ થઈ જાય)
+                localStorage.setItem('NNC_students', JSON.stringify(studentsList));
+                localStorage.setItem('students', JSON.stringify(studentsList));
+                
+                if (stock.length) {
+                    localStorage.setItem('NNC_stock', JSON.stringify(stock));
+                    localStorage.setItem('stockList', JSON.stringify(stock));
+                }
+                if (exp.length) {
+                    localStorage.setItem('NNC_expenses', JSON.stringify(exp));
+                    localStorage.setItem('expenses', JSON.stringify(exp));
+                }
+                if (Object.keys(master).length) {
+                    localStorage.setItem('NNC_master', JSON.stringify(master));
+                    localStorage.setItem('masterSettings', JSON.stringify(master));
+                }
+
+                // ૩. Global Variables પણ તરત બદલી નાખો
+                if (typeof students !== 'undefined') students = studentsList;
+                if (typeof stockList !== 'undefined') stockList = stock;
+                if (typeof expenses !== 'undefined') expenses = exp;
+                if (typeof masterSettings !== 'undefined') masterSettings = master;
 
                 alert("ડેટા સફળતાપૂર્વક રિસ્ટોર થઈ ગયો છે!");
 
-                // ૩. રીલોડ અને પેજ રીફ્રેશ કરો
-                if (typeof loadLocalData === 'function') {
-                    loadLocalData();
-                }
+                // ૪. જે પણ રેન્ડર ફંક્શન હોય તે ચલાવો
+                if (typeof renderStudents === 'function') renderStudents();
+                if (typeof renderDashboard === 'function') renderDashboard();
+                if (typeof loadLocalData === 'function') loadLocalData();
 
-                window.location.reload();
+                // ૫. પેજ રીફ્રેશ કરો
+                setTimeout(() => { window.location.reload(); }, 500);
 
             } catch (err) {
                 console.error(err);
-                alert("ફાઈલ વાંચવામાં ભૂલ આવી! કૃપા કરીને સાચી બેકઅપ ફાઈલ પસંદ કરો.");
+                alert("ફાઈલ રીડ કરવામાં ભૂલ આવી. કૃપા કરીને સાચી .json બેકઅપ ફાઈલ પસંદ કરો.");
             }
         };
         reader.readAsText(file);
