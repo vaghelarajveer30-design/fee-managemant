@@ -74,7 +74,7 @@
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
-    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ -->
+    <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (અન્ય બધું છુપાઈ જશે) -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
         <div class="card">
             <h3 style="color:#1565c0; text-align:center; margin-bottom:10px;">🧾 નિર્મળા નવોદય ક્લાિસિસ - ઓનલાઈન ફી રસીદ</h3>
@@ -664,7 +664,6 @@
         let generatedBlob = null;
         let generatedDataUrl = "";
 
-        // ગુજરાતી અક્ષરો (Unicode) સાચવીને Base64 એન્કોડ કરવા માટે
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
@@ -780,9 +779,10 @@
             });
         }
 
+        // સુધારેલું WhatsApp લિંક શેરિંગ ફંક્શન - જેમાં માત્ર પહોંચની જ લિંક જશે
         function shareReceiptLinkWhatsApp() {
             const linkVal = document.getElementById('receiptGeneratedUrl').value;
-            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*`;
+            const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${linkVal}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             openWhatsAppUrl(currentStudent.phone, text);
         }
 
@@ -790,6 +790,7 @@
             let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
             const encodedText = encodeURIComponent(text);
+            
             const waWebUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedText}`;
             window.open(waWebUrl, '_blank');
         }
@@ -1419,6 +1420,7 @@
             return `${baseUrl}?receipt=${encodedData}`;
         }
 
+        // પહોંચ જનરેટ થાય ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -1463,6 +1465,9 @@
             renderFeeHistoryTable();
 
             displayReceiptDataInPreview(newReceipt);
+            
+            // ફી પહોંચ જનરેટ થતાં જ સીધી તેની ઓનલાઈન લિંક સેટ થઈને WhatsApp પર શેર થશે
+            shareReceiptLinkWhatsApp();
         }
 
         function displayReceiptDataInPreview(receiptObj) {
