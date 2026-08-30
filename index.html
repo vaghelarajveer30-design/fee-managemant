@@ -828,7 +828,23 @@ if ('caches' in window) {
 
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
+// રસીદ ચેક કરવાનું લોજિક
+(function checkReceiptUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const receiptData = urlParams.get('receipt');
 
+    if (receiptData && receiptData.trim() !== "") {
+        setTimeout(function() {
+            const dashboard = document.querySelector('.container');
+            if (dashboard) {
+                dashboard.style.display = 'none';
+            }
+            if (typeof renderReceipt === "function") {
+                renderReceipt(receiptData);
+            }
+        }, 300);
+    }
+})();
         function saveLocalData() {
             localStorage.setItem('NNC_students', JSON.stringify(students));
             localStorage.setItem('NNC_stock', JSON.stringify(stockList));
