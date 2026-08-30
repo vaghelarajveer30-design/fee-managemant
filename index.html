@@ -1906,23 +1906,62 @@ window.addEventListener('DOMContentLoaded', function() {
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
         }
 
-        function downloadJSONBackup() {
-            const backupData = {
-                students: students,
-                stockList: stockList,
-                expenses: expenses,
-                masterSettings: masterSettings,
-                exportDate: new Date().toISOString()
-            };
+       // ૧. બેકઅપ લેવાનું સાચું ફંક્શન
+function downloadJSONBackup() {
+    try {
+        const backupData = {
+            students: (typeof students !== 'undefined' && students) ? students : JSON.parse(localStorage.getItem('NNC_students') || '[]'),
+            stockList: (typeof stockList !== 'undefined' && stockList) ? stockList : JSON.parse(localStorage.getItem('NNC_stock') || '[]'),
+            expenses: (typeof expenses !== 'undefined' && expenses) ? expenses : JSON.parse(localStorage.getItem('NNC_expenses') || '[]'),
+            masterSettings: (typeof masterSettings !== 'undefined' && masterSettings) ? masterSettings : JSON.parse(localStorage.getItem('NNC_master') || '{}'),
+            exportDate: new Date().toISOString()
+        };
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `FeeManager_Backup_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `FeeManager_Backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        alert("બેકઅપ ફાઈલ સફળતાપૂર્વક ડાઉનલોડ થઈ ગઈ છે!");
+    } catch (error) {
+        console.error(error);
+        alert("બેકઅપ લેવામાં ભૂલ આવી: " + error.message);
+    }
+}
+
+// ૨. ડેટા રિસ્ટોર કરવાનું ફંક્શન
+function restoreJSONBackup() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+
+    fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+
+                if (data.students) localStorage.setItem('NNC_students', JSON.stringify(data.students));
+                if (data.stockList) localStorage.setItem('NNC_stock', JSON.stringify(data.stockList));
+                if (data.expenses) localStorage.setItem('NNC_expenses', JSON.stringify(data.expenses));
+                if (data.masterSettings) localStorage.setItem('NNC_master', JSON.stringify(data.masterSettings));
+
+                alert("ડેટા સફળતાપૂર્વક રિસ્ટોર થઈ ગયો છે! પેજ રીફ્રેશ થશે.");
+                location.reload();
+            } catch (err) {
+                alert("ખોટી ફાઈલ સિલેક્ટ થઈ છે અથવા ફાઈલ ડેમેજ છે.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    fileInput.click();
+}
 
         function uploadJSONBackup(event) {
             const fileReader = new FileReader();
