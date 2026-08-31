@@ -1020,7 +1020,7 @@
         }
 
         function navigateTo(pageId) {
-            ['pageDashboard', 'pageAddStudent', 'pageMasterSettings', 'pageStationeryReport', 'pageAdminExpense', 'pageStudentDetails'].forEach(p => {
+            ['pageDashboard', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
@@ -1527,8 +1527,7 @@
 
             displayReceiptDataInPreview(newReceipt);
             
-            // ફી પહોંચ જનરેટ થતાં જ સીધી તેની ઓનલાઈન લિંક સેટ થઈને WhatsApp પર શેર થશે
-            shareReceiptLinkWhatsApp();
+            // પહોંચ જનરેટ થયા પછી મોકલવાનું કામ વપરાશકર્તા બટનથી કરશે; આપમેળે WhatsApp નહીં ખૂલે.
         }
 
         function displayReceiptDataInPreview(receiptObj) {
@@ -1582,18 +1581,24 @@
 
         function generateReceiptCanvas() {
             const printArea = document.getElementById('receiptPrintArea');
-            html2canvas(printArea, { scale: 2 }).then(canvas => {
+            return html2canvas(printArea, { scale: 2 }).then(canvas => {
                 generatedDataUrl = canvas.toDataURL('image/png');
-                canvas.toBlob(blob => {
-                    generatedBlob = blob;
-                }, 'image/png');
-
-                const btnDownload = document.getElementById('btnDownloadImageLink');
-                btnDownload.href = generatedDataUrl;
-                btnDownload.download = `Fee_Receipt_${currentStudent.name}.png`;
-
-                const btnOpen = document.getElementById('btnOpenBrowserLink');
-                btnOpen.href = generatedDataUrl;
+                return new Promise(resolve => {
+                    canvas.toBlob(blob => {
+                        generatedBlob = blob;
+                        const btnDownload = document.getElementById('btnDownloadImageLink');
+                        if (btnDownload) {
+                            btnDownload.href = generatedDataUrl;
+                            btnDownload.download = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
+                        }
+                        const btnOpen = document.getElementById('btnOpenBrowserLink');
+                        if (btnOpen) btnOpen.href = generatedDataUrl;
+                        resolve(blob);
+                    }, 'image/png');
+                });
+            }).catch(err => {
+                console.error(err);
+                throw new Error('Image બનાવવામાં ભૂલ આવી.');
             });
         }
 
@@ -1617,17 +1622,43 @@
             newTab.document.write(`<img src="${generatedDataUrl}" style="max-width:100%;"/>`);
         }
 
-        function shareWhatsAppImage() {
-            document.getElementById('customModal').style.display = 'flex';
-            downloadImageDirectly();
+        async function shareWhatsAppImage() {
+            try {
+                if (!generatedBlob) {
+                    await generateReceiptCanvas();
+                }
+                if (!generatedBlob) { throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.'); }
+                const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
+                const file = new File([generatedBlob], fileName, {type:'image/png'});
+
+                // Android/Chrome Web Share: WhatsApp પસંદ કરીને Image સીધી attach કરી શકાય છે.
+                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+                    await navigator.share({files:[file], title:'ફી પહોંચ'});
+                    return;
+                }
+
+                // Native APK wrapper bridge (જો WebView wrapper bridge આપે તો).
+                if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
+                    const reader = new FileReader();
+                    reader.onloadend = function(){
+                        try { window.Android.shareImageBase64(reader.result.split(',')[1], fileName); }
+                        catch(e) { alert('Android image shareમાં ભૂલ આવી.'); }
+                    };
+                    reader.readAsDataURL(generatedBlob);
+                    return;
+                }
+
+                // WebViewમાં native share ઉપલબ્ધ ન હોય તો ઓછામાં ઓછું Image download થાય.
+                downloadImageDirectly();
+                alert('આ ફોનના WebViewમાં Direct Image Share ઉપલબ્ધ નથી. Image ફોનમાં Download થઈ છે. WhatsAppમાં 📎 → Galleryથી મોકલો.');
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+                alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
+            }
         }
 
         function closeCustomModal() {
             document.getElementById('customModal').style.display = 'none';
-            if (currentStudent) {
-                const text = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ગેલેરીમાં ડાઉનલોડ કરેલ છે. કૃપા કરીને મોકલેલ પહોંચ ચકાસી લેવી.`;
-                openWhatsAppUrl(currentStudent.phone, text);
-            }
         }
 
         function shareWhatsAppText() {
@@ -2063,15 +2094,16 @@
             const list=document.getElementById('courseDivisionList');
             const summary=document.getElementById('courseDivisionSummary');
             if(!select||!list||!summary) return;
-            const courses=[...new Set(students.map(s=>(s.course||'કોર્સ વગર').trim()||'કોર્સ વગર'))].sort((a,b)=>a.localeCompare(b));
+            const activeStudents=students.filter(s=>(s.status||'active')==='active');
+            const courses=[...new Set(activeStudents.map(s=>(s.course||'કોર્સ વગર').trim()||'કોર્સ વગર'))].sort((a,b)=>a.localeCompare(b,'gu'));
             const old=select.value;
-            select.innerHTML='<option value="__ALL__">📚 બધા કોર્સ</option>'+courses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            select.innerHTML='<option value="__ALL__">📚 બધા કોર્સ</option>'+courses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)} (${activeStudents.filter(s=>(s.course||'કોર્સ વગર').trim()===c).length})</option>`).join('');
             if(courses.includes(old)) select.value=old; else select.value='__ALL__';
             const chosen=select.value;
-            const arr=chosen==='__ALL__'?students:students.filter(s=>(s.course||'કોર્સ વગર')===chosen);
+            const arr=chosen==='__ALL__'?activeStudents:activeStudents.filter(s=>(s.course||'કોર્સ વગર').trim()===chosen);
             const paid=arr.reduce((n,s)=>n+(Number(s.paid)||0),0), due=arr.reduce((n,s)=>n+(Number(s.due)||0),0);
-            summary.innerHTML=`<div class="grid-3"><div class="stat-box" style="background:#7b1fa2">વિદ્યાર્થી<br><span>${arr.length}</span></div><div class="stat-box" style="background:#2e7d32">જમા<br><span>₹${paid}</span></div><div class="stat-box" style="background:#d32f2f">બાકી<br><span>₹${due}</span></div></div>`;
-            list.innerHTML=arr.length?arr.map(s=>`<div class="student-item-card" onclick="openStudent('${s.id}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(s.name)}</span><span class="student-badge">${escapeHtml(s.course||'કોર્સ વગર')}</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between"><span>ધોરણ: ${escapeHtml(s.std||'-')}</span><span style="color:green;font-weight:bold">જમા ₹${Number(s.paid)||0}</span><span style="color:red;font-weight:bold">બાકી ₹${Number(s.due)||0}</span></div></div>`).join(''):'<div style="text-align:center;padding:20px;color:#888">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+            summary.innerHTML=`<div style="padding:10px;background:#f3e5f5;border-radius:8px;font-weight:bold;color:#6a1b9a;">કુલ Active બાળકો: ${activeStudents.length} &nbsp; | &nbsp; ${chosen==='__ALL__'?'બધા કોર્સ':escapeHtml(chosen)}: ${arr.length} બાળકો</div><div class="grid-2" style="margin-top:8px;"><div class="stat-box" style="background:#2e7d32">જમા<br><span>₹${paid}</span></div><div class="stat-box" style="background:#d32f2f">બાકી<br><span>₹${due}</span></div></div>`;
+            list.innerHTML=arr.length?arr.map(s=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(s.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(s.name)}</span><span class="student-badge">${escapeHtml(s.course||'કોર્સ વગર')}</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between"><span>ધોરણ: ${escapeHtml(s.std||'-')}</span><span style="color:green;font-weight:bold">જમા ₹${Number(s.paid)||0}</span><span style="color:red;font-weight:bold">બાકી ₹${Number(s.due)||0}</span></div></div>`).join(''):'<div style="text-align:center;padding:20px;color:#888">આ પસંદગીમાં કોઈ Active વિદ્યાર્થી નથી.</div>';
         }
 
         function escapeHtml(v){ return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
