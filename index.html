@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FEE MANAGEMENT - નિર્મળા નવોદય ક્લાિસિસ</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
         body { background-color: #f4f6f9; padding-bottom: 40px; }
@@ -426,6 +425,32 @@
                     <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
                 </div>
 
+                <div class="grid-2" style="margin-top: 8px;">
+                    <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)">🔄 રી-જોઈન્ટ કરો</button>
+                    <button class="btn btn-orange" onclick="openFeeChangeBox()">💰 ફી વધારો/બદલો</button>
+                </div>
+
+                <div class="card" style="background:#f3f8ff; border-color:#bbdefb; margin-top:10px; margin-bottom:0;">
+                    <div style="font-weight:bold; color:#1565c0; font-size:13px; margin-bottom:6px;">📅 વિદ્યાર્થીની દાખલ/રી-જોઈન્ટ તારીખો</div>
+                    <div id="profJoinHistory" style="font-size:12px; color:#333;"></div>
+                </div>
+
+                <div id="feeChangeBox" class="card" style="display:none; background:#fff8e1; border-color:#ffe082; margin-top:10px; margin-bottom:0;">
+                    <div style="font-weight:bold; color:#e65100; font-size:13px; margin-bottom:7px;">💰 વચ્ચેથી ફી વધારવી / બદલવી</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>ફી કઈ તારીખથી લાગુ પડશે?</label>
+                            <input type="date" id="feeChangeDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>નવી માસિક ફી (₹)</label>
+                            <input type="number" id="feeChangeAmount" class="form-control" min="0" placeholder="400">
+                        </div>
+                    </div>
+                    <button class="btn btn-orange" onclick="saveFeeChange()">💾 નવી ફી સેવ કરો</button>
+                    <div id="feeChangeHistory" style="font-size:12px; margin-top:8px;"></div>
+                </div>
+
                 <div class="grid-3" style="margin-top:12px;">
                     <div class="stat-box" style="background:#1976d2; cursor:default;">કુલ ફી<br><span id="profFee">₹350</span></div>
                     <div class="stat-box" style="background:#2e7d32; cursor:default;">જમા ફી<br><span id="profPaid">₹0</span></div>
@@ -506,6 +531,11 @@
                         <label>🗓️ કઈ તારીખ સુધી?</label>
                         <input type="date" id="recToDate" class="form-control" onchange="autoCalculateMonthsFee()">
                     </div>
+                </div>
+
+                <div id="receiptMonthBreakdown" style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:7px; padding:7px; margin-bottom:10px; font-size:12px;">
+                    <div style="font-weight:bold; color:#1565c0; margin-bottom:5px;">🗓️ મહિનાવાર ફી</div>
+                    <div id="receiptMonthBreakdownBody">તારીખ પસંદ કરતાં મહિનાવાર ફી અહીં દેખાશે.</div>
                 </div>
 
                 <div class="grid-3">
@@ -672,7 +702,7 @@
         ];
 
         let students = [
-            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "2026-06-01", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, status: "active", stationery: [], receipts: [] }
+            { id: "1", name: "Ravi", phone: "9033197515", joinDate: "2026-06-01", course: "Navoday", std: "5", feeType: "માસિક", fee: 350, paid: 0, due: 350, status: "active", stationery: [], receipts: [], feeHistory: [{fromDate:"2026-06-01", fee:350}], attendancePeriods: [{fromDate:"2026-06-01", toDate:null}] }
         ];
 
         let expenses = [];
@@ -766,18 +796,17 @@
             document.getElementById('sRPeriodTo').innerText = formatDate(data.toDate);
 
             const tbody = document.getElementById('sRTableBody');
-            tbody.innerHTML = `
-                <tr>
-                    <td>1</td>
-                    <td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td>
-                    <td>₹${data.tuitionFee}</td>
-                </tr>
-            `;
+            const monthRows = Array.isArray(data.months) && data.months.length
+                ? data.months.map((m,i) => `<tr><td>${i+1}</td><td>${m.name} ${m.year}</td><td>₹${m.fee}</td></tr>`).join('')
+                : `<tr><td>1</td><td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td><td>₹${data.tuitionFee}</td></tr>`;
+
+            tbody.innerHTML = monthRows;
 
             if (data.statFee > 0) {
+                const no = (Array.isArray(data.months) ? data.months.length : 1) + 1;
                 tbody.innerHTML += `
                     <tr>
-                        <td>2</td>
+                        <td>${no}</td>
                         <td>સ્ટેશનરી ચાર્જ</td>
                         <td>₹${data.statFee}</td>
                     </tr>
@@ -793,16 +822,17 @@
 
         function downloadStandaloneImage() {
             const printArea = document.getElementById('standalonePrintArea');
-            html2canvas(printArea, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
+            receiptElementToBlob(printArea).then(blob => {
                 const studentName = document.getElementById('sRName').innerText || 'Receipt';
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = imgData;
+                link.href = url;
                 link.download = `Fee_Receipt_${studentName}.png`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-            });
+                setTimeout(() => URL.revokeObjectURL(url), 3000);
+            }).catch(e => alert('❌ Image download થઈ નથી: ' + (e.message || e)));
         }
 
         function copyReceiptLink() {
@@ -889,6 +919,7 @@
             if (localStorage.getItem('NNC_stock')) stockList = JSON.parse(localStorage.getItem('NNC_stock'));
             if (localStorage.getItem('NNC_expenses')) expenses = JSON.parse(localStorage.getItem('NNC_expenses'));
             if (localStorage.getItem('NNC_master')) masterSettings = JSON.parse(localStorage.getItem('NNC_master'));
+            students.forEach(st => normalizeStudentRecords(st));
         }
 
         async function backupDataToCloud() {
@@ -971,27 +1002,130 @@
             }
         }
 
+        function normalizeStudentRecords(st) {
+            if (!st.feeHistory || !Array.isArray(st.feeHistory) || st.feeHistory.length === 0) {
+                st.feeHistory = [{ fromDate: st.joinDate || new Date().toISOString().split('T')[0], fee: parseFloat(st.fee) || 0 }];
+            }
+            st.feeHistory = st.feeHistory
+                .filter(x => x && x.fromDate)
+                .map(x => ({ fromDate: x.fromDate, fee: parseFloat(x.fee) || 0 }))
+                .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
+
+            if (!st.attendancePeriods || !Array.isArray(st.attendancePeriods) || st.attendancePeriods.length === 0) {
+                st.attendancePeriods = [{ fromDate: st.joinDate || new Date().toISOString().split('T')[0], toDate: null }];
+            }
+            st.attendancePeriods = st.attendancePeriods
+                .filter(x => x && x.fromDate)
+                .map(x => ({ fromDate: x.fromDate, toDate: x.toDate || null }))
+                .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
+        }
+
+        function dateOnly(str) {
+            if (!str) return null;
+            const d = new Date(str + 'T00:00:00');
+            return isNaN(d) ? null : d;
+        }
+
+        function addDaysToDateString(str, days) {
+            const d = dateOnly(str);
+            if (!d) return str;
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function monthNameGu(monthIndex) {
+            return ['જાન્યુઆરી','ફેબ્રુઆરી','માર્ચ','એપ્રિલ','મે','જૂન','જુલાઈ','ઓગસ્ટ','સપ્ટેમ્બર','ઓક્ટોબર','નવેમ્બર','ડિસેમ્બર'][monthIndex];
+        }
+
+        function monthKey(y, m) {
+            return y + '-' + String(m + 1).padStart(2,'0');
+        }
+
+        function getFeeForDate(st, dateStr) {
+            normalizeStudentRecords(st);
+            let chosen = null;
+            st.feeHistory.forEach(h => {
+                if (h.fromDate <= dateStr) chosen = h;
+            });
+            return chosen ? (parseFloat(chosen.fee) || 0) : (parseFloat(st.fee) || 0);
+        }
+
+        function isStudentActiveOnDate(st, dateStr) {
+            normalizeStudentRecords(st);
+            return st.attendancePeriods.some(p => {
+                return p.fromDate <= dateStr && (!p.toDate || dateStr <= p.toDate);
+            });
+        }
+
+        function getMonthsBreakdown(st, fromStr, toStr) {
+            if (!fromStr || !toStr || toStr < fromStr) return [];
+
+            const from = dateOnly(fromStr), to = dateOnly(toStr);
+            if (!from || !to) return [];
+
+            const result = [];
+            const seen = new Set();
+            let cursor = new Date(from.getFullYear(), from.getMonth(), 1);
+
+            while (cursor <= to) {
+                const y = cursor.getFullYear(), m = cursor.getMonth();
+                const first = new Date(y, m, 1);
+                const last = new Date(y, m + 1, 0);
+                const overlapFrom = first > from ? first : from;
+                const overlapTo = last < to ? last : to;
+                const firstCoveredStr = overlapFrom.toISOString().split('T')[0];
+
+                // A month is charged only when the selected period and a student attendance
+                // period overlap in at least one day.
+                let activeDay = null;
+                for (let d = new Date(overlapFrom); d <= overlapTo; d.setDate(d.getDate()+1)) {
+                    const ds = d.toISOString().split('T')[0];
+                    if (isStudentActiveOnDate(st, ds)) { activeDay = ds; break; }
+                }
+
+                const key = monthKey(y,m);
+                if (activeDay && !seen.has(key)) {
+                    const fee = getFeeForDate(st, activeDay);
+                    result.push({
+                        key,
+                        year:y,
+                        month:m,
+                        name:monthNameGu(m),
+                        fee,
+                        date:activeDay
+                    });
+                    seen.add(key);
+                }
+
+                cursor.setMonth(cursor.getMonth()+1);
+            }
+            return result;
+        }
+
+        function getTuitionForPeriod(st, fromStr, toStr) {
+            if (st.feeType !== "માસિક") {
+                const months = getMonthsBreakdown(st, fromStr, toStr);
+                if (months.length === 0) return { months: [], total: 0 };
+                return { months: [{...months[0], fee: parseFloat(st.fee)||0}], total: parseFloat(st.fee)||0 };
+            }
+            const months = getMonthsBreakdown(st, fromStr, toStr);
+            return { months, total: months.reduce((sum,m) => sum + (parseFloat(m.fee)||0), 0) };
+        }
+
         function recalculateStudentTotals() {
-            const today = new Date();
+            const todayStr = new Date().toISOString().split('T')[0];
 
             students.forEach(st => {
-                let monthlyFeeRate = parseFloat(st.fee) || 0;
-                let totalCalculatedTuition = monthlyFeeRate;
+                normalizeStudentRecords(st);
 
-                if (st.joinDate && st.feeType === "માસિક") {
-                    const join = new Date(st.joinDate);
-                    if (!isNaN(join) && today >= join) {
-                        let years = today.getFullYear() - join.getFullYear();
-                        let months = today.getMonth() - join.getMonth();
-                        let elapsedMonths = (years * 12) + months;
-                        
-                        if (today.getDate() >= join.getDate() || elapsedMonths === 0) {
-                            elapsedMonths += 1;
-                        }
-                        if (elapsedMonths <= 0) elapsedMonths = 1;
+                const startCandidates = st.attendancePeriods.map(p => p.fromDate).filter(Boolean);
+                const firstDate = startCandidates.sort()[0] || st.joinDate || todayStr;
+                let tuition = 0;
 
-                        totalCalculatedTuition = elapsedMonths * monthlyFeeRate;
-                    }
+                if (st.feeType === "માસિક" && firstDate <= todayStr) {
+                    tuition = getTuitionForPeriod(st, firstDate, todayStr).total;
+                } else {
+                    tuition = parseFloat(st.fee) || 0;
                 }
 
                 let creditStatAmt = 0;
@@ -1001,7 +1135,7 @@
                     });
                 }
 
-                st.totalFeeWithStationery = totalCalculatedTuition + creditStatAmt;
+                st.totalFeeWithStationery = tuition + creditStatAmt;
 
                 let paidFee = 0;
                 if (st.receipts) {
@@ -1013,6 +1147,10 @@
                 st.paid = paidFee;
                 st.due = st.totalFeeWithStationery - st.paid;
                 if (st.due < 0) st.due = 0;
+
+                // Keep the student's main fee field equal to the latest effective fee.
+                const latest = st.feeHistory[st.feeHistory.length - 1];
+                if (latest) st.fee = parseFloat(latest.fee) || 0;
             });
         }
 
@@ -1157,14 +1295,31 @@
             if (id) {
                 let st = students.find(s => s.id === id);
                 if (st) {
+                    normalizeStudentRecords(st);
+                    const oldJoinDate = st.joinDate;
                     st.name = name;
                     st.phone = phone;
                     st.joinDate = joinDate;
                     st.std = std;
                     st.course = course;
                     st.feeType = feeType;
-                    st.fee = fee;
                     st.status = status;
+
+                    if (oldJoinDate !== joinDate) {
+                        st.attendancePeriods[0] = st.attendancePeriods[0] || {};
+                        st.attendancePeriods[0].fromDate = joinDate;
+                        if (!st.feeHistory.some(h => h.fromDate === joinDate)) {
+                            st.feeHistory.push({fromDate:joinDate, fee:fee});
+                        }
+                    }
+                    // Editing the student's main fee updates the current/latest fee,
+                    // while keeping previously recorded fee changes intact.
+                    if (!st.feeHistory.length) st.feeHistory.push({fromDate:joinDate, fee:fee});
+                    const latest = st.feeHistory[st.feeHistory.length-1];
+                    if (latest.fromDate <= joinDate || latest.fromDate <= new Date().toISOString().split('T')[0]) {
+                        latest.fee = fee;
+                    }
+                    st.fee = fee;
                 }
             } else {
                 let newSt = {
@@ -1180,7 +1335,9 @@
                     due: fee,
                     status: status,
                     stationery: [],
-                    receipts: []
+                    receipts: [],
+                    feeHistory: [{fromDate:joinDate, fee:fee}],
+                    attendancePeriods: [{fromDate:joinDate, toDate:null}]
                 };
                 students.push(newSt);
             }
@@ -1203,7 +1360,11 @@
             document.getElementById('profStd').innerText = st.std;
             document.getElementById('profCourse').innerText = st.course;
             document.getElementById('profFeeType').innerText = st.feeType;
+            normalizeStudentRecords(st);
             document.getElementById('profFeeRate').innerText = st.fee;
+            renderJoinHistory();
+            renderFeeChangeHistory();
+            document.getElementById('feeChangeBox').style.display = 'none';
 
             const badge = document.getElementById('profStatusBadge');
             if (st.status === 'inactive') {
@@ -1260,48 +1421,124 @@
             }
         }
 
+        function renderJoinHistory() {
+            if (!currentStudent) return;
+            normalizeStudentRecords(currentStudent);
+            const el = document.getElementById('profJoinHistory');
+            if (!el) return;
+            el.innerHTML = currentStudent.attendancePeriods.map((p,i) => {
+                const end = p.toDate ? formatDate(p.toDate) : 'હાલ ચાલુ';
+                return `<div style="padding:3px 0;">${i+1}. ${formatDate(p.fromDate)} થી ${end}</div>`;
+            }).join('');
+        }
+
+        function rejoinStudent(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+            normalizeStudentRecords(st);
+
+            const defaultDate = new Date().toISOString().split('T')[0];
+            const rejoinDate = prompt('રી-જોઈન્ટ તારીખ દાખલ કરો (YYYY-MM-DD):', defaultDate);
+            if (!rejoinDate) return;
+
+            const d = dateOnly(rejoinDate);
+            if (!d) {
+                alert('❌ તારીખ સાચી નથી.');
+                return;
+            }
+
+            const last = st.attendancePeriods[st.attendancePeriods.length - 1];
+            if (last && !last.toDate) {
+                if (rejoinDate <= last.fromDate) {
+                    alert('❌ રી-જોઈન્ટ તારીખ અગાઉની દાખલ તારીખ કરતાં મોટી હોવી જોઈએ.');
+                    return;
+                }
+                last.toDate = addDaysToDateString(rejoinDate, -1);
+            } else {
+                const lastEnd = st.attendancePeriods.length ? st.attendancePeriods[st.attendancePeriods.length-1].toDate : null;
+                if (lastEnd && rejoinDate <= lastEnd) {
+                    alert('❌ રી-જોઈન્ટ તારીખ અગાઉના સમયગાળા પછીની હોવી જોઈએ.');
+                    return;
+                }
+            }
+
+            st.attendancePeriods.push({fromDate:rejoinDate, toDate:null});
+            st.status = 'active';
+
+            saveLocalData();
+            recalculateStudentTotals();
+            openStudent(st.id);
+            alert('✅ વિદ્યાર્થીની રી-જોઈન્ટ તારીખ સેવ થઈ ગઈ છે.');
+        }
+
+        function openFeeChangeBox() {
+            if (!currentStudent) return;
+            normalizeStudentRecords(currentStudent);
+            document.getElementById('feeChangeBox').style.display = 'block';
+            document.getElementById('feeChangeDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('feeChangeAmount').value = currentStudent.fee || '';
+            renderFeeChangeHistory();
+        }
+
+        function saveFeeChange() {
+            if (!currentStudent) return;
+            normalizeStudentRecords(currentStudent);
+
+            const date = document.getElementById('feeChangeDate').value;
+            const fee = parseFloat(document.getElementById('feeChangeAmount').value);
+            if (!date || isNaN(fee) || fee < 0) {
+                alert('❌ ફી માટે સાચી તારીખ અને રકમ દાખલ કરો.');
+                return;
+            }
+
+            const existing = currentStudent.feeHistory.find(h => h.fromDate === date);
+            if (existing) {
+                existing.fee = fee;
+            } else {
+                currentStudent.feeHistory.push({fromDate:date, fee:fee});
+            }
+            currentStudent.feeHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
+
+            // If the change is effective now or in the past, keep the main fee field current.
+            const today = new Date().toISOString().split('T')[0];
+            if (date <= today) {
+                currentStudent.fee = getFeeForDate(currentStudent, today);
+            }
+
+            saveLocalData();
+            recalculateStudentTotals();
+            renderFeeChangeHistory();
+            openStudent(currentStudent.id);
+            document.getElementById('feeChangeBox').style.display = 'block';
+            alert('✅ નવી ફી સફળતાપૂર્વક સેવ થઈ ગઈ છે.');
+        }
+
+        function renderFeeChangeHistory() {
+            if (!currentStudent) return;
+            normalizeStudentRecords(currentStudent);
+            const el = document.getElementById('feeChangeHistory');
+            if (!el) return;
+            el.innerHTML = '<strong>ફી હિસ્ટ્રી:</strong> ' +
+                currentStudent.feeHistory.map(h => `${formatDate(h.fromDate)} → ₹${h.fee}`).join(' &nbsp; | &nbsp; ');
+        }
+
         function calculateAlertDueFee() {
             if (!currentStudent) return;
             const fromStr = document.getElementById('alertFromDate').value;
             const toStr = document.getElementById('alertToDate').value;
 
-            if (!fromStr || !toStr) {
-                document.getElementById('calculatedAlertAmt').innerText = '₹' + currentStudent.due;
-                return;
-            }
-
-            const fromD = new Date(fromStr);
-            const toD = new Date(toStr);
-
-            if (toD < fromD) {
+            if (!fromStr || !toStr || toStr < fromStr) {
                 document.getElementById('calculatedAlertAmt').innerText = '₹0';
                 return;
             }
 
-            let monthlyFeeRate = parseFloat(currentStudent.fee) || 0;
-            let elapsedMonths = 0;
-
-            if (currentStudent.feeType === "માસિક") {
-                let years = toD.getFullYear() - fromD.getFullYear();
-                let months = toD.getMonth() - fromD.getMonth();
-                elapsedMonths = (years * 12) + months;
-                
-                if (toD.getDate() >= fromD.getDate() || elapsedMonths === 0) {
-                    elapsedMonths += 1;
-                }
-                if (elapsedMonths <= 0) elapsedMonths = 1;
-            } else {
-                elapsedMonths = 1;
-            }
-
-            let tuitionAmt = elapsedMonths * monthlyFeeRate;
+            const tuitionInfo = getTuitionForPeriod(currentStudent, fromStr, toStr);
+            let tuitionAmt = tuitionInfo.total;
 
             let creditStatAmt = 0;
             if (currentStudent.stationery) {
                 currentStudent.stationery.forEach(s => {
-                    if (s.payType === 'ઉધાર') {
-                        creditStatAmt += parseFloat(s.price) || 0;
-                    }
+                    if (s.payType === 'ઉધાર') creditStatAmt += parseFloat(s.price) || 0;
                 });
             }
 
@@ -1377,7 +1614,7 @@
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
 
-            document.getElementById('recAutoFee').value = currentStudent ? currentStudent.fee : 350;
+            document.getElementById('recAutoFee').value = currentStudent ? (currentStudent.fee || 350) : 350;
             
             let creditStatAmt = 0;
             if (currentStudent && currentStudent.stationery) {
@@ -1391,6 +1628,7 @@
             document.getElementById('recPayer').value = currentStudent ? currentStudent.name + " ના વાલી" : "";
             
             document.getElementById('recPaidInput').value = "0";
+            autoCalculateMonthsFee();
 
             calculateReceiptTotals();
         }
@@ -1400,30 +1638,22 @@
             const fromStr = document.getElementById('recFromDate').value;
             const toStr = document.getElementById('recToDate').value;
 
-            if (!fromStr || !toStr) return;
-
-            const fromD = new Date(fromStr);
-            const toD = new Date(toStr);
-
-            if (toD < fromD) return;
-
-            let monthlyFeeRate = parseFloat(currentStudent.fee) || 0;
-            let elapsedMonths = 0;
-
-            if (currentStudent.feeType === "માસિક") {
-                let years = toD.getFullYear() - fromD.getFullYear();
-                let months = toD.getMonth() - fromD.getMonth();
-                elapsedMonths = (years * 12) + months;
-                
-                if (toD.getDate() >= fromD.getDate() || elapsedMonths === 0) {
-                    elapsedMonths += 1;
-                }
-                if (elapsedMonths <= 0) elapsedMonths = 1;
-            } else {
-                elapsedMonths = 1;
+            if (!fromStr || !toStr || toStr < fromStr) {
+                document.getElementById('receiptMonthBreakdownBody').innerHTML = 'કૃપા કરીને સાચી તારીખ પસંદ કરો.';
+                return;
             }
 
-            document.getElementById('recAutoFee').value = elapsedMonths * monthlyFeeRate;
+            const info = getTuitionForPeriod(currentStudent, fromStr, toStr);
+            document.getElementById('recAutoFee').value = info.total;
+
+            const body = document.getElementById('receiptMonthBreakdownBody');
+            if (!info.months.length) {
+                body.innerHTML = '<span style="color:#888;">આ સમયગાળામાં કોઈ Active દિવસ મળ્યો નથી.</span>';
+            } else {
+                body.innerHTML = `<table style="margin:0;"><thead><tr><th>મહિનો</th><th>ફી (₹)</th></tr></thead><tbody>` +
+                    info.months.map(m => `<tr><td>${m.name} ${m.year}</td><td style="font-weight:bold;">₹${m.fee}</td></tr>`).join('') +
+                    `</tbody><tfoot><tr><td style="text-align:right;font-weight:bold;">કુલ ટ્યુશન ફી</td><td style="font-weight:bold;color:#1565c0;">₹${info.total}</td></tr></tfoot></table>`;
+            }
             calculateReceiptTotals();
         }
 
@@ -1456,7 +1686,7 @@
         }
 
         function receiptPublicData(receiptObj) {
-            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer};
+            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[]};
         }
 
         async function publishReceiptAndGetLink(receiptObj) {
@@ -1485,11 +1715,12 @@
             const dateVal = document.getElementById('recDateVal').value;
             const fromDate = document.getElementById('recFromDate').value;
             const toDate = document.getElementById('recToDate').value;
-            const tuitionFee = parseFloat(document.getElementById('recAutoFee').value) || 0;
+            const tuitionInfo = getTuitionForPeriod(currentStudent, fromDate, toDate);
+            const tuitionFee = tuitionInfo.total;
             const statFee = parseFloat(document.getElementById('recStationeryFee').value) || 0;
-            const grandTotal = parseFloat(document.getElementById('recGrandTotal').value) || 0;
+            const grandTotal = tuitionFee + statFee;
             const paidVal = parseFloat(document.getElementById('recPaidInput').value) || 0;
-            const dueVal = parseFloat(document.getElementById('recDueInput').value) || 0;
+            const dueVal = Math.max(0, grandTotal - paidVal);
             const payMode = document.getElementById('recPayMode').value;
             const payer = document.getElementById('recPayer').value.trim() || (currentStudent.name + " ના વાલી");
 
@@ -1506,7 +1737,8 @@
                 paidVal: paidVal,
                 dueVal: dueVal,
                 payMode: payMode,
-                payer: payer
+                payer: payer,
+                months: tuitionInfo.months.map(m => ({name:m.name, year:m.year, fee:m.fee}))
             };
 
             if (!currentStudent.receipts) currentStudent.receipts = [];
@@ -1536,18 +1768,17 @@
             document.getElementById('rPeriodTo').innerText = formatDate(receiptObj.toDate);
 
             const tbody = document.getElementById('receiptTableBody');
-            tbody.innerHTML = `
-                <tr>
-                    <td>1</td>
-                    <td>ટ્યુશન ફી (${formatDate(receiptObj.fromDate)} થી ${formatDate(receiptObj.toDate)})</td>
-                    <td>₹${receiptObj.tuitionFee}</td>
-                </tr>
-            `;
+            const monthRows = Array.isArray(receiptObj.months) && receiptObj.months.length
+                ? receiptObj.months.map((m,i) => `<tr><td>${i+1}</td><td>${m.name} ${m.year}</td><td>₹${m.fee}</td></tr>`).join('')
+                : `<tr><td>1</td><td>ટ્યુશન ફી (${formatDate(receiptObj.fromDate)} થી ${formatDate(receiptObj.toDate)})</td><td>₹${receiptObj.tuitionFee}</td></tr>`;
+
+            tbody.innerHTML = monthRows;
 
             if (receiptObj.statFee > 0) {
+                const no = (Array.isArray(receiptObj.months) ? receiptObj.months.length : 1) + 1;
                 tbody.innerHTML += `
                     <tr>
-                        <td>2</td>
+                        <td>${no}</td>
                         <td>સ્ટેશનરી ચાર્જ</td>
                         <td>₹${receiptObj.statFee}</td>
                     </tr>
@@ -1576,16 +1807,50 @@
             generateReceiptCanvas();
         }
 
+        // Offline/Online બંનેમાં પહોંચની Image બનાવવા માટેનું ફંક્શન.
+        // કોઈ External Library જરૂરી નથી; તેથી Internet વગર પણ કામ કરશે.
+        function receiptElementToBlob(element) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const rect = element.getBoundingClientRect();
+                    const width = Math.max(360, Math.ceil(rect.width || element.offsetWidth || 360));
+                    const height = Math.max(200, Math.ceil(element.scrollHeight || element.offsetHeight || 200));
+                    const clone = element.cloneNode(true);
+                    clone.style.width = width + 'px';
+                    clone.style.margin = '0';
+                    clone.style.position = 'static';
+                    clone.style.background = '#ffffff';
+                    clone.querySelectorAll('*').forEach(el => { el.style.boxSizing = 'border-box'; });
+
+                    const html = new XMLSerializer().serializeToString(clone);
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Segoe UI,Arial,sans-serif;background:#fff;width:${width}px;min-height:${height}px;">${html}</div></foreignObject></svg>`;
+                    const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+                    const url = URL.createObjectURL(svgBlob);
+                    const img = new Image();
+                    img.onload = function(){
+                        const canvas = document.createElement('canvas');
+                        const scale = 2;
+                        canvas.width = width * scale;
+                        canvas.height = height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0,0,canvas.width,canvas.height);
+                        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                        URL.revokeObjectURL(url);
+                        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Image blob તૈયાર થઈ નથી.')), 'image/png');
+                    };
+                    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('Offline Image બનાવવામાં ભૂલ આવી.')); };
+                    img.src = url;
+                } catch(e) { reject(e); }
+            });
+        }
+
         function generateReceiptCanvas() {
             const printArea = document.getElementById('receiptPrintArea');
-            return html2canvas(printArea, { scale: 2 }).then(canvas => {
-                generatedDataUrl = canvas.toDataURL('image/png');
-                return new Promise(resolve => {
-                    canvas.toBlob(blob => {
-                        generatedBlob = blob;
-                        resolve(blob);
-                    }, 'image/png');
-                });
+            return receiptElementToBlob(printArea).then(blob => {
+                generatedBlob = blob;
+                generatedDataUrl = '';
+                return blob;
             }).catch(err => {
                 console.error(err);
                 throw new Error('Image બનાવવામાં ભૂલ આવી.');
@@ -1708,6 +1973,7 @@
             document.getElementById('recDueInput').value = r.dueVal;
             document.getElementById('recPayMode').value = r.payMode;
             document.getElementById('recPayer').value = r.payer;
+            autoCalculateMonthsFee();
         }
 
         function deleteReceipt(receiptId) {
