@@ -635,13 +635,10 @@
 
                 <div style="margin-top: 15px;">
                     <div class="grid-2">
-                        <a id="btnDownloadImageLink" class="btn btn-green" download="" href="#" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</a>
-                        <a id="btnOpenBrowserLink" class="btn btn-blue" target="_blank" href="#" onclick="openImageInNewTab()">🌐 બીજા બ્રાઉઝરમાં ઓપન કરો</a>
-                    </div>
+                        <button id="btnDownloadImageLink" class="btn btn-green" type="button" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
+                                            </div>
                     <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppText()">📱 📄 ટેક્સ્ટ વ્હોટ્સએપ કરો</button>
-                    <button class="btn btn-cyan" style="margin-top:6px;" onclick="copyTextReceipt()">📋 લખાણ કોપી કરો</button>
-                </div>
+                                                        </div>
             </div>
 
         </div>
@@ -1586,13 +1583,6 @@
                 return new Promise(resolve => {
                     canvas.toBlob(blob => {
                         generatedBlob = blob;
-                        const btnDownload = document.getElementById('btnDownloadImageLink');
-                        if (btnDownload) {
-                            btnDownload.href = generatedDataUrl;
-                            btnDownload.download = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
-                        }
-                        const btnOpen = document.getElementById('btnOpenBrowserLink');
-                        if (btnOpen) btnOpen.href = generatedDataUrl;
                         resolve(blob);
                     }, 'image/png');
                 });
@@ -1606,51 +1596,54 @@
             document.getElementById('previewContainer').style.display = 'none';
         }
 
-        function downloadImageDirectly() {
-            if (!generatedDataUrl) return;
-            const link = document.createElement('a');
-            link.href = generatedDataUrl;
-            link.download = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function openImageInNewTab() {
-            if (!generatedDataUrl) return;
-            const newTab = window.open();
-            newTab.document.write(`<img src="${generatedDataUrl}" style="max-width:100%;"/>`);
+        async function downloadImageDirectly() {
+            try {
+                if (!generatedBlob) await generateReceiptCanvas();
+                if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
+                const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
+                const blobUrl = URL.createObjectURL(generatedBlob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => { URL.revokeObjectURL(blobUrl); link.remove(); }, 5000);
+            } catch (e) {
+                alert('❌ Image download થઈ નથી: ' + (e.message || e));
+            }
         }
 
         async function shareWhatsAppImage() {
             try {
-                if (!generatedBlob) {
-                    await generateReceiptCanvas();
-                }
-                if (!generatedBlob) { throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.'); }
+                if (!generatedBlob) await generateReceiptCanvas();
+                if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
                 const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
                 const file = new File([generatedBlob], fileName, {type:'image/png'});
 
-                // Android/Chrome Web Share: WhatsApp પસંદ કરીને Image સીધી attach કરી શકાય છે.
-                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
-                    await navigator.share({files:[file], title:'ફી પહોંચ'});
-                    return;
-                }
-
-                // Native APK wrapper bridge (જો WebView wrapper bridge આપે તો).
+                // 1) Android APK native bridge, if the wrapper exposes it.
                 if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
                     const reader = new FileReader();
                     reader.onloadend = function(){
-                        try { window.Android.shareImageBase64(reader.result.split(',')[1], fileName); }
-                        catch(e) { alert('Android image shareમાં ભૂલ આવી.'); }
+                        try {
+                            window.Android.shareImageBase64(reader.result.split(',')[1], fileName);
+                        } catch(e) {
+                            alert('❌ WhatsApp Image Shareમાં ભૂલ આવી.');
+                        }
                     };
                     reader.readAsDataURL(generatedBlob);
                     return;
                 }
 
-                // WebViewમાં native share ઉપલબ્ધ ન હોય તો ઓછામાં ઓછું Image download થાય.
-                downloadImageDirectly();
-                alert('આ ફોનના WebViewમાં Direct Image Share ઉપલબ્ધ નથી. Image ફોનમાં Download થઈ છે. WhatsAppમાં 📎 → Galleryથી મોકલો.');
+                // 2) Android Chrome / WebView versions supporting Web Share with files.
+                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+                    await navigator.share({files:[file], title:'ફી પહોંચ'});
+                    return;
+                }
+
+                // Do not send a text/link as a substitute. Give the user a real image file.
+                await downloadImageDirectly();
+                alert('આ WebViewમાં Direct Image Share સપોર્ટ નથી. Image Download થઈ છે. આ સુવિધા APKમાં native share bridgeથી જ સંપૂર્ણ Direct WhatsApp attachment તરીકે કામ કરશે.');
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
                 alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
@@ -1659,54 +1652,6 @@
 
         function closeCustomModal() {
             document.getElementById('customModal').style.display = 'none';
-        }
-
-        function shareWhatsAppText() {
-            if (!currentStudent) return;
-            const paid = document.getElementById('rPaidVal').innerText;
-            const due = document.getElementById('rDueVal').innerText;
-            const total = document.getElementById('rTotalVal').innerText;
-            const fromDate = document.getElementById('rPeriodFrom').innerText;
-            const toDate = document.getElementById('rPeriodTo').innerText;
-            const onlineLink = document.getElementById('receiptGeneratedUrl').value;
-
-            let msg = `🧾 *નિર્મળા નવોદય ક્લાિસિસ - ફી પહોંચ*\n\n`;
-            msg += `👤 *વિદ્યાર્થી:* ${currentStudent.name}\n`;
-            msg += `📚 *ધોરણ:* ${currentStudent.std} | *કોર્સ:* ${currentStudent.course}\n`;
-            msg += `🗓️ *સમયગાળો:* ${fromDate} થી ${toDate}\n`;
-            msg += `--------------------------\n`;
-            msg += `💰 *કુલ રકમ:* ${total}\n`;
-            msg += `✅ *જમા રકમ:* ${paid}\n`;
-            msg += `❗ *બાકી રકમ:* ${due}\n`;
-            msg += `--------------------------\n`;
-            msg += `🔗 *ઓનલાઈન રસીદ લિંક:* ${onlineLink}\n\n`;
-            msg += `ધન્યવાદ!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
-
-            openWhatsAppUrl(currentStudent.phone, msg);
-        }
-
-        function copyTextReceipt() {
-            if (!currentStudent) return;
-            const paid = document.getElementById('rPaidVal').innerText;
-            const due = document.getElementById('rDueVal').innerText;
-            const total = document.getElementById('rTotalVal').innerText;
-            const fromDate = document.getElementById('rPeriodFrom').innerText;
-            const toDate = document.getElementById('rPeriodTo').innerText;
-            const onlineLink = document.getElementById('receiptGeneratedUrl').value;
-
-            let msg = `🧾 *નિર્મળા નવોદય ક્લાિસિસ - ફી પહોંચ*\n\n`;
-            msg += `👤 *વિદ્યાર્થી:* ${currentStudent.name}\n`;
-            msg += `📚 *ધોરણ:* ${currentStudent.std} | *કોર્સ:* ${currentStudent.course}\n`;
-            msg += `🗓️ *સમયગાળો:* ${fromDate} થી ${toDate}\n`;
-            msg += `💰 *કુલ રકમ:* ${total}\n`;
-            msg += `✅ *જમા રકમ:* ${paid}\n`;
-            msg += `❗ *બાકી રકમ:* ${due}\n`;
-            msg += `🔗 *ઓનલાઈન રસીદ લિંક:* ${onlineLink}\n\n`;
-            msg += `*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
-
-            navigator.clipboard.writeText(msg).then(() => {
-                alert("લખાણ કોપી થઈ ગયું છે!");
-            });
         }
 
         function renderFeeHistoryTable() {
