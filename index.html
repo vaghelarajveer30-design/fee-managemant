@@ -827,19 +827,45 @@
             document.getElementById('sRPayer').innerText = data.payer || "-";
         }
 
-        function downloadStandaloneImage() {
-            const printArea = document.getElementById('standalonePrintArea');
-            receiptElementToBlob(printArea).then(blob => {
+        async function downloadStandaloneImage() {
+            try {
+                const printArea = document.getElementById('standalonePrintArea');
+                const blob = await receiptElementToBlob(printArea);
+                if (!blob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
                 const studentName = document.getElementById('sRName').innerText || 'Receipt';
-                const url = URL.createObjectURL(blob);
+                const fileName = `Fee_Receipt_${studentName}.png`;
+
+                // Shared receipt page: first try the normal browser download.
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
                 const link = document.createElement('a');
-                link.href = url;
-                link.download = `Fee_Receipt_${studentName}.png`;
+                link.href = dataUrl;
+                link.download = fileName;
+                link.setAttribute('download', fileName);
+                link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-                setTimeout(() => URL.revokeObjectURL(url), 3000);
-            }).catch(e => alert('❌ Image download થઈ નથી: ' + (e.message || e)));
+                setTimeout(() => link.remove(), 1000);
+
+                // Android Chrome/WebView fallback: if the download attribute is ignored,
+                // offer the actual PNG file through the native Web Share file picker.
+                setTimeout(async () => {
+                    try {
+                        const file = new File([blob], fileName, {type:'image/png'});
+                        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+                            await navigator.share({files:[file], title:'ફી પહોંચ'});
+                        }
+                    } catch(e) {
+                        if (e && e.name === 'AbortError') return;
+                    }
+                }, 500);
+            } catch(e) {
+                alert('❌ Image download થઈ નથી: ' + (e.message || e));
+            }
         }
 
         function copyReceiptLink() {
