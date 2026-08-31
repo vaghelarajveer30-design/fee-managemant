@@ -37,6 +37,12 @@
         .form-control { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
         .student-photo-preview { width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 2px solid #90caf9; display: block; margin: 8px auto; background: #f5f5f5; }
         .student-photo-profile { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #90caf9; display: block; margin: 0 auto 10px; background: #f5f5f5; }
+        .student-info-box { background:#f8fbff; border:1px solid #bbdefb; border-radius:8px; padding:8px; margin-top:10px; }
+        .student-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .student-info-cell { background:#fff; border:1px solid #dbe7f3; border-radius:6px; padding:5px 7px; font-size:12px; line-height:1.4; color:#333; min-width:0; }
+        .student-info-cell.full { grid-column:1 / -1; }
+        .student-info-cell strong { color:#333; }
+        .student-info-photo { width:58px; height:58px; object-fit:cover; border-radius:50%; border:2px solid #90caf9; display:block; margin:0 auto 6px; background:#f5f5f5; }
         
         .student-item-card { background: white; border-radius: 8px; padding: 12px; border-left: 5px solid #1565c0; margin-bottom: 10px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
         .student-item-head { display: flex; justify-content: space-between; align-items: center; }
@@ -440,22 +446,18 @@
                     <h2 id="profName" style="color:#1565c0;">Ravi</h2>
                     <span id="profStatusBadge" style="background:#2e7d32; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">ચાલુ છે</span>
                 </div>
-                <div style="margin-top:10px; font-size:13px; line-height:1.7; color:#333;">
-                    <div><strong>મોબાઈલ નં:</strong> <span id="profPhone">-</span></div>
-                    <div><strong>📅 દાખલ તારીખ:</strong> <span id="profJoinDate">-</span></div>
-                    <div><strong>ધોરણ:</strong> <span id="profStd">5</span> | <strong>કોર્સ:</strong> <span id="profCourse">Navoday</span></div>
-                    <div><strong>ફી નો પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
-                </div>
-
-                <div class="card" style="background:#f8fbff; border-color:#bbdefb; margin-top:10px; margin-bottom:0;">
-                    <img id="profPhoto" class="student-photo-profile" style="display:none;" alt="વિદ્યાર્થીનો ફોટો">
-                    <div style="font-weight:bold; color:#1565c0; font-size:13px; margin-bottom:6px;">👨‍👩‍👧 વિદ્યાર્થીની વધારાની માહિતી</div>
-                    <div style="font-size:13px; line-height:1.8; color:#333;">
-                        <div><strong>પપ્પાનું નામ:</strong> <span id="profFatherName">-</span></div>
-                        <div><strong>માતાનું નામ:</strong> <span id="profMotherName">-</span></div>
-                        <div><strong>જન્મ તારીખ:</strong> <span id="profBirthDate">-</span></div>
-                        <div><strong>શાળાનું નામ:</strong> <span id="profSchoolName">-</span></div>
-                        <div><strong>સરનામું:</strong> <span id="profAddress">-</span></div>
+                <div class="student-info-box">
+                    <img id="profPhoto" class="student-info-photo" style="display:none;" alt="વિદ્યાર્થીનો ફોટો">
+                    <div class="student-info-grid">
+                        <div class="student-info-cell"><strong>મોબાઈલ નં:</strong> <span id="profPhone">-</span></div>
+                        <div class="student-info-cell"><strong>ધોરણ:</strong> <span id="profStd">5</span> | <strong>કોર્સ:</strong> <span id="profCourse">Navoday</span></div>
+                        <div class="student-info-cell"><strong>📅 દાખલ તારીખ:</strong> <span id="profJoinDate">-</span></div>
+                        <div class="student-info-cell"><strong>જન્મ તારીખ:</strong> <span id="profBirthDate">-</span></div>
+                        <div class="student-info-cell"><strong>પપ્પાનું નામ:</strong> <span id="profFatherName">-</span></div>
+                        <div class="student-info-cell"><strong>માતાનું નામ:</strong> <span id="profMotherName">-</span></div>
+                        <div class="student-info-cell"><strong>ફી પ્રકાર:</strong> <span id="profFeeType">માસિક</span> (₹<span id="profFeeRate">350</span>)</div>
+                        <div class="student-info-cell"><strong>શાળાનું નામ:</strong> <span id="profSchoolName">-</span></div>
+                        <div class="student-info-cell full"><strong>સરનામું:</strong> <span id="profAddress">-</span></div>
                     </div>
                 </div>
 
@@ -845,18 +847,17 @@
             tbody.innerHTML = monthRows;
 
             if (data.statFee > 0) {
-                const no = (Array.isArray(data.months) ? data.months.length : 1) + 1;
+                const startNo = (Array.isArray(data.months) ? data.months.length : 1) + 1;
                 const items = Array.isArray(data.stationeryItems) ? data.stationeryItems : [];
-                const detail = items.length
-                    ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.unitPrice || (Number(x.price || 0) / (Number(x.qty) || 1)))})`).join('<br>')
-                    : 'સ્ટેશનરી';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${no}</td>
-                        <td>${detail}</td>
-                        <td>₹${data.statFee}</td>
-                    </tr>
-                `;
+                if (items.length) {
+                    items.forEach((x, idx) => {
+                        const itemTotal = Number(x.price || ((Number(x.unitPrice) || 0) * (Number(x.qty) || 0)));
+                        const unit = Number(x.unitPrice || (itemTotal / (Number(x.qty) || 1)));
+                        tbody.innerHTML += `<tr><td>${startNo + idx}</td><td>${escapeHtml(x.itemName)} (${x.qty} × ₹${unit})</td><td>₹${itemTotal}</td></tr>`;
+                    });
+                } else {
+                    tbody.innerHTML += `<tr><td>${startNo}</td><td>સ્ટેશનરી</td><td>₹${data.statFee}</td></tr>`;
+                }
             }
 
             document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
@@ -1978,17 +1979,17 @@
             tbody.innerHTML = monthRows;
 
             if (receiptObj.statFee > 0) {
-                const no = (Array.isArray(receiptObj.months) ? receiptObj.months.length : 1) + 1;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${no}</td>
-                        <td>${(() => {
-                            const items = receiptObj.stationeryItems || [];
-                            return items.length ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.unitPrice || (Number(x.price || 0) / (Number(x.qty) || 1)))})`).join('<br>') : 'સ્ટેશનરી';
-                        })()}</td>
-                        <td>₹${receiptObj.statFee}</td>
-                    </tr>
-                `;
+                const startNo = (Array.isArray(receiptObj.months) ? receiptObj.months.length : 1) + 1;
+                const items = receiptObj.stationeryItems || [];
+                if (items.length) {
+                    items.forEach((x, idx) => {
+                        const itemTotal = Number(x.price || ((Number(x.unitPrice) || 0) * (Number(x.qty) || 0)));
+                        const unit = Number(x.unitPrice || (itemTotal / (Number(x.qty) || 1)));
+                        tbody.innerHTML += `<tr><td>${startNo + idx}</td><td>${escapeHtml(x.itemName)} (${x.qty} × ₹${unit})</td><td>₹${itemTotal}</td></tr>`;
+                    });
+                } else {
+                    tbody.innerHTML += `<tr><td>${startNo}</td><td>સ્ટેશનરી</td><td>₹${receiptObj.statFee}</td></tr>`;
+                }
             }
 
             document.getElementById('rTotalVal').innerText = '₹' + receiptObj.grandTotal;
@@ -2024,13 +2025,17 @@
                     const height = Math.max(200, Math.ceil(element.scrollHeight || element.offsetHeight || 200));
                     const clone = element.cloneNode(true);
                     clone.style.width = width + 'px';
+                    clone.style.height = height + 'px';
                     clone.style.margin = '0';
                     clone.style.position = 'static';
                     clone.style.background = '#ffffff';
+                    clone.style.boxSizing = 'border-box';
                     clone.querySelectorAll('*').forEach(el => { el.style.boxSizing = 'border-box'; });
 
+                    // Include the same CSS used by the live receipt so the PNG matches the on-screen receipt.
+                    const cssText = Array.from(document.querySelectorAll('style')).map(st => st.textContent || '').join('\n');
                     const html = new XMLSerializer().serializeToString(clone);
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject x="0" y="0" width="${width}" height="${height}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Segoe UI,Arial,sans-serif;background:#fff;width:${width}px;min-height:${height}px;">${html}</div></foreignObject></svg>`;
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject x="0" y="0" width="${width}" height="${height}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Segoe UI,Arial,sans-serif;background:#fff;width:${width}px;min-height:${height}px;margin:0;padding:0;"><style>${cssText}</style>${html}</div></foreignObject></svg>`;
                     const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
                     const img = new Image();
                     img.onload = function(){
