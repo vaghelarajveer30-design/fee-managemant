@@ -165,6 +165,7 @@
             <div class="grid-2" style="margin-top: 10px;">
                 <button class="btn btn-orange" onclick="navigateTo('pageStationeryReport')">📖 સ્ટેશનરી રિપોર્ટ & સ્ટોક</button>
                 <button class="btn btn-orange" onclick="navigateTo('pageAdminExpense')">💸 Admin ખર્ચ વિગત</button>
+                <button class="btn btn-purple" onclick="openCourseDivision()">📚 કોર્સ વિભાજન</button>
             </div>
 
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
@@ -269,6 +270,11 @@
                         <label>ડિફોલ્ટ કોર્સનું નામ</label>
                         <input type="text" id="mDefaultCourse" class="form-control" value="Navoday">
                     </div>
+                    <div class="form-group">
+                        <label>ઓનલાઈન ફી પહોંચનું Base URL (લિંક એપ/વેબ માટે)</label>
+                        <input type="url" id="mReceiptBaseUrl" class="form-control" placeholder="https://તમારી-site.com/index.html">
+                        <small style="color:#666;">ZIP/APK માંથી WhatsApp લિંક મોકલવી હોય તો પહોંચ ખોલતી HTML વેબ પર હોવી જરૂરી છે.</small>
+                    </div>
 
                     <button type="submit" class="btn btn-purple">💾 સેટિંગ્સ સેવ કરો</button>
                 </form>
@@ -281,6 +287,19 @@
                     <button class="btn btn-gray" onclick="document.getElementById('uploadJsonInput').click()">📤 ડેટા અપલોડ કરો</button>
                     <input type="file" id="uploadJsonInput" style="display:none;" onchange="uploadJSONBackup(event)">
                 </div>
+            </div>
+        </div>
+
+        <div id="pageCourseDivision" style="display:none;">
+            <div style="margin-bottom:10px;">
+                <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
+            </div>
+            <div class="card">
+                <h3 style="color:#7b1fa2;">📚 કોર્સ પ્રમાણે વિદ્યાર્થી વિભાજન</h3>
+                <p style="font-size:12px;color:#666;margin:6px 0 10px;">કોર્સ પસંદ કરો અને માત્ર તે કોર્સના વિદ્યાર્થીઓ જુઓ.</p>
+                <select id="courseDivisionSelect" class="form-control" onchange="renderCourseDivision()"></select>
+                <div id="courseDivisionSummary" style="margin-top:10px;"></div>
+                <div id="courseDivisionList" style="margin-top:10px;"></div>
             </div>
         </div>
 
@@ -646,7 +665,8 @@
             dbUrl: "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app",
             defaultFee: 350,
             defaultStd: "5",
-            defaultCourse: "Navoday"
+            defaultCourse: "Navoday",
+            receiptBaseUrl: ""
         };
 
         let stockList = [
@@ -678,25 +698,29 @@
 
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const receiptIdParam = urlParams.get('r');
-            const legacyReceiptDataParam = urlParams.get('receipt');
+            const receiptDataParam = urlParams.get('receipt');
+            const shortReceiptId = urlParams.get('r');
 
-            // નવી ટૂંકી receipt link: ?r=XXXXXXXX
-            if (receiptIdParam) {
+            if (shortReceiptId) {
                 try {
-                    await loadPublicReceipt(receiptIdParam);
+                    const db = (masterSettings.dbUrl || "").replace(/\/$/, "");
+                    if (!db) throw new Error("Firebase URL નથી");
+                    const response = await fetch(db + '/publicReceipts/' + encodeURIComponent(shortReceiptId) + '.json', {cache:'no-store'});
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    if (!data) throw new Error('રસીદ મળી નથી');
+                    renderStandaloneReceipt(data);
                     return;
                 } catch(e) {
-                    console.error("ટૂંકી પહોંચ લિંક ખોલવામાં ભૂલ:", e);
-                    alert("❌ આ ફી પહોંચની લિંક મળી નથી અથવા ઈન્ટરનેટ ઉપલબ્ધ નથી.");
+                    console.error("ટૂંકી પહોંચ લિંક ખોલવામાં ભૂલ", e);
+                    alert("❌ આ ફી પહોંચની લિંક મળતી નથી. કૃપા કરીને ફરીથી લિંક બનાવો.");
                     return;
                 }
             }
 
-            // જૂની receipt link પણ ચાલુ રહેશે
-            if (legacyReceiptDataParam) {
+            if (receiptDataParam) {
                 try {
-                    const jsonStr = base64ToUtf8(legacyReceiptDataParam);
+                    const jsonStr = base64ToUtf8(receiptDataParam);
                     const data = JSON.parse(jsonStr);
                     renderStandaloneReceipt(data);
                     return;
@@ -727,19 +751,9 @@
             document.getElementById('mDefaultFee').value = masterSettings.defaultFee;
             document.getElementById('mDefaultStd').value = masterSettings.defaultStd;
             document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
+            document.getElementById('mReceiptBaseUrl').value = masterSettings.receiptBaseUrl || "";
+            renderCourseDivision();
         };
-
-        async function loadPublicReceipt(receiptId) {
-            let dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
-            if (!dbUrl) throw new Error("Firebase Database URL સેટ નથી.");
-
-            const response = await fetch(`${dbUrl}/publicReceipts/${encodeURIComponent(receiptId)}.json`);
-            if (!response.ok) throw new Error("Receipt not found");
-            const data = await response.json();
-
-            if (!data || !data.name || !data.date) throw new Error("Invalid receipt");
-            renderStandaloneReceipt(data);
-        }
 
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
@@ -806,16 +820,17 @@
         }
 
         // સુધારેલું WhatsApp લિંક શેરિંગ ફંક્શન - જેમાં માત્ર પહોંચની જ લિંક જશે
-        function shareReceiptLinkWhatsApp() {
-            const linkVal = document.getElementById('receiptGeneratedUrl').value;
-            if (!linkVal || linkVal === "લિંક બની રહી છે...") {
-                alert("પહોંચની લિંક હજુ તૈયાર થઈ રહી છે. થોડીવાર પછી ફરી પ્રયાસ કરો.");
-                return;
-            }
-
-            // WhatsAppમાં માત્ર ફી પહોંચની લિંક મોકલાય છે; આખી એપની લિંક નહીં.
-            const text = `🧾 *ફી પહોંચ*\n\nવિદ્યાર્થી: *${currentStudent.name}*\n🔗 ${linkVal}`;
-            openWhatsAppUrl(currentStudent.phone, text);
+        async function shareReceiptLinkWhatsApp() {
+            if (!currentStudent) return;
+            const receiptId=document.getElementById('editingReceiptId').value || (currentStudent.receipts?.length ? currentStudent.receipts[currentStudent.receipts.length-1].id : '');
+            const receiptObj=(currentStudent.receipts||[]).find(r=>String(r.id)===String(receiptId)) || (currentStudent.receipts||[]).slice(-1)[0];
+            if(!receiptObj){ alert('પહોંચ મળી નથી.'); return; }
+            try {
+                const link=await publishReceiptAndGetLink(receiptObj);
+                document.getElementById('receiptGeneratedUrl').value=link;
+                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+                openWhatsAppUrl(currentStudent.phone,text);
+            } catch(err) { alert('❌ પહોંચ લિંક બનાવવામાં ભૂલ: '+err.message); }
         }
 
         function openWhatsAppUrl(phone, text) {
@@ -917,44 +932,45 @@
         }
 
         async function restoreDataFromCloud() {
-            if (!navigator.onLine) {
-                alert("ઇન્ટરનેટ જોડાણ નથી. કૃપા કરીને ઓનલાઇન થાઓ.");
-                return;
-            }
-            let dbUrl = masterSettings.dbUrl ? masterSettings.dbUrl.trim() : "";
-            if (!dbUrl) {
-                alert("કૃપા કરીને માસ્ટર સેટિંગ્સમાં Firebase Database URL દાખલ કરો.");
-                return;
-            }
-            if (dbUrl.endsWith('/')) dbUrl = dbUrl.slice(0, -1);
-            
-            const fullUrl = `${dbUrl}/backup.json`;
-
+            const dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
+            if (!dbUrl) { alert("કૃપા કરીને Firebase Database URL દાખલ કરો."); return; }
+            const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
+            btns.forEach(b => { b.disabled=true; b.innerText='⏳ રીસ્ટોર થઈ રહ્યું છે...'; });
             try {
-                const response = await fetch(fullUrl);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data) {
-                        if (data.students) students = data.students;
-                        if (data.stockList) stockList = data.stockList;
-                        if (data.expenses) expenses = data.expenses;
-                        if (data.masterSettings) masterSettings = data.masterSettings;
-
-                        saveLocalData();
-                        recalculateStudentTotals();
-                        renderDashboard();
-                        renderStockTable();
-                        renderStockDropdown();
-                        renderExpenses();
-                        alert("✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
-                    } else {
-                        alert("⚠️ ક્લાઉડ પર કોઈ બેકઅપ ડેટા મળ્યો નથી.");
-                    }
-                } else {
-                    alert("❌ ડેટા રીસ્ટોર કરવામાં ભૂલ થઈ. Status: " + response.statusText);
+                const url = dbUrl + '/backup.json';
+                let data = null;
+                try {
+                    const response = await fetch(url, {method:'GET', cache:'no-store', headers:{'Accept':'application/json'}});
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    data = await response.json();
+                } catch(fetchErr) {
+                    data = await new Promise((resolve,reject)=>{
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', url, true); xhr.setRequestHeader('Accept','application/json');
+                        xhr.onload=()=>xhr.status>=200 && xhr.status<300 ? resolve(JSON.parse(xhr.responseText)) : reject(new Error('HTTP '+xhr.status));
+                        xhr.onerror=()=>reject(new Error('નેટવર્ક/CORS ભૂલ')); xhr.ontimeout=()=>reject(new Error('સમય પૂરો')); xhr.timeout=15000; xhr.send();
+                    });
                 }
-            } catch (err) {
-                alert("❌ ક્લાઉડ રીસ્ટોર કનેક્શન નિષ્ફળ: " + err.message);
+                if (!data || typeof data !== 'object') { alert('⚠️ Firebaseમાં કોઈ બેકઅપ મળ્યો નથી.'); return; }
+                students = Array.isArray(data.students) ? data.students : [];
+                stockList = Array.isArray(data.stockList) ? data.stockList : [];
+                expenses = Array.isArray(data.expenses) ? data.expenses : [];
+                if (data.masterSettings && typeof data.masterSettings === 'object') {
+                    masterSettings = Object.assign({}, masterSettings, data.masterSettings);
+                }
+                saveLocalData(); currentStudent = students[0] || null;
+                recalculateStudentTotals(); renderDashboard(); renderStockTable(); renderStockDropdown(); renderExpenses(); renderCourseDivision();
+                if (document.getElementById('mApiKey')) document.getElementById('mApiKey').value=masterSettings.apiKey||'';
+                if (document.getElementById('mDbUrl')) document.getElementById('mDbUrl').value=masterSettings.dbUrl||'';
+                if (document.getElementById('mDefaultFee')) document.getElementById('mDefaultFee').value=masterSettings.defaultFee||350;
+                if (document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
+                if (document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
+                if (document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
+                alert('✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!');
+            } catch(err) {
+                alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
+            } finally {
+                btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
             }
         }
 
@@ -1176,6 +1192,7 @@
             alert("વિદ્યાર્થીની વિગત સેવ થઈ ગઈ છે!");
             navigateTo('pageDashboard');
             renderDashboard();
+            renderCourseDivision();
         }
 
         function openStudent(id) {
@@ -1427,81 +1444,44 @@
             document.getElementById('recDueInput').value = due;
         }
 
-        // ટૂંકી ઓનલાઈન ફી પહોંચ લિંક:
-        // સંપૂર્ણ એપ/ડેટા URLમાં મૂકવાને બદલે માત્ર receipt ID મૂકાય છે.
-        // પહોંચ Firebase માં /publicReceipts/<id> પર સેવ થાય છે.
-        function generateShortReceiptId() {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-            let id = "";
-            const bytes = new Uint8Array(8);
-            if (window.crypto && crypto.getRandomValues) {
-                crypto.getRandomValues(bytes);
-                for (let i = 0; i < bytes.length; i++) id += chars[bytes[i] % chars.length];
-            } else {
-                for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
-            }
-            return id;
+        function getReceiptBaseUrl() {
+            let configured = (masterSettings.receiptBaseUrl || '').trim();
+            if (configured) return configured.replace(/\/$/, '');
+            if (/^https?:$/i.test(window.location.protocol)) return window.location.href.split('?')[0];
+            return '';
         }
 
-        async function savePublicReceiptAndGetLink(receiptObj) {
-            const dataToStore = {
-                name: currentStudent.name,
-                std: currentStudent.std,
-                course: currentStudent.course,
-                date: receiptObj.date,
-                fromDate: receiptObj.fromDate,
-                toDate: receiptObj.toDate,
-                tuitionFee: receiptObj.tuitionFee,
-                statFee: receiptObj.statFee,
-                grandTotal: receiptObj.grandTotal,
-                paidVal: receiptObj.paidVal,
-                dueVal: receiptObj.dueVal,
-                payMode: receiptObj.payMode,
-                payer: receiptObj.payer
-            };
-
-            let dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
-            if (!dbUrl) throw new Error("Firebase Database URL સેટ નથી.");
-
-            const receiptId = generateShortReceiptId();
-            const saveUrl = `${dbUrl}/publicReceipts/${receiptId}.json`;
-
-            const response = await fetch(saveUrl, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(dataToStore)
-            });
-
-            if (!response.ok) throw new Error("ફી પહોંચ Firebase પર સેવ થઈ નથી.");
-
-            // URLમાં માત્ર receipt ID જાય છે — આખી એપ અથવા receipt JSON નહીં.
-            const baseUrl = window.location.href.split("?")[0].split("#")[0];
-            return `${baseUrl}?r=${receiptId}`;
+        function makeReceiptId(receiptObj) {
+            if (receiptObj.shortId) return String(receiptObj.shortId);
+            const seed = String(receiptObj.id || Date.now()) + '-' + String(currentStudent?.id || '0');
+            let h=2166136261; for(let i=0;i<seed.length;i++){h^=seed.charCodeAt(i);h=Math.imul(h,16777619);}
+            return ('R' + (h>>>0).toString(36) + Date.now().toString(36).slice(-4)).slice(0,16);
         }
 
-        // જૂની embedded receipt link માટે backward compatibility
-        function generateLegacyReceiptLink(receiptObj) {
-            const dataToEncode = {
-                name: currentStudent.name,
-                std: currentStudent.std,
-                course: currentStudent.course,
-                date: receiptObj.date,
-                fromDate: receiptObj.fromDate,
-                toDate: receiptObj.toDate,
-                tuitionFee: receiptObj.tuitionFee,
-                statFee: receiptObj.statFee,
-                grandTotal: receiptObj.grandTotal,
-                paidVal: receiptObj.paidVal,
-                dueVal: receiptObj.dueVal,
-                payMode: receiptObj.payMode,
-                payer: receiptObj.payer
-            };
-            const baseUrl = window.location.href.split("?")[0].split("#")[0];
-            return `${baseUrl}?receipt=${utf8ToBase64(JSON.stringify(dataToEncode))}`;
+        function receiptPublicData(receiptObj) {
+            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer};
         }
 
-        // પહોંચ જનરેટ થાય ત્યારે ટૂંકી, માત્ર પહોંચની જ લિંક તૈયાર થશે
-//         ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
+        async function publishReceiptAndGetLink(receiptObj) {
+            if (!receiptObj.shortId) receiptObj.shortId = makeReceiptId(receiptObj);
+            const db=(masterSettings.dbUrl||'').trim().replace(/\/$/,'');
+            const base=getReceiptBaseUrl();
+            if (!db || !base) throw new Error('Firebase URL અથવા Receipt Base URL સેટ નથી.');
+            const url=db+'/publicReceipts/'+encodeURIComponent(receiptObj.shortId)+'.json';
+            const response=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(receiptPublicData(receiptObj))});
+            if(!response.ok) throw new Error('Receipt save HTTP '+response.status);
+            saveLocalData();
+            return base + '?r=' + encodeURIComponent(receiptObj.shortId);
+        }
+
+        function generateReceiptShareableLink(receiptObj) {
+            const base=getReceiptBaseUrl();
+            if(base && receiptObj.shortId) return base+'?r='+encodeURIComponent(receiptObj.shortId);
+            const dataToEncode=receiptPublicData(receiptObj);
+            return (base || window.location.href.split('?')[0])+'?receipt='+utf8ToBase64(JSON.stringify(dataToEncode));
+        }
+
+        // પહોંચ જનરેટ થાય ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -1551,7 +1531,7 @@
             shareReceiptLinkWhatsApp();
         }
 
-        async function displayReceiptDataInPreview(receiptObj) {
+        function displayReceiptDataInPreview(receiptObj) {
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
@@ -1584,16 +1564,13 @@
             document.getElementById('rMode').innerText = receiptObj.payMode;
             document.getElementById('rPayer').innerText = receiptObj.payer;
 
-            // ટૂંકી receipt-only link Firebase પર સેવ થયા પછી મળશે.
-            document.getElementById('receiptGeneratedUrl').value = "લિંક બની રહી છે...";
-            try {
-                const onlineLink = await savePublicReceiptAndGetLink(receiptObj);
-                document.getElementById('receiptGeneratedUrl').value = onlineLink;
-            } catch (e) {
-                // Firebase ઉપલબ્ધ ન હોય તો જૂની link પદ્ધતિથી receipt ચાલુ રહેશે.
-                const fallbackLink = generateLegacyReceiptLink(receiptObj);
-                document.getElementById('receiptGeneratedUrl').value = fallbackLink;
-                console.warn("Short link unavailable, using fallback receipt link:", e);
+            const onlineLink = generateReceiptShareableLink(receiptObj);
+            document.getElementById('receiptGeneratedUrl').value = onlineLink;
+            if (getReceiptBaseUrl() && masterSettings.dbUrl) {
+                publishReceiptAndGetLink(receiptObj).then(link => {
+                    document.getElementById('receiptGeneratedUrl').value = link;
+                    saveLocalData();
+                }).catch(err => console.warn('Receipt cloud publish:', err.message));
             }
 
             const previewContainer = document.getElementById('previewContainer');
@@ -1773,6 +1750,7 @@
             masterSettings.defaultFee = parseFloat(document.getElementById('mDefaultFee').value) || 350;
             masterSettings.defaultStd = document.getElementById('mDefaultStd').value.trim();
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
+            masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
@@ -2074,6 +2052,29 @@
                 `;
             });
         }
+
+        function openCourseDivision() {
+            navigateTo('pageCourseDivision');
+            renderCourseDivision();
+        }
+
+        function renderCourseDivision() {
+            const select=document.getElementById('courseDivisionSelect');
+            const list=document.getElementById('courseDivisionList');
+            const summary=document.getElementById('courseDivisionSummary');
+            if(!select||!list||!summary) return;
+            const courses=[...new Set(students.map(s=>(s.course||'કોર્સ વગર').trim()||'કોર્સ વગર'))].sort((a,b)=>a.localeCompare(b));
+            const old=select.value;
+            select.innerHTML='<option value="__ALL__">📚 બધા કોર્સ</option>'+courses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if(courses.includes(old)) select.value=old; else select.value='__ALL__';
+            const chosen=select.value;
+            const arr=chosen==='__ALL__'?students:students.filter(s=>(s.course||'કોર્સ વગર')===chosen);
+            const paid=arr.reduce((n,s)=>n+(Number(s.paid)||0),0), due=arr.reduce((n,s)=>n+(Number(s.due)||0),0);
+            summary.innerHTML=`<div class="grid-3"><div class="stat-box" style="background:#7b1fa2">વિદ્યાર્થી<br><span>${arr.length}</span></div><div class="stat-box" style="background:#2e7d32">જમા<br><span>₹${paid}</span></div><div class="stat-box" style="background:#d32f2f">બાકી<br><span>₹${due}</span></div></div>`;
+            list.innerHTML=arr.length?arr.map(s=>`<div class="student-item-card" onclick="openStudent('${s.id}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(s.name)}</span><span class="student-badge">${escapeHtml(s.course||'કોર્સ વગર')}</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between"><span>ધોરણ: ${escapeHtml(s.std||'-')}</span><span style="color:green;font-weight:bold">જમા ₹${Number(s.paid)||0}</span><span style="color:red;font-weight:bold">બાકી ₹${Number(s.due)||0}</span></div></div>`).join(''):'<div style="text-align:center;padding:20px;color:#888">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+        }
+
+        function escapeHtml(v){ return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
         function formatDate(dateStr) {
             if (!dateStr) return "-";
