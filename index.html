@@ -830,40 +830,59 @@
         async function downloadStandaloneImage() {
             try {
                 const printArea = document.getElementById('standalonePrintArea');
+                if (!printArea) throw new Error('ફી પહોંચ મળી નથી.');
                 const blob = await receiptElementToBlob(printArea);
                 if (!blob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
-                const studentName = document.getElementById('sRName').innerText || 'Receipt';
-                const fileName = `Fee_Receipt_${studentName}.png`;
+                const studentName = (document.getElementById('sRName')?.innerText || 'Receipt').trim();
+                const safeName = studentName.replace(/[\\/:*?"<>|]/g, '_') || 'Receipt';
+                const fileName = `Fee_Receipt_${safeName}.png`;
 
-                // Shared receipt page: first try the normal browser download.
-                const dataUrl = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = fileName;
-                link.setAttribute('download', fileName);
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => link.remove(), 1000);
-
-                // Android Chrome/WebView fallback: if the download attribute is ignored,
-                // offer the actual PNG file through the native Web Share file picker.
-                setTimeout(async () => {
+                // Android/Chromeમાં શક્ય હોય તો સીધું Save File dialog ખોલો.
+                if (window.showSaveFilePicker) {
                     try {
-                        const file = new File([blob], fileName, {type:'image/png'});
-                        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
-                            await navigator.share({files:[file], title:'ફી પહોંચ'});
-                        }
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: fileName,
+                            types: [{description: 'PNG Image', accept: {'image/png': ['.png']}}]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
+                        return;
                     } catch(e) {
                         if (e && e.name === 'AbortError') return;
                     }
-                }, 500);
+                }
+
+                // સામાન્ય Chrome/Browser download.
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                link.rel = 'noopener';
+                link.style.position = 'fixed';
+                link.style.left = '-9999px';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 3000);
+
+                // WhatsAppના in-app browserમાં download attribute ઘણી વાર block થાય છે.
+                // તેથી actual PNG ને નવી tabમાં ખોલવાનો fallback આપીએ છીએ.
+                setTimeout(() => {
+                    try {
+                        const dataUrl = URL.createObjectURL(blob);
+                        const w = window.open(dataUrl, '_blank');
+                        if (!w) {
+                            // popup block હોય તો એ જ પેજમાં image ખોલો; અહીંથી Save/Download કરી શકાય.
+                            window.location.href = dataUrl;
+                        }
+                        setTimeout(() => URL.revokeObjectURL(dataUrl), 60000);
+                    } catch(e) {
+                        alert('❌ તમારા બ્રાઉઝરમાં સીધું ડાઉનલોડ બંધ છે. પહોંચની Image ખોલ્યા પછી લાંબું દબાવી Save Image કરો.');
+                    }
+                }, 400);
             } catch(e) {
+                console.error(e);
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
             }
         }
