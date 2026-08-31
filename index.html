@@ -1779,7 +1779,10 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${no}</td>
-                        <td>સ્ટેશનરી ચાર્જ</td>
+                        <td>${(() => {
+                            const items = (currentStudent.stationery || []).filter(x => x.payType === 'ઉધાર');
+                            return items.length ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.price || 0) / (Number(x.qty) || 1)})`).join('<br>') : 'સ્ટેશનરી';
+                        })()}</td>
                         <td>₹${receiptObj.statFee}</td>
                     </tr>
                 `;
