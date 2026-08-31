@@ -728,6 +728,9 @@
             const receiptDataParam = urlParams.get('receipt');
             const shortReceiptId = urlParams.get('r');
 
+            // Shared receipt links need saved Firebase settings before fetching.
+            loadLocalData();
+
             if (shortReceiptId) {
                 try {
                     const db = (masterSettings.dbUrl || "").replace(/\/$/, "");
@@ -804,10 +807,14 @@
 
             if (data.statFee > 0) {
                 const no = (Array.isArray(data.months) ? data.months.length : 1) + 1;
+                const items = Array.isArray(data.stationeryItems) ? data.stationeryItems : [];
+                const detail = items.length
+                    ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.unitPrice || (Number(x.price || 0) / (Number(x.qty) || 1)))})`).join('<br>')
+                    : 'સ્ટેશનરી';
                 tbody.innerHTML += `
                     <tr>
                         <td>${no}</td>
-                        <td>સ્ટેશનરી ચાર્જ</td>
+                        <td>${detail}</td>
                         <td>₹${data.statFee}</td>
                     </tr>
                 `;
@@ -1686,7 +1693,7 @@
         }
 
         function receiptPublicData(receiptObj) {
-            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[]};
+            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
         }
 
         async function publishReceiptAndGetLink(receiptObj) {
@@ -1738,7 +1745,8 @@
                 dueVal: dueVal,
                 payMode: payMode,
                 payer: payer,
-                months: tuitionInfo.months.map(m => ({name:m.name, year:m.year, fee:m.fee}))
+                months: tuitionInfo.months.map(m => ({name:m.name, year:m.year, fee:m.fee})),
+                stationeryItems: (currentStudent.stationery || []).filter(x => x.payType === 'ઉધાર').map(x => ({itemName:x.itemName, qty:x.qty, price:x.price, unitPrice:Number(x.price || 0) / (Number(x.qty) || 1)}))
             };
 
             if (!currentStudent.receipts) currentStudent.receipts = [];
@@ -1780,8 +1788,8 @@
                     <tr>
                         <td>${no}</td>
                         <td>${(() => {
-                            const items = (currentStudent.stationery || []).filter(x => x.payType === 'ઉધાર');
-                            return items.length ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.price || 0) / (Number(x.qty) || 1)})`).join('<br>') : 'સ્ટેશનરી';
+                            const items = receiptObj.stationeryItems || [];
+                            return items.length ? items.map(x => `${escapeHtml(x.itemName)} (${x.qty} × ₹${Number(x.unitPrice || (Number(x.price || 0) / (Number(x.qty) || 1)))})`).join('<br>') : 'સ્ટેશનરી';
                         })()}</td>
                         <td>₹${receiptObj.statFee}</td>
                     </tr>
@@ -2209,11 +2217,25 @@
                         <td>₹${s.price}</td>
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
                         <td>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px;" onclick="deleteStudentStationery('${s.id}')">🗑️</button>
+                            <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="deleteStudentStationery('${s.id}')">🗑️</button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        function toggleStationeryPayment(statId) {
+            if (!currentStudent || !currentStudent.stationery) return;
+            const item = currentStudent.stationery.find(s => String(s.id) === String(statId));
+            if (!item) return;
+            item.payType = item.payType === 'ઉધાર' ? 'રોકડ' : 'ઉધાર';
+            saveLocalData();
+            recalculateStudentTotals();
+            renderStudentStationeryList();
+            renderFeeHistoryTable();
+            openStudent(currentStudent.id);
+            alert(item.payType === 'રોકડ' ? 'સ્ટેશનરીની ચુકવણી રોકડ તરીકે બદલાઈ ગઈ છે.' : 'સ્ટેશનરીની ચુકવણી ફરી ઉધાર તરીકે બદલાઈ ગઈ છે.');
         }
 
         function deleteStudentStationery(statId) {
