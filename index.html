@@ -1288,47 +1288,113 @@
         }
 
         async function restoreDataFromCloud() {
-            const dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
-            if (!dbUrl) { alert("કૃપા કરીને Firebase Database URL દાખલ કરો."); return; }
+            let dbUrl = (masterSettings.dbUrl || "").trim();
+            if (!dbUrl) {
+                const entered = prompt("Firebase Database URL દાખલ કરો:", "");
+                if (!entered) return;
+                dbUrl = entered.trim();
+            }
+            dbUrl = dbUrl.replace(/\/$/, "");
+            if (!/^https?:\/\//i.test(dbUrl)) {
+                alert("❌ Firebase Database URL સાચી નથી.");
+                return;
+            }
+
             const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
-            btns.forEach(b => { b.disabled=true; b.innerText='⏳ રીસ્ટોર થઈ રહ્યું છે...'; });
+            btns.forEach(b => { b.disabled = true; b.innerText = "⏳ રીસ્ટોર થઈ રહ્યું છે..."; });
+
             try {
-                const url = dbUrl + '/backup.json';
-                let data = null;
+                const url = dbUrl + "/backup.json";
+                let response;
+
                 try {
-                    const response = await fetch(url, {method:'GET', cache:'no-store', headers:{'Accept':'application/json'}});
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    data = await response.json();
-                } catch(fetchErr) {
-                    data = await new Promise((resolve,reject)=>{
+                    response = await fetch(url, {
+                        method: "GET",
+                        cache: "no-store",
+                        mode: "cors",
+                        headers: { "Accept": "application/json" }
+                    });
+                } catch (fetchErr) {
+                    response = await new Promise((resolve, reject) => {
                         const xhr = new XMLHttpRequest();
-                        xhr.open('GET', url, true); xhr.setRequestHeader('Accept','application/json');
-                        xhr.onload=()=>xhr.status>=200 && xhr.status<300 ? resolve(JSON.parse(xhr.responseText)) : reject(new Error('HTTP '+xhr.status));
-                        xhr.onerror=()=>reject(new Error('નેટવર્ક/CORS ભૂલ')); xhr.ontimeout=()=>reject(new Error('સમય પૂરો')); xhr.timeout=15000; xhr.send();
+                        xhr.open("GET", url, true);
+                        xhr.setRequestHeader("Accept", "application/json");
+                        xhr.timeout = 20000;
+                        xhr.onload = () => resolve(xhr);
+                        xhr.onerror = () => reject(new Error("નેટવર્ક/CORS ભૂલ"));
+                        xhr.ontimeout = () => reject(new Error("કનેક્શન માટે સમય પૂરો થયો"));
+                        xhr.send();
                     });
                 }
-                if (!data || typeof data !== 'object') { alert('⚠️ Firebaseમાં કોઈ બેકઅપ મળ્યો નથી.'); return; }
+
+                const status = response.status;
+                if (status === 401 || status === 403) {
+                    throw new Error("Firebase Rules દ્વારા ડેટા વાંચવાની પરવાનગી નથી (HTTP " + status + "). Firebase Realtime Database Rules તપાસો.");
+                }
+                if (status === 404) {
+                    throw new Error("Firebaseમાં /backup.json મળ્યું નથી. પહેલા 'બેકઅપ ડેટા લો' કરો.");
+                }
+                if (status < 200 || status >= 300) {
+                    throw new Error("Firebase HTTP Error " + status);
+                }
+
+                let data;
+                if (typeof response.json === "function") {
+                    data = await response.json();
+                } else {
+                    try {
+                        data = JSON.parse(response.responseText || "null");
+                    } catch (e) {
+                        throw new Error("Firebaseમાંથી મળેલ ડેટા JSON નથી.");
+                    }
+                }
+
+                if (!data || typeof data !== "object" || Array.isArray(data)) {
+                    throw new Error("Firebaseમાં માન્ય બેકઅપ ડેટા મળ્યો નથી.");
+                }
+
                 students = Array.isArray(data.students) ? data.students : [];
                 stockList = Array.isArray(data.stockList) ? data.stockList : [];
                 expenses = Array.isArray(data.expenses) ? data.expenses : [];
                 loanRecords = Array.isArray(data.loanRecords) ? data.loanRecords : [];
                 previousYearDues = Array.isArray(data.previousYearDues) ? data.previousYearDues : [];
-                if (data.masterSettings && typeof data.masterSettings === 'object') {
+
+                if (data.masterSettings && typeof data.masterSettings === "object") {
                     masterSettings = Object.assign({}, masterSettings, data.masterSettings);
                 }
-                saveLocalData(); currentStudent = students[0] || null;
-                recalculateStudentTotals(); renderDashboard(); renderStockTable(); renderStockDropdown(); renderExpenses(); renderCourseDivision();
-                if (document.getElementById('mApiKey')) document.getElementById('mApiKey').value=masterSettings.apiKey||'';
-                if (document.getElementById('mDbUrl')) document.getElementById('mDbUrl').value=masterSettings.dbUrl||'';
-                if (document.getElementById('mDefaultFee')) document.getElementById('mDefaultFee').value=masterSettings.defaultFee||350;
-                if (document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
-                if (document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
-                if (document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
-                alert('✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!');
-            } catch(err) {
-                alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
+
+                students.forEach(st => {
+                    normalizeStudentRecords(st);
+                    syncPreviousDueWithStudentReceipts(st);
+                });
+
+                saveLocalData();
+                currentStudent = students[0] || null;
+
+                recalculateStudentTotals();
+                renderDashboard();
+                renderStockTable();
+                renderStockDropdown();
+                renderExpenses();
+                renderCourseDivision();
+                if (typeof renderLoanPage === "function") renderLoanPage();
+                if (typeof renderPreviousYearDuePage === "function") renderPreviousYearDuePage();
+
+                if (document.getElementById("mApiKey")) document.getElementById("mApiKey").value = masterSettings.apiKey || "";
+                if (document.getElementById("mDbUrl")) document.getElementById("mDbUrl").value = masterSettings.dbUrl || dbUrl;
+                if (document.getElementById("mDefaultFee")) document.getElementById("mDefaultFee").value = masterSettings.defaultFee || 350;
+                if (document.getElementById("mDefaultStd")) document.getElementById("mDefaultStd").value = masterSettings.defaultStd || "5";
+                if (document.getElementById("mDefaultCourse")) document.getElementById("mDefaultCourse").value = masterSettings.defaultCourse || "Navoday";
+                if (document.getElementById("mReceiptBaseUrl")) document.getElementById("mReceiptBaseUrl").value = masterSettings.receiptBaseUrl || "";
+
+                alert("✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
+            } catch (err) {
+                alert("❌ ડેટા રીસ્ટોર થઈ શક્યો નથી.\n\n" + err.message);
             } finally {
-                btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
+                btns.forEach(b => {
+                    b.disabled = false;
+                    b.innerText = "🔄 ડેટા રીસ્ટોર કરવો";
+                });
             }
         }
 
@@ -2532,6 +2598,8 @@
                 students: students,
                 stockList: stockList,
                 expenses: expenses,
+                loanRecords: loanRecords,
+                previousYearDues: previousYearDues,
                 masterSettings: masterSettings
             };
             const jsonStr = JSON.stringify(data, null, 2);
@@ -2555,7 +2623,16 @@
                     if (data.students) students = data.students;
                     if (data.stockList) stockList = data.stockList;
                     if (data.expenses) expenses = data.expenses;
+                    if (data.loanRecords) loanRecords = data.loanRecords;
+                    if (data.previousYearDues) previousYearDues = data.previousYearDues;
                     if (data.masterSettings) masterSettings = data.masterSettings;
+
+                    if (!Array.isArray(loanRecords)) loanRecords = [];
+                    if (!Array.isArray(previousYearDues)) previousYearDues = [];
+                    students.forEach(st => {
+                        normalizeStudentRecords(st);
+                        syncPreviousDueWithStudentReceipts(st);
+                    });
 
                     saveLocalData();
                     recalculateStudentTotals();
