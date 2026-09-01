@@ -1376,14 +1376,24 @@
             let activeCount = 0;
             let inactiveCount = 0;
 
+            // જે વિદ્યાર્થીની ગયા વર્ષના બાકી વિભાગમાં નોંધ છે તેને
+            // વિદ્યાર્થીની ફી અને ગયા વર્ષના બાકી બંને જગ્યાએ બે વાર ન ગણવો.
+            const prevStudentIds = new Set(
+                previousYearDues.map(r => String(r.studentId)).filter(Boolean)
+            );
+
             students.forEach(s => {
                 if(!s.status) s.status = 'active';
                 if (s.status === 'active') activeCount++;
                 else inactiveCount++;
 
-                totalFeeSum += (s.totalFeeWithStationery || s.fee);
-                totalPaidSum += s.paid;
-                totalDueSum += s.due;
+                // ગયા વર્ષના બાકી માં નોંધાયેલ વિદ્યાર્થીને અહીં ફરીથી
+                // કુલ સરવૈયામાં ઉમેરવામાં નહીં આવે.
+                if (!prevStudentIds.has(String(s.id))) {
+                    totalFeeSum += (s.totalFeeWithStationery || s.fee);
+                    totalPaidSum += s.paid;
+                    totalDueSum += s.due;
+                }
             });
 
             const loanTotal = loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
@@ -1392,7 +1402,8 @@
             const prevPaid = previousYearDues.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
 
             // આખા વર્ષનું એક જ સરવૈયું:
-            // વિદ્યાર્થીની કુલ ફી + ગયા વર્ષનું બાકી + ઉછીના આપેલ
+            // વિદ્યાર્થીની કુલ ફી + ગયા વર્ષનું બાકી + ઉછીના આપેલ.
+            // એક જ વિદ્યાર્થી બંને જગ્યાએ હોય તો માત્ર એક જ વાર ગણાય છે.
             const grandTotal = totalFeeSum + prevTotal + loanTotal;
             const grandPaid = totalPaidSum + prevPaid + loanPaid;
             const grandDue = Math.max(0, grandTotal - grandPaid);
