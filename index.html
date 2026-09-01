@@ -195,17 +195,6 @@
                 </div>
             </div>
 
-            <div class="finance-summary">
-                <h4>💰 ઉછીના + ગયા વર્ષના બાકીનું કુલ સરવૈયું</h4>
-                <div class="grid-2">
-                    <div class="stat-box" style="background:#388e3c;">કુલ જમા<br><span id="sumOtherPaid">₹0</span></div>
-                    <div class="stat-box" style="background:#d32f2f;">કુલ બાકી<br><span id="sumOtherDue">₹0</span></div>
-                </div>
-                <div style="text-align:center;margin-top:8px;font-size:13px;font-weight:bold;color:#333;">
-                    કુલ જવાબદારી: <span id="sumOtherTotal">₹0</span>
-                </div>
-            </div>
-
             <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
@@ -1400,16 +1389,6 @@
             document.getElementById('sumTotalFee').innerText = '₹' + totalFeeSum;
             document.getElementById('sumPaidFee').innerText = '₹' + totalPaidSum;
             document.getElementById('sumDueFee').innerText = '₹' + totalDueSum;
-            const loanTotal = loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
-            const loanPaid = loanRecords.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
-            const prevTotal = previousYearDues.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
-            const prevPaid = previousYearDues.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
-            const otherTotal = loanTotal + prevTotal;
-            const otherPaid = loanPaid + prevPaid;
-            const otherDue = Math.max(0, otherTotal - otherPaid);
-            document.getElementById('sumOtherTotal').innerText = '₹' + otherTotal;
-            document.getElementById('sumOtherPaid').innerText = '₹' + otherPaid;
-            document.getElementById('sumOtherDue').innerText = '₹' + otherDue;
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
 
