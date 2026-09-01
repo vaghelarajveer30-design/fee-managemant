@@ -187,7 +187,7 @@
             </div>
 
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
-                <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓની ફી નું સરવૈયું</div>
+                <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓનું કુલ સરવૈયું</div>
                 <div class="grid-3">
                     <div id="btnFilterAll" class="stat-box" style="background: #1976d2;" onclick="filterStudents(null)">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
                     <div id="btnFilterPaid" class="stat-box" style="background: #388e3c;" onclick="filterStudents('paid')">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
@@ -1386,9 +1386,20 @@
                 totalDueSum += s.due;
             });
 
-            document.getElementById('sumTotalFee').innerText = '₹' + totalFeeSum;
-            document.getElementById('sumPaidFee').innerText = '₹' + totalPaidSum;
-            document.getElementById('sumDueFee').innerText = '₹' + totalDueSum;
+            const loanTotal = loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
+            const loanPaid = loanRecords.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
+            const prevTotal = previousYearDues.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
+            const prevPaid = previousYearDues.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
+
+            // આખા વર્ષનું એક જ સરવૈયું:
+            // વિદ્યાર્થીની કુલ ફી + ગયા વર્ષનું બાકી + ઉછીના આપેલ
+            const grandTotal = totalFeeSum + prevTotal + loanTotal;
+            const grandPaid = totalPaidSum + prevPaid + loanPaid;
+            const grandDue = Math.max(0, grandTotal - grandPaid);
+
+            document.getElementById('sumTotalFee').innerText = '₹' + grandTotal;
+            document.getElementById('sumPaidFee').innerText = '₹' + grandPaid;
+            document.getElementById('sumDueFee').innerText = '₹' + grandDue;
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
 
