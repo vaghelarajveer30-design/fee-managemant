@@ -84,17 +84,6 @@
 </head>
 <body>
 
-    <div id="appLockOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;align-items:center;justify-content:center;padding:20px;">
-        <div style="width:100%;max-width:360px;background:#fff;border-radius:14px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.35);text-align:center;">
-            <div style="font-size:34px;">🔐</div>
-            <h3 style="color:#1565c0;margin:8px 0;">એપ પાસવર્ડ</h3>
-            <p style="font-size:13px;color:#666;margin:0 0 12px;">એપ ચાલુ કરવા પાસવર્ડ દાખલ કરો.</p>
-            <input type="password" id="appUnlockPassword" class="form-control" placeholder="પાસવર્ડ" onkeydown="if(event.key==='Enter') unlockApp()">
-            <button class="btn btn-blue" style="margin-top:10px;" onclick="unlockApp()">🔓 એપ ખોલો</button>
-            <div id="appUnlockError" style="display:none;color:#d32f2f;font-size:12px;margin-top:8px;">ખોટો પાસવર્ડ.</div>
-        </div>
-    </div>
-
     <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
         <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
@@ -206,15 +195,6 @@
                 </div>
             </div>
 
-            <div class="finance-summary">
-                <h4>📅 ગયા વર્ષના બાકીનું અલગ સરવૈયું</h4>
-                <div class="grid-3">
-                    <div class="stat-box" style="background:#1976d2;">કુલ બાકી<br><span id="sumPrevTotal">₹0</span></div>
-                    <div class="stat-box" style="background:#388e3c;">કુલ જમા<br><span id="sumPrevPaid">₹0</span></div>
-                    <div class="stat-box" style="background:#d32f2f;">હજુ બાકી<br><span id="sumPrevDue">₹0</span></div>
-                </div>
-            </div>
-
             <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
@@ -317,6 +297,10 @@
                         <label>Firebase Database URL / Project ID:</label>
                         <input type="text" id="mDbUrl" class="form-control" placeholder="https://your-app-default-rtdb.firebaseio.com">
                     </div>
+                    <div class="form-group">
+                        <label>🔐 ડિલીટ / રીસ્ટોર પાસવર્ડ (તમારો પાસવર્ડ જાતે સેટ કરો):</label>
+                        <input type="password" id="mPassword" class="form-control" placeholder="તમારો પાસવર્ડ દાખલ કરો">
+                    </div>
 
                     <h4 style="margin-top:10px; color:#1565c0;">📚 ડિફોલ્ટ ફી બુક અને કિંમતો</h4>
                     <div class="grid-2">
@@ -333,12 +317,6 @@
                         <label>ડિફોલ્ટ કોર્સનું નામ</label>
                         <input type="text" id="mDefaultCourse" class="form-control" value="Navoday">
                     </div>
-                    <div class="form-group">
-                        <label>🔐 એપ પાસવર્ડ (જાતે સેટ કરો)</label>
-                        <input type="password" id="mAppPassword" class="form-control" placeholder="નવો પાસવર્ડ (બદલવો ન હોય તો ખાલી રાખો)">
-                        <input type="password" id="mAppPasswordConfirm" class="form-control" style="margin-top:6px;" placeholder="પાસવર્ડ ફરી લખો">
-                    </div>
-
                     <div class="form-group">
                         <label>ઓનલાઈન ફી પહોંચનું Base URL (લિંક એપ/વેબ માટે)</label>
                         <input type="url" id="mReceiptBaseUrl" class="form-control" placeholder="https://તમારી-site.com/index.html">
@@ -515,8 +493,7 @@
                 <h3 style="color:#7b1fa2;">📅 ગયા વર્ષના બાકી</h3>
                 <p style="font-size:12px;color:#666;margin:6px 0 10px;">વિદ્યાર્થીનું ગયા વર્ષનું બાકી દાખલ કરો. પછી થોડું-થોડું કે એકસાથે જમા થાય તેમ બાકી આપમેળે ઘટશે.</p>
                 <form onsubmit="event.preventDefault(); savePreviousYearDue();">
-                    <div class="form-group"><label>વિદ્યાર્થી</label><select id="prevStudentSelect" class="form-control" onchange="showPreviousStudentFee()" required></select></div>
-                    <div id="previousStudentFeeInfo" style="display:none;background:#f3f8ff;border:1px solid #bbdefb;border-radius:8px;padding:9px;font-size:12px;margin-bottom:8px;"></div>
+                    <div class="form-group"><label>વિદ્યાર્થી</label><select id="prevStudentSelect" class="form-control" required></select></div>
                     <div class="grid-2">
                         <div class="form-group"><label>ગયા વર્ષનું કુલ બાકી (₹)</label><input type="number" id="prevAmount" class="form-control" min="0" required></div>
                         <div class="form-group"><label>બાકી નોંધ તારીખ</label><input type="date" id="prevDate" class="form-control" required></div>
@@ -837,7 +814,7 @@
             defaultStd: "5",
             defaultCourse: "Navoday",
             receiptBaseUrl: "",
-            appPasswordHash: ""
+            password: ""
         };
 
         let stockList = [
@@ -852,126 +829,13 @@
         let expenses = [];
         let loanRecords = [];
         let previousYearDues = [];
+        // ડિલીટ થયેલા વિદ્યાર્થીઓ અહીં મૂળ status સાથે થોડા સમય માટે રાખવામાં આવે છે,
+        // જેથી backup/restore કર્યા પછી જે statusમાંથી delete થયા હતા તે જ statusમાં પાછા આવે.
+        let deletedStudents = [];
         let currentStudent = students[0];
         let currentFilter = null;
         let generatedBlob = null;
         let generatedDataUrl = "";
-
-        let cloudSyncTimer = null;
-        let cloudPollTimer = null;
-        let cloudSyncBusy = false;
-        let lastCloudTimestamp = Number(localStorage.getItem('NNC_lastCloudTimestamp') || 0);
-
-        function getCloudDbUrl() {
-            return (masterSettings.dbUrl || '').trim().replace(/\/$/, '');
-        }
-
-        function cloudPayload(timestamp) {
-            return {students, stockList, expenses, loanRecords, previousYearDues, masterSettings, timestamp};
-        }
-
-        function scheduleCloudSync() {
-            if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
-            cloudSyncTimer = setTimeout(pushCloudDataSilently, 700);
-        }
-
-        async function pushCloudDataSilently() {
-            if (cloudSyncBusy || !navigator.onLine) return;
-            const db = getCloudDbUrl();
-            if (!db) return;
-            cloudSyncBusy = true;
-            const timestamp = Date.now();
-            try {
-                const response = await fetch(db + '/backup.json', {
-                    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cloudPayload(timestamp))
-                });
-                if (response.ok) {
-                    lastCloudTimestamp = timestamp;
-                    localStorage.setItem('NNC_lastCloudTimestamp', String(timestamp));
-                }
-            } catch(e) {} finally { cloudSyncBusy = false; }
-        }
-
-        function applyCloudData(data) {
-            if (!data || typeof data !== 'object') return;
-            students = Array.isArray(data.students) ? data.students : [];
-            stockList = Array.isArray(data.stockList) ? data.stockList : [];
-            expenses = Array.isArray(data.expenses) ? data.expenses : [];
-            loanRecords = Array.isArray(data.loanRecords) ? data.loanRecords : [];
-            previousYearDues = Array.isArray(data.previousYearDues) ? data.previousYearDues : [];
-            if (data.masterSettings && typeof data.masterSettings === 'object') masterSettings = Object.assign({}, masterSettings, data.masterSettings);
-            students.forEach(st => normalizeStudentRecords(st));
-            students.forEach(st => syncPreviousDueWithStudentReceipts(st));
-            localStorage.setItem('NNC_students', JSON.stringify(students));
-            localStorage.setItem('NNC_stock', JSON.stringify(stockList));
-            localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
-            localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
-            localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
-            localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-            lastCloudTimestamp = Number(data.timestamp || Date.now());
-            localStorage.setItem('NNC_lastCloudTimestamp', String(lastCloudTimestamp));
-        }
-
-        async function syncCloudDataOnStart() {
-            if (!navigator.onLine) return;
-            const db = getCloudDbUrl();
-            if (!db) return;
-            try {
-                const response = await fetch(db + '/backup.json', {cache:'no-store'});
-                if (!response.ok) return;
-                const data = await response.json();
-                if (!data || typeof data !== 'object') return;
-                const cloudTs = Number(data.timestamp || 0);
-                if (cloudTs > lastCloudTimestamp || !lastCloudTimestamp) applyCloudData(data);
-                else if (lastCloudTimestamp > cloudTs) await pushCloudDataSilently();
-            } catch(e) {}
-        }
-
-        async function pollCloudData() {
-            if (!navigator.onLine || cloudSyncBusy) return;
-            const db = getCloudDbUrl();
-            if (!db) return;
-            try {
-                const response = await fetch(db + '/backup.json', {cache:'no-store'});
-                if (!response.ok) return;
-                const data = await response.json();
-                const cloudTs = Number(data?.timestamp || 0);
-                if (cloudTs > lastCloudTimestamp) {
-                    applyCloudData(data);
-                    currentStudent = students[0] || null;
-                    recalculateStudentTotals(); renderDashboard();
-                    if (document.getElementById('pagePreviousYearDue')?.style.display !== 'none') renderPreviousYearDuePage();
-                    if (currentStudent && document.getElementById('pageStudentDetails')?.style.display !== 'none') openStudent(currentStudent.id);
-                }
-            } catch(e) {}
-        }
-
-        async function sha256Text(text) {
-            const data = new TextEncoder().encode(text);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-        }
-
-        async function unlockApp() {
-            const input = document.getElementById('appUnlockPassword');
-            const error = document.getElementById('appUnlockError');
-            const hash = await sha256Text(input.value || '');
-            if (hash === masterSettings.appPasswordHash) {
-                document.getElementById('appLockOverlay').style.display = 'none';
-                document.getElementById('mainAppContainer').style.display = '';
-                document.getElementById('appNavbar').style.display = '';
-                if (error) error.style.display='none'; input.value='';
-            } else { if (error) error.style.display='block'; input.select(); }
-        }
-
-        async function requireAppPassword() {
-            if (!masterSettings.appPasswordHash) return true;
-            document.getElementById('mainAppContainer').style.display = 'none';
-            document.getElementById('appNavbar').style.display = 'none';
-            document.getElementById('appLockOverlay').style.display = 'flex';
-            setTimeout(()=>document.getElementById('appUnlockPassword')?.focus(),100);
-            return false;
-        }
 
         function utf8ToBase64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
@@ -1026,8 +890,6 @@
             if(previewBox) previewBox.style.display = 'none';
 
             updateNetworkStatus();
-            await syncCloudDataOnStart();
-            if (!(await requireAppPassword())) return;
             loadLocalData();
             recalculateStudentTotals();
             renderDashboard();
@@ -1046,11 +908,8 @@
             document.getElementById('mDefaultStd').value = masterSettings.defaultStd;
             document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
             document.getElementById('mReceiptBaseUrl').value = masterSettings.receiptBaseUrl || "";
-            if (document.getElementById('mAppPassword')) document.getElementById('mAppPassword').value = '';
-            if (document.getElementById('mAppPasswordConfirm')) document.getElementById('mAppPasswordConfirm').value = '';
+            if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
             renderCourseDivision();
-            if (cloudPollTimer) clearInterval(cloudPollTimer);
-            cloudPollTimer = setInterval(pollCloudData, 8000);
         };
 
         function renderStandaloneReceipt(data) {
@@ -1232,8 +1091,8 @@
             localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
             localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
             localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
+            localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
             localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-            scheduleCloudSync();
         }
 
         function loadLocalData() {
@@ -1242,10 +1101,12 @@
             if (localStorage.getItem('NNC_expenses')) expenses = JSON.parse(localStorage.getItem('NNC_expenses'));
             if (localStorage.getItem('NNC_loans')) loanRecords = JSON.parse(localStorage.getItem('NNC_loans'));
             if (localStorage.getItem('NNC_previousYearDues')) previousYearDues = JSON.parse(localStorage.getItem('NNC_previousYearDues'));
+            if (localStorage.getItem('NNC_deletedStudents')) deletedStudents = JSON.parse(localStorage.getItem('NNC_deletedStudents'));
             if (!Array.isArray(loanRecords)) loanRecords = [];
             if (!Array.isArray(previousYearDues)) previousYearDues = [];
-            if (localStorage.getItem('NNC_master')) masterSettings = JSON.parse(localStorage.getItem('NNC_master'));
-            students.forEach(st => { normalizeStudentRecords(st); syncPreviousDueWithStudentReceipts(st); });
+            if (!Array.isArray(deletedStudents)) deletedStudents = [];
+            if (localStorage.getItem('NNC_master')) masterSettings = Object.assign({}, masterSettings, JSON.parse(localStorage.getItem('NNC_master')));
+            students.forEach(st => normalizeStudentRecords(st));
         }
 
         async function backupDataToCloud() {
@@ -1267,6 +1128,7 @@
                 expenses: expenses,
                 loanRecords: loanRecords,
                 previousYearDues: previousYearDues,
+                deletedStudents: deletedStudents,
                 masterSettings: masterSettings,
                 timestamp: new Date().toISOString()
             };
@@ -1288,113 +1150,65 @@
         }
 
         async function restoreDataFromCloud() {
-            let dbUrl = (masterSettings.dbUrl || "").trim();
-            if (!dbUrl) {
-                const entered = prompt("Firebase Database URL દાખલ કરો:", "");
-                if (!entered) return;
-                dbUrl = entered.trim();
-            }
-            dbUrl = dbUrl.replace(/\/$/, "");
-            if (!/^https?:\/\//i.test(dbUrl)) {
-                alert("❌ Firebase Database URL સાચી નથી.");
-                return;
-            }
-
+            if (!verifyMasterPassword('ડેટા રીસ્ટોર')) return;
+            const dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
+            if (!dbUrl) { alert("કૃપા કરીને Firebase Database URL દાખલ કરો."); return; }
             const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
-            btns.forEach(b => { b.disabled = true; b.innerText = "⏳ રીસ્ટોર થઈ રહ્યું છે..."; });
-
+            btns.forEach(b => { b.disabled=true; b.innerText='⏳ રીસ્ટોર થઈ રહ્યું છે...'; });
             try {
-                const url = dbUrl + "/backup.json";
-                let response;
-
+                const url = dbUrl + '/backup.json';
+                let data = null;
                 try {
-                    response = await fetch(url, {
-                        method: "GET",
-                        cache: "no-store",
-                        mode: "cors",
-                        headers: { "Accept": "application/json" }
-                    });
-                } catch (fetchErr) {
-                    response = await new Promise((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open("GET", url, true);
-                        xhr.setRequestHeader("Accept", "application/json");
-                        xhr.timeout = 20000;
-                        xhr.onload = () => resolve(xhr);
-                        xhr.onerror = () => reject(new Error("નેટવર્ક/CORS ભૂલ"));
-                        xhr.ontimeout = () => reject(new Error("કનેક્શન માટે સમય પૂરો થયો"));
-                        xhr.send();
-                    });
-                }
-
-                const status = response.status;
-                if (status === 401 || status === 403) {
-                    throw new Error("Firebase Rules દ્વારા ડેટા વાંચવાની પરવાનગી નથી (HTTP " + status + "). Firebase Realtime Database Rules તપાસો.");
-                }
-                if (status === 404) {
-                    throw new Error("Firebaseમાં /backup.json મળ્યું નથી. પહેલા 'બેકઅપ ડેટા લો' કરો.");
-                }
-                if (status < 200 || status >= 300) {
-                    throw new Error("Firebase HTTP Error " + status);
-                }
-
-                let data;
-                if (typeof response.json === "function") {
+                    const response = await fetch(url, {method:'GET', cache:'no-store', headers:{'Accept':'application/json'}});
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
                     data = await response.json();
-                } else {
-                    try {
-                        data = JSON.parse(response.responseText || "null");
-                    } catch (e) {
-                        throw new Error("Firebaseમાંથી મળેલ ડેટા JSON નથી.");
-                    }
+                } catch(fetchErr) {
+                    data = await new Promise((resolve,reject)=>{
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', url, true); xhr.setRequestHeader('Accept','application/json');
+                        xhr.onload=()=>xhr.status>=200 && xhr.status<300 ? resolve(JSON.parse(xhr.responseText)) : reject(new Error('HTTP '+xhr.status));
+                        xhr.onerror=()=>reject(new Error('નેટવર્ક/CORS ભૂલ')); xhr.ontimeout=()=>reject(new Error('સમય પૂરો')); xhr.timeout=15000; xhr.send();
+                    });
                 }
-
-                if (!data || typeof data !== "object" || Array.isArray(data)) {
-                    throw new Error("Firebaseમાં માન્ય બેકઅપ ડેટા મળ્યો નથી.");
-                }
-
+                if (!data || typeof data !== 'object') { alert('⚠️ Firebaseમાં કોઈ બેકઅપ મળ્યો નથી.'); return; }
                 students = Array.isArray(data.students) ? data.students : [];
                 stockList = Array.isArray(data.stockList) ? data.stockList : [];
                 expenses = Array.isArray(data.expenses) ? data.expenses : [];
                 loanRecords = Array.isArray(data.loanRecords) ? data.loanRecords : [];
                 previousYearDues = Array.isArray(data.previousYearDues) ? data.previousYearDues : [];
+                deletedStudents = Array.isArray(data.deletedStudents) ? data.deletedStudents : [];
 
-                if (data.masterSettings && typeof data.masterSettings === "object") {
-                    masterSettings = Object.assign({}, masterSettings, data.masterSettings);
+                // જો backupમાં ડિલીટ થયેલા વિદ્યાર્થી હોય તો restore વખતે તે જ મૂળ statusમાં પાછા લાવો.
+                if (deletedStudents.length) {
+                    const existingIds = new Set(students.map(s => String(s.id)));
+                    deletedStudents.forEach(st => {
+                        if (!st || st.id == null) return;
+                        if (!existingIds.has(String(st.id))) {
+                            st.status = st._deletedFromStatus || st.status || 'active';
+                            delete st._deletedFromStatus;
+                            students.push(st);
+                        }
+                    });
+                    deletedStudents = [];
                 }
 
-                students.forEach(st => {
-                    normalizeStudentRecords(st);
-                    syncPreviousDueWithStudentReceipts(st);
-                });
-
-                saveLocalData();
-                currentStudent = students[0] || null;
-
-                recalculateStudentTotals();
-                renderDashboard();
-                renderStockTable();
-                renderStockDropdown();
-                renderExpenses();
-                renderCourseDivision();
-                if (typeof renderLoanPage === "function") renderLoanPage();
-                if (typeof renderPreviousYearDuePage === "function") renderPreviousYearDuePage();
-
-                if (document.getElementById("mApiKey")) document.getElementById("mApiKey").value = masterSettings.apiKey || "";
-                if (document.getElementById("mDbUrl")) document.getElementById("mDbUrl").value = masterSettings.dbUrl || dbUrl;
-                if (document.getElementById("mDefaultFee")) document.getElementById("mDefaultFee").value = masterSettings.defaultFee || 350;
-                if (document.getElementById("mDefaultStd")) document.getElementById("mDefaultStd").value = masterSettings.defaultStd || "5";
-                if (document.getElementById("mDefaultCourse")) document.getElementById("mDefaultCourse").value = masterSettings.defaultCourse || "Navoday";
-                if (document.getElementById("mReceiptBaseUrl")) document.getElementById("mReceiptBaseUrl").value = masterSettings.receiptBaseUrl || "";
-
-                alert("✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!");
-            } catch (err) {
-                alert("❌ ડેટા રીસ્ટોર થઈ શક્યો નથી.\n\n" + err.message);
+                if (data.masterSettings && typeof data.masterSettings === 'object') {
+                    masterSettings = Object.assign({}, masterSettings, data.masterSettings);
+                }
+                saveLocalData(); currentStudent = students[0] || null;
+                recalculateStudentTotals(); renderDashboard(); renderStockTable(); renderStockDropdown(); renderExpenses(); renderCourseDivision();
+                if (document.getElementById('mApiKey')) document.getElementById('mApiKey').value=masterSettings.apiKey||'';
+                if (document.getElementById('mDbUrl')) document.getElementById('mDbUrl').value=masterSettings.dbUrl||'';
+                if (document.getElementById('mDefaultFee')) document.getElementById('mDefaultFee').value=masterSettings.defaultFee||350;
+                if (document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
+                if (document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
+                if (document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
+                if (document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
+                alert('✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!');
+            } catch(err) {
+                alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
             } finally {
-                btns.forEach(b => {
-                    b.disabled = false;
-                    b.innerText = "🔄 ડેટા રીસ્ટોર કરવો";
-                });
+                btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
             }
         }
 
@@ -1548,6 +1362,9 @@
                 }
 
                 st.paid = paidFee;
+                const prevRecord = previousYearDues.find(x => String(x.studentId) === String(st.id));
+                st.previousYearPaid = prevRecord ? previousPaidAmount(prevRecord) : 0;
+                st.previousYearDue = prevRecord ? previousDueAmount(prevRecord) : 0;
                 st.due = st.totalFeeWithStationery - st.paid;
                 if (st.due < 0) st.due = 0;
 
@@ -1593,40 +1410,41 @@
             let activeCount = 0;
             let inactiveCount = 0;
 
+            // જે વિદ્યાર્થીની ગયા વર્ષના બાકી વિભાગમાં નોંધ છે તેને
+            // વિદ્યાર્થીની ફી અને ગયા વર્ષના બાકી બંને જગ્યાએ બે વાર ન ગણવો.
+            const prevStudentIds = new Set(
+                previousYearDues.map(r => String(r.studentId)).filter(Boolean)
+            );
+
             students.forEach(s => {
                 if(!s.status) s.status = 'active';
                 if (s.status === 'active') activeCount++;
                 else inactiveCount++;
 
-                totalFeeSum += (s.totalFeeWithStationery || s.fee);
-                totalPaidSum += s.paid;
-                totalDueSum += s.due;
+                // ગયા વર્ષના બાકી માં નોંધાયેલ વિદ્યાર્થીને અહીં ફરીથી
+                // કુલ સરવૈયામાં ઉમેરવામાં નહીં આવે.
+                if (!prevStudentIds.has(String(s.id))) {
+                    totalFeeSum += (s.totalFeeWithStationery || s.fee);
+                    totalPaidSum += s.paid;
+                    totalDueSum += s.due;
+                }
             });
 
             const loanTotal = loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
             const loanPaid = loanRecords.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
             const prevTotal = previousYearDues.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
             const prevPaid = previousYearDues.reduce((a,r)=>a+(Array.isArray(r.payments)?r.payments.reduce((x,p)=>x+(parseFloat(p.amount)||0),0):0),0);
-            const prevDue = Math.max(0, prevTotal - prevPaid);
 
-            // મુખ્ય વિદ્યાર્થી સરવૈયું:
-            // માત્ર વિદ્યાર્થીઓની ચાલુ ફી + ઉછીના આપેલ રકમ.
-            // ગયા વર્ષના બાકીનો સમાવેશ અહીં નહીં થાય.
-            const grandTotal = totalFeeSum + loanTotal;
-            const grandPaid = totalPaidSum + loanPaid;
+            // આખા વર્ષનું એક જ સરવૈયું:
+            // વિદ્યાર્થીની કુલ ફી + ગયા વર્ષનું બાકી + ઉછીના આપેલ.
+            // એક જ વિદ્યાર્થી બંને જગ્યાએ હોય તો માત્ર એક જ વાર ગણાય છે.
+            const grandTotal = totalFeeSum + prevTotal + loanTotal;
+            const grandPaid = totalPaidSum + prevPaid + loanPaid;
             const grandDue = Math.max(0, grandTotal - grandPaid);
 
             document.getElementById('sumTotalFee').innerText = '₹' + grandTotal;
             document.getElementById('sumPaidFee').innerText = '₹' + grandPaid;
             document.getElementById('sumDueFee').innerText = '₹' + grandDue;
-
-            // ગયા વર્ષના બાકીનું સરવૈયું અલગ.
-            const prevTotalEl = document.getElementById('sumPrevTotal');
-            const prevPaidEl = document.getElementById('sumPrevPaid');
-            const prevDueEl = document.getElementById('sumPrevDue');
-            if (prevTotalEl) prevTotalEl.innerText = '₹' + prevTotal;
-            if (prevPaidEl) prevPaidEl.innerText = '₹' + prevPaid;
-            if (prevDueEl) prevDueEl.innerText = '₹' + prevDue;
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
 
@@ -1941,11 +1759,31 @@
             navigateTo('pageAddStudent');
         }
 
+        function verifyMasterPassword(actionText) {
+            const configured = String(masterSettings.password || '');
+            if (!configured) return true;
+            const entered = prompt('🔐 ' + (actionText || 'કામ') + ' માટે પાસવર્ડ દાખલ કરો:');
+            if (entered === null) return false;
+            if (entered !== configured) {
+                alert('❌ ખોટો પાસવર્ડ.');
+                return false;
+            }
+            return true;
+        }
+
         function deleteStudent(id) {
+            if (!verifyMasterPassword('વિદ્યાર્થી ડિલીટ')) return;
+            const st = students.find(s => String(s.id) === String(id));
+            if (!st) return;
             if (confirm("શું તમે ખરેખર આ વિદ્યાર્થીને ડિલીટ કરવા માગો છો?")) {
-                students = students.filter(s => s.id !== id);
+                const deletedCopy = JSON.parse(JSON.stringify(st));
+                deletedCopy._deletedFromStatus = st.status || 'active';
+                deletedStudents = deletedStudents.filter(s => String(s.id) !== String(id));
+                deletedStudents.push(deletedCopy);
+                students = students.filter(s => String(s.id) !== String(id));
+                if (currentStudent && String(currentStudent.id) === String(id)) currentStudent = students[0] || null;
                 saveLocalData();
-                alert("વિદ્યાર્થી ડિલીટ થઈ ગયો છે.");
+                alert("વિદ્યાર્થી ડિલીટ થઈ ગયો છે. Restore કરશો ત્યારે જે statusમાંથી ડિલીટ કર્યો હતો તે જ statusમાં પાછો આવશે.");
                 navigateTo('pageDashboard');
                 renderDashboard();
             }
@@ -2174,17 +2012,10 @@
             }
 
             const info = getTuitionForPeriod(currentStudent, fromStr, toStr);
-            let receiptFee = info.total;
-            const inactiveDue = (currentStudent.status === 'inactive') ? (parseFloat(currentStudent.due) || 0) : 0;
-            if (currentStudent.status === 'inactive' && inactiveDue > 0 && receiptFee <= 0) {
-                receiptFee = inactiveDue;
-            }
-            document.getElementById('recAutoFee').value = receiptFee;
+            document.getElementById('recAutoFee').value = info.total;
 
             const body = document.getElementById('receiptMonthBreakdownBody');
-            if (currentStudent.status === 'inactive' && inactiveDue > 0 && !info.months.length) {
-                body.innerHTML = `<span style="color:#d32f2f;font-weight:bold;">આ ઇન-એક્ટિવ વિદ્યાર્થીની બાકી ફી: ₹${inactiveDue} — આ રકમમાંથી જમા કરતાં વિદ્યાર્થીની બાકી ફી આપમેળે ઘટશે.</span>`;
-            } else if (!info.months.length) {
+            if (!info.months.length) {
                 body.innerHTML = '<span style="color:#888;">આ સમયગાળામાં કોઈ Active દિવસ મળ્યો નથી.</span>';
             } else {
                 body.innerHTML = `<table style="margin:0;"><thead><tr><th>મહિનો</th><th>ફી (₹)</th></tr></thead><tbody>` +
@@ -2246,6 +2077,58 @@
         }
 
         // પહોંચ જનરેટ થાય ત્યારે ઓટોમેટીક ડાયરેક્ટ પહોંચની લિંક શેર થશે
+        // ફી પહોંચની જમા રકમ અને ગયા વર્ષના બાકી વચ્ચે આપમેળે લિંક રાખે છે.
+        // એક જ પેમેન્ટ વિદ્યાર્થીની receipts માં અને previousYearDues માં દેખાશે,
+        // પરંતુ Dashboard ના કુલ સરવૈયામાં બે વાર ગણાશે નહીં.
+        function syncReceiptToPreviousYearDue(studentId, receiptObj) {
+            const prev = previousYearDues.find(x => String(x.studentId) === String(studentId));
+            if (!prev) return;
+
+            prev.payments = Array.isArray(prev.payments) ? prev.payments : [];
+            const paymentId = 'receipt_' + String(receiptObj.id);
+            const old = prev.payments.find(p => String(p.id) === paymentId);
+            const paid = Math.max(0, parseFloat(receiptObj.paidVal) || 0);
+
+            if (paid <= 0) {
+                if (old) prev.payments = prev.payments.filter(p => String(p.id) !== paymentId);
+                return;
+            }
+
+            // બીજા manual payments બાદ જેટલું બાકી છે તેમાં જ આ receiptની રકમ લેવી.
+            const otherPaid = prev.payments
+                .filter(p => String(p.id) !== paymentId && !String(p.id).startsWith('receipt_'))
+                .reduce((a,p) => a + (parseFloat(p.amount) || 0), 0);
+            const otherReceiptPaid = prev.payments
+                .filter(p => String(p.id) !== paymentId && String(p.id).startsWith('receipt_'))
+                .reduce((a,p) => a + (parseFloat(p.amount) || 0), 0);
+            const available = Math.max(0, (parseFloat(prev.totalAmount) || 0) - otherPaid - otherReceiptPaid);
+            const linkedAmount = Math.min(paid, available);
+
+            if (linkedAmount <= 0) {
+                if (old) prev.payments = prev.payments.filter(p => String(p.id) !== paymentId);
+                return;
+            }
+
+            const payment = {
+                id: paymentId,
+                date: receiptObj.date || new Date().toISOString().split('T')[0],
+                amount: linkedAmount,
+                note: 'ફી પહોંચ #' + String(receiptObj.id) + ' માંથી આપમેળે જમા'
+            };
+            if (old) Object.assign(old, payment);
+            else prev.payments.push(payment);
+        }
+
+        function syncStudentReceiptsToPreviousYearDue(studentId) {
+            const st = students.find(s => String(s.id) === String(studentId));
+            const prev = previousYearDues.find(x => String(x.studentId) === String(studentId));
+            if (!st || !prev) return;
+
+            // Receipt-linked payments ને ફરીથી બનાવીએ જેથી edit/delete પછી પણ ગણતરી સાચી રહે.
+            prev.payments = Array.isArray(prev.payments) ? prev.payments.filter(p => !String(p.id).startsWith('receipt_')) : [];
+            (st.receipts || []).forEach(r => syncReceiptToPreviousYearDue(studentId, r));
+        }
+
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -2288,10 +2171,16 @@
                 currentStudent.receipts.push(newReceipt);
             }
 
-            syncPreviousDueWithStudentReceipts(currentStudent);
+            // વિદ્યાર્થી Active હોય કે Inactive, જો ગયા વર્ષનું બાકી નોંધાયેલું હોય
+            // તો આ જ જમા રકમ ત્યાં પણ આપમેળે દેખાડો અને બાકી ઘટાડો.
+            syncReceiptToPreviousYearDue(currentStudent.id, newReceipt);
+
             saveLocalData();
             recalculateStudentTotals();
             renderFeeHistoryTable();
+            // Home dashboard, Active/Inactive lists અને કુલ જમા બોક્સ તરત અપડેટ કરો.
+            renderDashboard();
+            renderPreviousYearDuePage();
 
             displayReceiptDataInPreview(newReceipt);
             
@@ -2560,33 +2449,22 @@
             if (!currentStudent || !currentStudent.receipts) return;
             if (confirm("શું તમે આ ફી પહોંચ ડિલીટ કરવા માગો છો?")) {
                 currentStudent.receipts = currentStudent.receipts.filter(r => r.id !== receiptId);
-                syncPreviousDueWithStudentReceipts(currentStudent);
+                // Deleted receiptનું auto-linked ગયા વર્ષનું payment પણ દૂર કરો.
+                syncStudentReceiptsToPreviousYearDue(currentStudent.id);
                 saveLocalData();
                 recalculateStudentTotals();
                 openStudent(currentStudent.id);
             }
         }
 
-        async function saveMasterSettings() {
+        function saveMasterSettings() {
             masterSettings.apiKey = document.getElementById('mApiKey').value.trim();
             masterSettings.dbUrl = document.getElementById('mDbUrl').value.trim();
             masterSettings.defaultFee = parseFloat(document.getElementById('mDefaultFee').value) || 350;
             masterSettings.defaultStd = document.getElementById('mDefaultStd').value.trim();
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
             masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
-
-            const newPassword = document.getElementById('mAppPassword')?.value || '';
-            const confirmPassword = document.getElementById('mAppPasswordConfirm')?.value || '';
-            if (newPassword || confirmPassword) {
-                if (newPassword.length < 4) { alert('પાસવર્ડ ઓછામાં ઓછા 4 અક્ષરનો રાખો.'); return; }
-                if (newPassword !== confirmPassword) { alert('બન્ને પાસવર્ડ સરખા નથી.'); return; }
-                if (masterSettings.appPasswordHash) {
-                    const oldPassword = prompt('પાસવર્ડ બદલવા માટે હાલનો પાસવર્ડ દાખલ કરો:');
-                    if (oldPassword === null) return;
-                    if (await sha256Text(oldPassword) !== masterSettings.appPasswordHash) { alert('હાલનો પાસવર્ડ ખોટો છે.'); return; }
-                }
-                masterSettings.appPasswordHash = await sha256Text(newPassword);
-            }
+            masterSettings.password = document.getElementById('mPassword').value;
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
@@ -2600,6 +2478,7 @@
                 expenses: expenses,
                 loanRecords: loanRecords,
                 previousYearDues: previousYearDues,
+                deletedStudents: deletedStudents,
                 masterSettings: masterSettings
             };
             const jsonStr = JSON.stringify(data, null, 2);
@@ -2625,14 +2504,18 @@
                     if (data.expenses) expenses = data.expenses;
                     if (data.loanRecords) loanRecords = data.loanRecords;
                     if (data.previousYearDues) previousYearDues = data.previousYearDues;
-                    if (data.masterSettings) masterSettings = data.masterSettings;
-
-                    if (!Array.isArray(loanRecords)) loanRecords = [];
-                    if (!Array.isArray(previousYearDues)) previousYearDues = [];
-                    students.forEach(st => {
-                        normalizeStudentRecords(st);
-                        syncPreviousDueWithStudentReceipts(st);
-                    });
+                    deletedStudents = Array.isArray(data.deletedStudents) ? data.deletedStudents : [];
+                    if (deletedStudents.length) {
+                        const existingIds = new Set(students.map(s => String(s.id)));
+                        deletedStudents.forEach(st => {
+                            if (!st || st.id == null || existingIds.has(String(st.id))) return;
+                            st.status = st._deletedFromStatus || st.status || 'active';
+                            delete st._deletedFromStatus;
+                            students.push(st);
+                        });
+                        deletedStudents = [];
+                    }
+                    if (data.masterSettings) masterSettings = Object.assign({}, masterSettings, data.masterSettings);
 
                     saveLocalData();
                     recalculateStudentTotals();
@@ -2640,6 +2523,7 @@
                     renderStockTable();
                     renderStockDropdown();
                     renderExpenses();
+                    if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || '';
                     alert("ડેટા સફળતાપૂર્વક અપલોડ અને રીસ્ટોર થઈ ગયો છે!");
                 } catch (err) {
                     alert("ફાઈલ વાંચવામાં ભુલ થઈ! કૃપા કરીને સાચી JSON બેકઅપ ફાઈલ પસંદ કરો.");
@@ -3025,31 +2909,6 @@
             }).join('');
         }
 
-        function showPreviousStudentFee() {
-            const sel = document.getElementById('prevStudentSelect');
-            const box = document.getElementById('previousStudentFeeInfo');
-            if (!sel || !box) return;
-            const st = students.find(s => String(s.id) === String(sel.value));
-            if (!st) { box.style.display='none'; box.innerHTML=''; return; }
-            normalizeStudentRecords(st);
-            const prev = previousYearDues.find(x => String(x.studentId) === String(st.id));
-            const prevDue = prev ? previousDueAmount(prev) : 0;
-            box.style.display='block';
-            box.innerHTML = `<strong>👤 ${escapeHtml(st.name)}</strong><br>ચાલુ ફી કુલ: <b>₹${st.totalFeeWithStationery || st.fee}</b> &nbsp; | &nbsp; જમા: <b style="color:#2e7d32">₹${st.paid}</b> &nbsp; | &nbsp; ચાલુ બાકી: <b style="color:#d32f2f">₹${st.due}</b><br>ગયા વર્ષનું બાકી: <b style="color:#d32f2f">₹${prevDue}</b>`;
-        }
-
-        function syncPreviousDueWithStudentReceipts(st) {
-            if (!st) return;
-            const rec = previousYearDues.find(x => String(x.studentId) === String(st.id));
-            if (!rec) return;
-            rec.payments = Array.isArray(rec.payments) ? rec.payments : [];
-            rec.payments = rec.payments.filter(p => !p.sourceReceiptId);
-            (st.receipts || []).forEach(r => {
-                const amount = parseFloat(r.paidVal) || 0;
-                if (amount > 0) rec.payments.push({id:'receipt-'+String(r.id),date:r.date || new Date().toISOString().split('T')[0],amount,note:'ચાલુ ફી જમા — ગયા વર્ષના બાકીમાંથી ઓટોમેટિક ઘટાડો',sourceReceiptId:String(r.id)});
-            });
-        }
-
         function savePreviousYearDue() {
             const studentId=document.getElementById('prevStudentSelect').value;
             const date=document.getElementById('prevDate').value;
@@ -3065,6 +2924,9 @@
             }else{
                 previousYearDues.push({id:Date.now().toString(),studentId:st.id,studentName:st.name,date,totalAmount:total,detail,payments:[]});
             }
+            // જો આ વિદ્યાર્થીની ફી અગાઉથી ભરાયેલી હોય તો તે જમા રકમ પણ
+            // ગયા વર્ષના બાકી વિભાગમાં આપમેળે લિંક થાય.
+            syncStudentReceiptsToPreviousYearDue(st.id);
             saveLocalData(); renderPreviousYearDuePage(); renderDashboard();
             document.getElementById('prevAmount').value=''; document.getElementById('prevDetail').value='';
             alert('✅ ગયા વર્ષનું બાકી સેવ થઈ ગયું.');
@@ -3079,7 +2941,16 @@
             const date=prompt('જમા તારીખ (YYYY-MM-DD):',new Date().toISOString().split('T')[0]); if(!date)return;
             const note=prompt('જમા અંગે નોંધ (વૈકલ્પિક):','')||'';
             r.payments=r.payments||[]; r.payments.push({id:Date.now().toString(),date,amount:val,note});
-            saveLocalData(); renderPreviousYearDuePage(); renderDashboard();
+            saveLocalData();
+            recalculateStudentTotals();
+            renderPreviousYearDuePage();
+            renderDashboard();
+            // Manual previous-year payment પણ વિદ્યાર્થીના paid summaryમાં દેખાય.
+            const linkedStudent = students.find(s => String(s.id) === String(r.studentId));
+            if (linkedStudent) {
+                linkedStudent.previousYearPaid = previousPaidAmount(r);
+                saveLocalData();
+            }
             alert('✅ ગયા વર્ષના બાકીમાંથી જમા રકમ સેવ થઈ ગઈ. બાકી આપમેળે ઘટી ગઈ.');
         }
 
@@ -3093,9 +2964,8 @@
             const sel=document.getElementById('prevStudentSelect');
             if(sel){
                 const old=sel.value;
-                sel.innerHTML='<option value="">વિદ્યાર્થી પસંદ કરો</option>'+students.map(st=>{ normalizeStudentRecords(st); return `<option value="${st.id}">${escapeHtml(st.name)} (${escapeHtml(st.std||'')}) — ${st.status==='inactive'?'ઇન-એક્ટિવ':'એક્ટિવ'} | બાકી ₹${st.due||0}</option>`; }).join('');
+                sel.innerHTML='<option value="">વિદ્યાર્થી પસંદ કરો</option>'+students.map(st=>`<option value="${st.id}">${escapeHtml(st.name)} (${escapeHtml(st.std||'')})</option>`).join('');
                 if(old)sel.value=old;
-                showPreviousStudentFee();
             }
             const total=previousYearDues.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
             const paid=previousYearDues.reduce((a,r)=>a+previousPaidAmount(r),0);
