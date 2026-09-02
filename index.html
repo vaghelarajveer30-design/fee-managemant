@@ -1677,11 +1677,20 @@
                     });
                 }
 
-                // મુખ્ય વિદ્યાર્થી ફી સરવૈયામાં માત્ર ટ્યુશન ફી ગણાશે.
-                // ઉધાર સ્ટેશનરી અલગથી બતાવવામાં આવે છે; તેથી 01-04 થી 30-06 = 3 મહિના
-                // અને ₹250 પ્રતિ મહિનો હોય તો કુલ ફી ₹750 જ રહેશે.
+                // મુખ્ય વિદ્યાર્થીના કુલ સરવૈયામાં ટ્યુશન + આપેલી સ્ટેશનરી ગણાશે.
+                // સ્ટેશનરી કોઈપણ કોર્ષ/પિરિયડની કુલ ફીમાં ઉમેરાતી નથી; માત્ર
+                // વિદ્યાર્થીના ઉપરના કુલમાં એક જ વખત ઉમેરાય છે.
+                let stationeryTotal = 0;
+                let stationeryCashPaid = 0;
+                (st.stationery || []).forEach(s => {
+                    const amount = parseFloat(s.price) || 0;
+                    stationeryTotal += amount;
+                    if (s.payType === 'રોકડ') stationeryCashPaid += amount;
+                });
                 st.stationeryDue = creditStatAmt;
-                st.totalFeeWithStationery = tuition;
+                st.stationeryTotal = stationeryTotal;
+                st.stationeryCashPaid = stationeryCashPaid;
+                st.totalFeeWithStationery = tuition + stationeryTotal;
 
                 let paidFee = 0;
                 if (st.receipts) {
@@ -1690,7 +1699,9 @@
                     });
                 }
 
-                st.paid = paidFee;
+                // રોકડમાં આપેલી સ્ટેશનરી પહેલેથી જ જમા છે; ઉધાર સ્ટેશનરી
+                // પહોંચ દ્વારા ભરાય ત્યારે receipt.paidValમાં ગણાશે.
+                st.paid = paidFee + stationeryCashPaid;
                 const prevRecord = previousYearDues.find(x => String(x.studentId) === String(st.id));
                 st.previousYearPaid = prevRecord ? previousPaidAmount(prevRecord) : 0;
                 st.previousYearDue = prevRecord ? previousDueAmount(prevRecord) : 0;
@@ -1966,7 +1977,7 @@
             }
 
             filteredStudents.forEach(s => {
-                const totalDisp = s.totalFeeWithStationery || s.fee;
+                const totalDisp = Number(s.totalFeeWithStationery ?? s.fee) || 0;
                 let historyHtml = '';
                 if (currentFilter === 'paid' && s.receipts && s.receipts.length > 0) {
                     let receiptList = s.receipts.map(r => `📅 ${formatDate(r.date)}: ₹${r.paidVal}`).join(' | ');
