@@ -1569,18 +1569,21 @@
                 return;
             }
 
-            // In-Active બટન દબાવતાં માત્ર In-Active વિદ્યાર્થીઓનું કુલ, જમા અને બાકી બતાવો.
-            if (currentFilter === 'inactive') {
-                const inactiveTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
-                const inactivePaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
-                const inactiveDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+            // Active / In-Active બટન દબાવતાં માત્ર પસંદ કરેલા વિદ્યાર્થીઓનું
+            // કુલ ફી, જમા અને બાકીનું સરવૈયું અહીં માત્ર બતાવવાનું છે.
+            // આ રકમને ફરીથી મુખ્ય સરવૈયામાં ઉમેરવામાં આવતી નથી.
+            if (currentFilter === 'active' || currentFilter === 'inactive') {
+                const groupTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                const groupPaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                const groupDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+                const isInactive = currentFilter === 'inactive';
                 container.innerHTML = `
-                    <div class="card" style="background:#ffebee;border-color:#ef9a9a;margin-bottom:10px;">
-                        <div style="text-align:center;font-weight:bold;color:#b71c1c;margin-bottom:8px;">🔴 ઇન-એક્ટિવ વિદ્યાર્થીઓનું કુલ સરવૈયું</div>
+                    <div class="card" style="background:${isInactive ? '#ffebee' : '#e8f5e9'};border-color:${isInactive ? '#ef9a9a' : '#a5d6a7'};margin-bottom:10px;">
+                        <div style="text-align:center;font-weight:bold;color:${isInactive ? '#b71c1c' : '#2e7d32'};margin-bottom:8px;">${isInactive ? '🔴 ઇન-એક્ટિવ' : '🟢 એક્ટિવ'} વિદ્યાર્થીઓનું કુલ સરવૈયું</div>
                         <div class="grid-3">
-                            <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span>₹${inactiveTotal}</span></div>
-                            <div class="stat-box" style="background:#388e3c;">કુલ જમા<br><span>₹${inactivePaid}</span></div>
-                            <div class="stat-box" style="background:#d32f2f;">કુલ બાકી<br><span>₹${inactiveDue}</span></div>
+                            <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span>₹${groupTotal}</span></div>
+                            <div class="stat-box" style="background:#388e3c;">કુલ જમા<br><span>₹${groupPaid}</span></div>
+                            <div class="stat-box" style="background:#d32f2f;">કુલ બાકી<br><span>₹${groupDue}</span></div>
                         </div>
                     </div>`;
             }
@@ -2195,15 +2198,30 @@
             }
 
             const info = getTuitionForPeriod(currentStudent, fromStr, toStr);
-            document.getElementById('recAutoFee').value = info.total;
+            // પહેલેથી જ જમા થયેલી મહિનાની ફી ફરીથી નવી પહોંચમાં ન ઉમેરાય.
+            // તે મહિનો ટેબલમાં દેખાશે, પરંતુ તેની ફી પર લીટી અને "ફી જમા થઈ ગઈ" લખાશે.
+            const paidInfo = getReminderFeeInfo(currentStudent, fromStr, toStr);
+            const remainingTuition = paidInfo.unpaidMonths.reduce((sum,m) => sum + (parseFloat(m.remaining) || 0), 0);
+            document.getElementById('recAutoFee').value = Math.round(remainingTuition);
 
             const body = document.getElementById('receiptMonthBreakdownBody');
             if (!info.months.length) {
                 body.innerHTML = '<span style="color:#888;">આ સમયગાળામાં કોઈ Active દિવસ મળ્યો નથી.</span>';
             } else {
                 body.innerHTML = `<table style="margin:0;"><thead><tr><th>મહિનો</th><th>ફી (₹)</th></tr></thead><tbody>` +
-                    info.months.map(m => `<tr><td>${m.name} ${m.year}</td><td style="font-weight:bold;">₹${m.fee}</td></tr>`).join('') +
-                    `</tbody><tfoot><tr><td style="text-align:right;font-weight:bold;">કુલ ટ્યુશન ફી</td><td style="font-weight:bold;color:#1565c0;">₹${info.total}</td></tr></tfoot></table>`;
+                    info.months.map(m => {
+                        const status = paidInfo.months.find(x => x.key === m.key);
+                        const paid = status ? (parseFloat(status.paid) || 0) : 0;
+                        const remaining = status ? (parseFloat(status.remaining) || 0) : (parseFloat(m.fee) || 0);
+                        if (m.fee > 0 && paid >= m.fee) {
+                            return `<tr><td>${m.name} ${m.year} <span style="color:#2e7d32;font-weight:bold;">✅ ફી જમા થઈ ગઈ</span></td><td style="font-weight:bold;color:#777;"><s>₹${m.fee}</s></td></tr>`;
+                        }
+                        if (paid > 0 && remaining > 0) {
+                            return `<tr><td>${m.name} ${m.year} <span style="color:#ef6c00;font-weight:bold;">⚠️ ₹${Math.round(remaining)} બાકી</span></td><td style="font-weight:bold;">₹${Math.round(remaining)}</td></tr>`;
+                        }
+                        return `<tr><td>${m.name} ${m.year}</td><td style="font-weight:bold;">₹${m.fee}</td></tr>`;
+                    }).join('') +
+                    `</tbody><tfoot><tr><td style="text-align:right;font-weight:bold;">બાકી રહેલી ટ્યુશન ફી</td><td style="font-weight:bold;color:#1565c0;">₹${Math.round(remainingTuition)}</td></tr></tfoot></table>`;
             }
             calculateReceiptTotals();
         }
