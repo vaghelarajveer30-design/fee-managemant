@@ -183,7 +183,42 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px 0;">
+            <div class="card" style="background:#f5f7ff;border-color:#c5cae9;">
+                <h3 style="color:#283593;margin-bottom:10px;">📊 સંપૂર્ણ Dashboard</h3>
+                <div class="grid-3">
+                    <div class="stat-box" style="background:#00897b;cursor:default;">આજે જમા<br><span id="dashTodayPaid">₹0</span></div>
+                    <div class="stat-box" style="background:#1565c0;cursor:default;">આ મહિને જમા<br><span id="dashMonthPaid">₹0</span></div>
+                    <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span id="dashTotalDue">₹0</span></div>
+                    <div class="stat-box" style="background:#ef6c00;cursor:default;">બાકી વિદ્યાર્થીઓ<br><span id="dashDueStudents">0</span></div>
+                    <div class="stat-box" style="background:#2e7d32;cursor:default;">Active<br><span id="dashActiveCount">0</span></div>
+                    <div class="stat-box" style="background:#6a1b9a;cursor:default;">Inactive<br><span id="dashInactiveCount">0</span></div>
+                </div>
+                <div id="dashBackupStatus" style="font-size:12px;margin-top:9px;font-weight:bold;"></div>
+            </div>
+
+            <div class="card" style="background:#fff8e1;border-color:#ffcc80;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <h4 style="margin:0;color:#e65100;">🔔 Automatic Reminder List</h4>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()">📲 યાદી WhatsApp</button>
+                </div>
+                <div id="dashboardReminderList" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="card" style="background:#e3f2fd;border-color:#90caf9;">
+                <h4 style="color:#1565c0;">📅 આગામી મહિનાની ફી</h4>
+                <div id="dashboardNextMonthList" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="card">
+                <h4>🧾 Receipt Search</h4>
+                <div class="grid-2">
+                    <input id="receiptSearchInput" class="form-control" placeholder="રસીદ નં. / નામ / મોબાઈલ" oninput="searchReceiptsDashboard()">
+                    <button class="btn btn-blue" onclick="searchReceiptsDashboard()">🔍 શોધો</button>
+                </div>
+                <div id="receiptSearchResults" style="margin-top:8px;"></div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px 0;">
                 <h3 style="font-size: 17px; color: #333;">વિદ્યાર્થીઓની યાદી</h3>
                 <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
             </div>
@@ -518,8 +553,8 @@
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
             <div class="card">
-                <h3 style="color:#1565c0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3>
-                <p style="font-size:12px;color:#666;margin:6px 0 10px;">અહીં મુખ્ય વિદ્યાર્થીઓની ફીનું સરવૈયું છે. ગયા વર્ષનું બાકી આ રિપોર્ટમાં સામેલ નથી.</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="color:#1565c0;margin:0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3><button class="btn btn-blue" style="width:auto;padding:6px 10px;font-size:12px;" onclick="window.print()">🖨️ પ્રિન્ટ / PDF</button></div>
+                <p style="font-size:12px;color:#666;margin:6px 0 10px;">📈 આવક રિપોર્ટ એપ્રિલથી માર્ચ સુધી મહિના પ્રમાણે છે. જમા રકમ પહોંચની તારીખ પ્રમાણે ગણાય છે અને બાકી અલગ બતાવાય છે.</p>
                 <div class="grid-2">
                     <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="reportFromDate" class="form-control" onchange="renderFeeReports()"></div>
                     <div class="form-group"><label>કઈ તારીખ સુધી?</label><input type="date" id="reportToDate" class="form-control" onchange="renderFeeReports()"></div>
@@ -637,6 +672,14 @@
                     <div class="stat-box" style="background:#1976d2; cursor:default;">કુલ ફી<br><span id="profFee">₹350</span></div>
                     <div class="stat-box" style="background:#2e7d32; cursor:default;">જમા ફી<br><span id="profPaid">₹0</span></div>
                     <div class="stat-box" style="background:#d32f2f; cursor:default;">બાકી ફી<br><span id="profDue">₹350</span></div>
+                </div>
+
+                <div class="card" style="background:#f8fbff;border-color:#bbdefb;margin-top:10px;margin-bottom:0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                        <h4 style="color:#1565c0;margin:0;">📋 વિદ્યાર્થીનું સંપૂર્ણ ફી સરવૈયું</h4>
+                        <button class="btn btn-whatsapp" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0;" onclick="sendStudentFullFeeWhatsApp()">📲 સરવૈયું મોકલો</button>
+                    </div>
+                    <div id="studentFeeOverview" style="margin-top:8px;"></div>
                 </div>
 
                 <div style="background:#fff3e0; padding:10px; border-radius:8px; margin-top:12px; border:1px solid #ffe0b2;">
@@ -1266,6 +1309,9 @@
                     body: JSON.stringify(payload)
                 });
                 if (response.ok) {
+                    masterSettings.lastBackupAt = new Date().toISOString();
+                    saveLocalData();
+                    renderDashboard();
                     alert("✅ ક્લાઉડ પર સંતોષકારક રીતે બેકઅપ સેવ થઈ ગયું છે!");
                 } else {
                     alert("❌ ક્લાઉડ બેકઅપ લેવામાં ભૂલ થઈ. Error: " + response.statusText);
@@ -1525,8 +1571,83 @@
             renderDashboard();
         }
 
+
+        function getPaidReceiptsBetween(fromStr, toStr) {
+            let total=0;
+            students.forEach(st => (st.receipts||[]).forEach(r => {
+                if (r.date && r.date >= fromStr && r.date <= toStr) total += Number(r.paidVal)||0;
+            }));
+            return total;
+        }
+
+        function formatDashboardMoney(n){ return '₹'+Math.round(Number(n)||0); }
+
+        function getFiscalYearRangeForToday(){
+            const t=new Date(), y=t.getFullYear(), m=t.getMonth();
+            const startYear=m>=3?y:y-1;
+            return {from:startYear+'-04-01',to:(startYear+1)+'-03-31'};
+        }
+
+        function renderDashboardAdvanced(){
+            const now=new Date();
+            const today=new Date().toISOString().split('T')[0];
+            const monthFrom=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+            const todayPaid=getPaidReceiptsBetween(today,today);
+            const monthPaid=getPaidReceiptsBetween(monthFrom,today);
+            const dueStudents=students.filter(s=>Number(s.due)>0);
+            const active=students.filter(s=>s.status==='active').length;
+            const inactive=students.filter(s=>s.status==='inactive').length;
+            const set=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
+            set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid));
+            set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0)));
+            set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
+
+            const backup=document.getElementById('dashBackupStatus');
+            if(backup){
+                if(masterSettings.lastBackupAt){
+                    const d=new Date(masterSettings.lastBackupAt); const days=Math.floor((Date.now()-d.getTime())/86400000);
+                    backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');
+                    backup.style.color=days>=7?'#d32f2f':'#2e7d32';
+                } else { backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.'; backup.style.color='#d32f2f'; }
+            }
+
+            const reminder=document.getElementById('dashboardReminderList');
+            if(reminder){
+                const list=dueStudents.sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
+                reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer;"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold;">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px;" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold;">✅ કોઈ બાકી ફી નથી.</div>';
+            }
+
+            const next=document.getElementById('dashboardNextMonthList');
+            if(next){
+                const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(), m=(now.getMonth()+1)%12;
+                const from=new Date(y,m,1).toISOString().split('T')[0], to=new Date(y,m+1,0).toISOString().split('T')[0];
+                const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);
+                next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold;">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555;">નવી લાગુ ફી: ${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666;">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+            }
+        }
+
+        function sendStudentDashboardReminder(id){
+            const st=students.find(s=>String(s.id)===String(id)); if(!st)return;
+            const today=new Date().toISOString().split('T')[0];
+            const from=new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().split('T')[0];
+            const info=getReminderFeeInfo(st,from,today);
+            let msg=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ* માં *${st.name}* ની ફી બાકી છે.\n\n❗ બાકી: *₹${Math.round(info.due||st.due||0)}*\n📅 બાકી મહિના: ${info.unpaidMonths.map(m=>m.name+' '+m.year+' ₹'+Math.round(m.remaining)).join(', ')||'હાલના સરવૈયા મુજબ બાકી'}\n\nકૃપા કરીને બાકી ફી જમા કરાવવા વિનંતી. 🌸\n\nઆભાર,\n*નિર્મળા નવોદય ક્લાસિસ*`;
+            openWhatsAppUrl(st.phone,msg);
+        }
+        function sendAllDashboardRemindersWhatsApp(){
+            const list=students.filter(s=>Number(s.due)>0); if(!list.length){alert('✅ કોઈ બાકી ફી નથી.');return;}
+            let msg='🙏🏻 *નિર્મળા નવોદય ક્લાસિસ - બાકી ફીની યાદી*\n\n'; list.forEach((s,i)=>msg+=`${i+1}. ${s.name} — ₹${Math.round(s.due||0)}\n`); openWhatsAppUrl('',msg);
+        }
+        function searchReceiptsDashboard(){
+            const q=(document.getElementById('receiptSearchInput')?.value||'').toLowerCase().trim(), box=document.getElementById('receiptSearchResults'); if(!box)return;
+            if(!q){box.innerHTML='<div style="color:#888;text-align:center;padding:8px;">રસીદ નંબર, નામ અથવા મોબાઈલ લખો.</div>';return;}
+            const rows=[]; students.forEach(st=>(st.receipts||[]).forEach(r=>{if(String(r.receiptNo||'').toLowerCase().includes(q)||String(st.name||'').toLowerCase().includes(q)||String(st.phone||'').includes(q))rows.push({st,r});}));
+            box.innerHTML=rows.length?rows.slice(0,50).map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}');setTimeout(()=>viewReceiptInfo('${escapeHtml(x.r.id)}'),100)"><b>🧾 #${escapeHtml(x.r.receiptNo||'-')} — ${escapeHtml(x.st.name)}</b><div style="font-size:12px;">${formatDate(x.r.date)} | જમા ₹${Math.round(x.r.paidVal||0)} | બાકી ₹${Math.round(x.r.dueVal||0)}</div></div>`).join(''):'<div style="text-align:center;padding:10px;color:#888;">કોઈ રસીદ મળી નથી.</div>';
+        }
+
         function renderDashboard() {
             recalculateStudentTotals();
+            renderDashboardAdvanced();
             const container = document.getElementById('studentListContainer');
             const searchVal = document.getElementById('searchInput')?.value.toLowerCase().trim() || "";
             container.innerHTML = '';
@@ -1862,6 +1983,7 @@
 
             resetReceiptForm();
             calculateAlertDueFee();
+            renderStudentFeeOverview();
             renderStudentStationeryList();
             renderFeeHistoryTable();
 
@@ -2192,6 +2314,42 @@
             thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
 
             openWhatsAppUrl(currentStudent.phone, thankMsg);
+        }
+
+        function renderStudentFeeOverview() {
+            if (!currentStudent) return;
+            const el = document.getElementById('studentFeeOverview');
+            if (!el) return;
+            const from = currentStudent.joinDate || new Date().toISOString().split('T')[0];
+            const to = new Date().toISOString().split('T')[0];
+            const info = getReminderFeeInfo(currentStudent, from, to);
+            const paidMonths = info.paidMonths || [];
+            const unpaidMonths = info.unpaidMonths || [];
+            const receiptCount = (currentStudent.receipts || []).length;
+            const paidText = paidMonths.length ? paidMonths.map(m => `<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:5px;padding:3px 6px;margin:2px;">✅ ${m.name} ${m.year} ₹${Math.round(m.paid)}</span>`).join('') : '<span style="color:#888;">કોઈ મહિનો સંપૂર્ણ જમા નથી.</span>';
+            const dueText = unpaidMonths.length ? unpaidMonths.map(m => `<span style="display:inline-block;background:#ffebee;color:#d32f2f;border:1px solid #ef9a9a;border-radius:5px;padding:3px 6px;margin:2px;">❗ ${m.name} ${m.year} ₹${Math.round(m.remaining)}</span>`).join('') : '<span style="color:#2e7d32;font-weight:bold;">✅ બધા મહિના જમા.</span>';
+            const receiptText = receiptCount ? `🧾 કુલ ${receiptCount} પહોંચ` : '🧾 હજુ કોઈ પહોંચ નથી';
+            el.innerHTML = `
+                <div style="font-size:12px;color:#555;margin-bottom:7px;">📅 ${formatDate(from)} થી ${formatDate(to)} સુધી &nbsp; | &nbsp; ${receiptText}</div>
+                <div style="font-size:12px;font-weight:bold;color:#2e7d32;margin-bottom:3px;">જમા થયેલા મહિના:</div>
+                <div>${paidText}</div>
+                <div style="font-size:12px;font-weight:bold;color:#d32f2f;margin-top:7px;margin-bottom:3px;">બાકી મહિના:</div>
+                <div>${dueText}</div>
+                ${info.stationeryDue > 0 ? `<div style="margin-top:7px;font-size:12px;color:#d32f2f;font-weight:bold;">📚 ઉધાર સ્ટેશનરી: ₹${Math.round(info.stationeryDue)}</div>` : ''}
+            `;
+        }
+
+        function sendStudentFullFeeWhatsApp() {
+            if (!currentStudent) return;
+            const from = currentStudent.joinDate || new Date().toISOString().split('T')[0];
+            const to = new Date().toISOString().split('T')[0];
+            const info = getReminderFeeInfo(currentStudent, from, to);
+            const paidText = info.paidMonths.length ? info.paidMonths.map(m => `${m.name} ${m.year} ₹${Math.round(m.paid)}`).join(', ') : 'કોઈ સંપૂર્ણ જમા મહિનો નથી';
+            const dueText = info.unpaidMonths.length ? info.unpaidMonths.map(m => `${m.name} ${m.year} ₹${Math.round(m.remaining)}`).join(', ') : 'કોઈ બાકી મહિનો નથી';
+            let msg = `🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ*\n*વિદ્યાર્થી:* ${currentStudent.name}\n*ધોરણ:* ${currentStudent.std}\n\n📅 *સમયગાળો:* ${formatDate(from)} થી ${formatDate(to)}\n\n✅ *જમા:* ${paidText}\n❗ *બાકી:* ${dueText}\n💰 *કુલ બાકી:* *₹${Math.round(info.due)}*`;
+            if (info.stationeryDue > 0) msg += `\n📚 *ઉધાર સ્ટેશનરી:* ₹${Math.round(info.stationeryDue)}`;
+            msg += `\n\nઆભાર,\n*નિર્મળા નવોદય ક્લાસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+            openWhatsAppUrl(currentStudent.phone, msg);
         }
 
         function resetReceiptForm() {
@@ -3250,7 +3408,8 @@
             const today = new Date();
             const pad=n=>String(n).padStart(2,'0');
             const defaultFrom = `${today.getFullYear()}-04-01`;
-            const defaultTo = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+            const fiscalEndYear = today.getMonth() >= 3 ? today.getFullYear()+1 : today.getFullYear();
+            const defaultTo = `${fiscalEndYear}-03-31`;
             const fromEl=document.getElementById('reportFromDate');
             const toEl=document.getElementById('reportToDate');
             if(fromEl && !fromEl.value) fromEl.value=defaultFrom;
@@ -3282,10 +3441,12 @@
                 let mtot=0,mpaid=0,mdue=0;
                 students.forEach(st=>{
                     const info=getReminderFeeInfo(st,mf,mt);
-                    mtot += Number(info.total)||0;
-                    mpaid += Number(info.paid)||0;
                     mdue += Number(info.due)||0;
+                    (st.receipts||[]).forEach(r=>{
+                        if(r.date && r.date>=mf && r.date<=mt) mpaid += Number(r.paidVal)||0;
+                    });
                 });
+                mtot = mpaid + mdue;
                 const label = new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor);
                 rows.push(`<tr><td>${label}</td><td>₹${Math.round(mtot)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(mpaid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(mdue)}</td></tr>`);
                 cursor.setMonth(cursor.getMonth()+1);
