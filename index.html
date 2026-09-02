@@ -1569,6 +1569,22 @@
                 return;
             }
 
+            // In-Active બટન દબાવતાં માત્ર In-Active વિદ્યાર્થીઓનું કુલ, જમા અને બાકી બતાવો.
+            if (currentFilter === 'inactive') {
+                const inactiveTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                const inactivePaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                const inactiveDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+                container.innerHTML = `
+                    <div class="card" style="background:#ffebee;border-color:#ef9a9a;margin-bottom:10px;">
+                        <div style="text-align:center;font-weight:bold;color:#b71c1c;margin-bottom:8px;">🔴 ઇન-એક્ટિવ વિદ્યાર્થીઓનું કુલ સરવૈયું</div>
+                        <div class="grid-3">
+                            <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span>₹${inactiveTotal}</span></div>
+                            <div class="stat-box" style="background:#388e3c;">કુલ જમા<br><span>₹${inactivePaid}</span></div>
+                            <div class="stat-box" style="background:#d32f2f;">કુલ બાકી<br><span>₹${inactiveDue}</span></div>
+                        </div>
+                    </div>`;
+            }
+
             filteredStudents.forEach(s => {
                 const totalDisp = s.totalFeeWithStationery || s.fee;
                 let historyHtml = '';
@@ -1975,43 +1991,76 @@
         }
 
         function getReminderFeeInfo(st, fromStr, toStr) {
-            if (!st || !fromStr || !toStr || toStr < fromStr) return {months:[],total:0,paid:0,due:0,unpaidMonths:[],stationeryDue:0};
+            if (!st || !fromStr || !toStr || toStr < fromStr) {
+                return {months:[],total:0,paid:0,due:0,paidMonths:[],unpaidMonths:[],stationeryDue:0};
+            }
+
             const tuitionInfo = getTuitionForPeriod(st, fromStr, toStr);
             const monthRows = (tuitionInfo.months || []).map(m => ({
                 key:m.key || monthKey(m.year,m.month), name:m.name, year:m.year,
-                fee:parseFloat(m.fee)||0, remaining:parseFloat(m.fee)||0
+                fee:parseFloat(m.fee)||0, remaining:parseFloat(m.fee)||0, paid:0
             }));
 
-            // દરેક પહોંચમાં જે મહિનાઓ માટે ફી લેવામાં આવી છે, તેની જ paid રકમ
-            // એ મહિનાઓમાં ક્રમ પ્રમાણે વહેંચીએ. તેથી જૂન-જુલાઈ ભરેલી ફી ઓગસ્ટ-
-            // સપ્ટેમ્બરના reminderમાં ખોટી રીતે કપાશે નહીં.
+            // દરેક પહોંચમાં કયા મહિના માટે ફી ભરાઈ છે તે આધારે જ તે મહિને
+            // જમા રકમ ગણીશું. એટલે એપ્રિલ ભરેલો હોય તો એપ્રિલ ફરી બાકી નહીં ગણાય.
             (st.receipts || []).forEach(r => {
                 const paidDate = r.date || '';
                 if (paidDate && paidDate > toStr) return;
+
                 let receiptMonths = Array.isArray(r.months) && r.months.length ? r.months : [];
                 if (!receiptMonths.length && r.fromDate && r.toDate) {
                     receiptMonths = getTuitionForPeriod(st,r.fromDate,r.toDate).months || [];
                 }
-                let pool = Math.max(0,parseFloat(r.paidVal)||0);
+
+                let pool = Math.max(0, parseFloat(r.paidVal) || 0);
                 receiptMonths.forEach(rm => {
-                    if(pool<=0) return;
-                    const key=rm.key || monthKey(Number(rm.year),Number(rm.month));
-                    const row=monthRows.find(m=>m.key===key || (String(m.name)===String(rm.name) && Number(m.year)===Number(rm.year)));
-                    if(!row) return;
-                    const use=Math.min(row.remaining,pool,parseFloat(rm.fee)||row.remaining);
-                    row.remaining-=use;
-                    pool-=use;
+                    if (pool <= 0) return;
+                    const key = rm.key || (rm.year != null && rm.month != null ? monthKey(Number(rm.year),Number(rm.month)) : '');
+                    const row = monthRows.find(m => key && m.key === key) ||
+                                monthRows.find(m => String(m.name) === String(rm.name) && Number(m.year) === Number(rm.year));
+                    if (!row) return;
+                    const rmFee = Math.max(0, parseFloat(rm.fee) || row.fee);
+                    const use = Math.min(row.remaining, pool, rmFee);
+                    row.remaining -= use;
+                    row.paid += use;
+                    pool -= use;
                 });
             });
 
-            const tuitionDue=monthRows.reduce((a,m)=>a+m.remaining,0);
-            let stationeryDue=0;
-            (st.stationery || []).forEach(x=>{
-                if(x.payType==='ઉધાર' && (!x.date || (x.date>=fromStr && x.date<=toStr))) stationeryDue+=parseFloat(x.price)||0;
+            // જૂના receiptsમાં month detail ન હોય તો પણ તારીખના સમયગાળા પરથી
+            // ચૂકવણીને યોગ્ય મહિનાઓમાં વહેંચી દઈએ.
+            (st.receipts || []).forEach(r => {
+                const paid = Math.max(0, parseFloat(r.paidVal) || 0);
+                if (!paid || (Array.isArray(r.months) && r.months.length)) return;
+                if (!r.fromDate || !r.toDate || r.toDate < fromStr || r.fromDate > toStr) return;
+                let pool = paid;
+                monthRows.forEach(row => {
+                    if (pool <= 0 || row.remaining <= 0) return;
+                    const use = Math.min(row.remaining, pool);
+                    row.remaining -= use;
+                    row.paid += use;
+                    pool -= use;
+                });
             });
-            const total=monthRows.reduce((a,m)=>a+m.fee,0)+stationeryDue;
-            const paid=Math.max(0,total-tuitionDue-stationeryDue);
-            return {months:monthRows,total,paid,due:Math.max(0,tuitionDue+stationeryDue),unpaidMonths:monthRows.filter(m=>m.remaining>0),stationeryDue};
+
+            const tuitionTotal = monthRows.reduce((a,m)=>a+m.fee,0);
+            const tuitionPaid = monthRows.reduce((a,m)=>a+m.paid,0);
+            const tuitionDue = monthRows.reduce((a,m)=>a+m.remaining,0);
+
+            let stationeryDue = 0;
+            (st.stationery || []).forEach(x => {
+                if (x.payType === 'ઉધાર' && (!x.date || (x.date >= fromStr && x.date <= toStr))) {
+                    stationeryDue += parseFloat(x.price) || 0;
+                }
+            });
+
+            const paidMonths = monthRows.filter(m => m.paid >= m.fee && m.fee > 0);
+            const unpaidMonths = monthRows.filter(m => m.remaining > 0);
+            const total = tuitionTotal + stationeryDue;
+            const paid = tuitionPaid;
+            const due = Math.max(0, tuitionDue + stationeryDue);
+
+            return {months:monthRows,total,paid,due,paidMonths,unpaidMonths,stationeryDue};
         }
 
         function calculateAlertDueFee() {
@@ -2020,13 +2069,30 @@
             const toStr=document.getElementById('alertToDate').value;
             const amountEl=document.getElementById('calculatedAlertAmt');
             if (!fromStr || !toStr || toStr < fromStr) { amountEl.innerText='₹0'; return; }
+
             const info=getReminderFeeInfo(currentStudent,fromStr,toStr);
             amountEl.innerText='₹'+Math.round(info.due);
+
             const parent=amountEl.parentElement;
             let detail=document.getElementById('alertDueMonthDetail');
-            if(!detail){ detail=document.createElement('div'); detail.id='alertDueMonthDetail'; detail.style.cssText='font-size:12px;color:#d32f2f;margin-top:5px;font-weight:bold;'; parent.appendChild(detail); }
-            const months=info.unpaidMonths.length ? info.unpaidMonths.map(m=>`${m.name} ${m.year} (₹${Math.round(m.remaining)})`).join(', ') : 'કોઈ ટ્યુશન મહિનો બાકી નથી';
-            detail.innerText='બાકી મહિના: '+months;
+            if(!detail){
+                detail=document.createElement('div');
+                detail.id='alertDueMonthDetail';
+                detail.style.cssText='font-size:12px;margin-top:7px;font-weight:bold;line-height:1.7;';
+                parent.appendChild(detail);
+            }
+
+            const paidText = info.paidMonths.length
+                ? info.paidMonths.map(m=>`${m.name} ${m.year} (₹${Math.round(m.paid)})`).join(', ')
+                : 'આ સમયગાળામાં કોઈ ટ્યુશન ફી જમા નથી';
+            const dueText = info.unpaidMonths.length
+                ? info.unpaidMonths.map(m=>`${m.name} ${m.year} (₹${Math.round(m.remaining)})`).join(', ')
+                : 'કોઈ ટ્યુશન ફી બાકી નથી';
+
+            detail.innerHTML = `
+                <div style="color:#2e7d32;">✅ જમા: ${paidText}</div>
+                <div style="color:#d32f2f;">❗ બાકી: ${dueText}${info.stationeryDue>0 ? ` + ઉધાર સ્ટેશનરી ₹${Math.round(info.stationeryDue)}` : ''}</div>
+            `;
         }
 
         function sendDueFeeAlertWhatsApp() {
@@ -2034,15 +2100,28 @@
             const fromInput=document.getElementById('alertFromDate').value;
             const toInput=document.getElementById('alertToDate').value;
             if(!fromInput || !toInput || toInput<fromInput){ alert('❌ કૃપા કરીને સાચો સમયગાળો પસંદ કરો.'); return; }
+
             const info=getReminderFeeInfo(currentStudent,fromInput,toInput);
-            if(info.due<=0){ alert('✅ આ પસંદ કરેલા સમયગાળાની ફી બાકી નથી.'); return; }
-            const monthText=info.unpaidMonths.length ? info.unpaidMonths.map(m=>`${m.name} ${m.year} ₹${Math.round(m.remaining)}`).join(', ') : 'ટ્યુશન ફી';
+            if(info.due<=0){
+                alert('✅ આ પસંદ કરેલા સમયગાળાની બધી ફી જમા થઈ ગઈ છે.');
+                return;
+            }
+
+            const paidText=info.paidMonths.length
+                ? info.paidMonths.map(m=>`${m.name} ${m.year} ₹${Math.round(m.paid)}`).join(', ')
+                : 'કોઈ ટ્યુશન ફી જમા નથી';
+            const dueText=info.unpaidMonths.length
+                ? info.unpaidMonths.map(m=>`${m.name} ${m.year} ₹${Math.round(m.remaining)}`).join(', ')
+                : 'કોઈ ટ્યુશન મહિનો બાકી નથી';
+
             let msg=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n`;
-            msg+=`*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફી બાકી રહેતી હોવાથી આ યાદી મોકલેલ છે.\n\n`;
-            msg+=`🗓️ *સમયગાળો:* ${formatDate(fromInput)} થી ${formatDate(toInput)}\n`;
-            msg+=`📚 *બાકી મહિના:* ${monthText}\n`;
-            msg+=`❗ *કુલ બાકી ફી:* *₹${Math.round(info.due)}*\n\n`;
-            msg+=`આ ફી વહેલી તકે જમા કરાવવા વિનંતી છે. 🌸\n\n`;
+            msg+=`*નિર્મળા નવોદય ક્લાિસિસ* માં આપના બાળક *${currentStudent.name}* (ધોરણ: ${currentStudent.std}) ની ફીનો હિસાબ નીચે મુજબ છે.\n\n`;
+            msg+=`🗓️ *ચકાસેલ સમયગાળો:* ${formatDate(fromInput)} થી ${formatDate(toInput)}\n\n`;
+            msg+=`✅ *આ સમયગાળામાં જમા થયેલી ફી:* ${paidText}\n`;
+            msg+=`❗ *હવે બાકી ફી:* ${dueText}\n`;
+            if(info.stationeryDue>0) msg+=`📚 *ઉધાર સ્ટેશનરી:* ₹${Math.round(info.stationeryDue)}\n`;
+            msg+=`💰 *કુલ બાકી:* *₹${Math.round(info.due)}*\n\n`;
+            msg+=`કૃપા કરીને બાકી ફી વહેલી તકે જમા કરાવવા વિનંતી છે. 🌸\n\n`;
             msg+=`આભાર,\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
             openWhatsAppUrl(currentStudent.phone,msg);
         }
