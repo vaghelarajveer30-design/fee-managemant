@@ -116,9 +116,14 @@
     <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
         <div style="display:flex;align-items:center;gap:8px;">
-            <div class="r-menu-wrap">
-                <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
-                <div id="rMenuPanel" class="r-menu-panel">
+            <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
+        </div>
+    </div>
+    <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
+    <div class="container" style="padding-top:8px;padding-bottom:0;">
+        <div class="r-menu-wrap">
+            <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
+            <div id="rMenuPanel" class="r-menu-panel">
                     <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
                     <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')">🔔 Automatic Reminder List</button>
                     <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
@@ -130,12 +135,9 @@
                     <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')">⚠️ બાકી ફીની યાદી</button>
                     <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
                     <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')">🔎 સર્ચ ફી રિપોર્ટ</button>
-                </div>
             </div>
-            <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
         </div>
     </div>
-    <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
     <!-- ઓનલાઈન લીંક દ્વારા ફી પહોંચ જોવા માટેનો સ્ટેન્ડઅલોન વ્યુ (અન્ય બધું છુપાઈ જશે) -->
     <div id="standaloneReceiptView" class="container" style="display: none;">
@@ -195,6 +197,14 @@
 
     <!-- મેઈન એપ્લિકેશન કન્ટેનર -->
     <div class="container" id="mainAppContainer">
+
+        <div id="pageRFeature" style="display:none;">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <button class="btn btn-gray" style="width:auto;margin-top:0;" onclick="navigateTo('pageDashboard')">← મેઈન પેજ</button>
+                <strong id="rFeatureTitle" style="color:#1565c0;font-size:16px;"></strong>
+            </div>
+            <div id="rFeatureContent"></div>
+        </div>
 
         <div id="pageDashboard">
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
@@ -263,15 +273,6 @@
 
             <div id="studentListContainer"></div>
 
-            <div class="grid-2" style="margin-top: 10px;">
-                <button class="btn btn-cyan" onclick="navigateTo('pageLoans')">💰 ઉછીના આપેલ રૂપિયા</button>
-                <button class="btn btn-purple" onclick="navigateTo('pagePreviousYearDue')">📅 ગયા વર્ષના બાકી</button>
-                <button class="btn btn-orange" onclick="navigateTo('pageStationeryReport')">📖 સ્ટેશનરી રિપોર્ટ & સ્ટોક</button>
-                <button class="btn btn-orange" onclick="navigateTo('pageAdminExpense')">💸 Admin ખર્ચ વિગત</button>
-                <button class="btn btn-purple" onclick="openCourseDivision()">📚 કોર્સ વિભાજન</button>
-                <button class="btn btn-blue" onclick="navigateTo('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
-                <button class="btn btn-red" onclick="openDueReport()">⚠️ બાકી ફીની યાદી</button>
-            </div>
 
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
                 <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">📊 બધા વિદ્યાર્થીઓનું કુલ સરવૈયું</div>
@@ -1593,7 +1594,12 @@
         }
 
         function navigateTo(pageId) {
-            ['pageDashboard', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageStudentDetails'].forEach(p => {
+            if(pageId==='pageDashboard' && rFeatureSource && rFeatureHome && rFeatureSource.parentNode===document.getElementById('rFeatureContent')){
+                rFeatureHome.appendChild(rFeatureSource);
+                rFeatureSource.style.display='none';
+                rFeatureSource=null; rFeatureHome=null;
+            }
+            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
@@ -1644,24 +1650,52 @@
             const p=document.getElementById('rMenuPanel');
             if(p)p.style.display='none';
         }
+        let rFeatureHome = null;
+        let rFeatureSource = null;
+
         function rMenuAction(action){
             closeRMenu();
             resetInactivityTimer();
+            const map={
+                dashboardAdvancedCard:['📊 સંપૂર્ણ Dashboard','dashboardAdvancedCard'],
+                dashboardReminderCard:['🔔 Automatic Reminder List','dashboardReminderCard'],
+                dashboardNextMonthCard:['📅 આગામી મહિનાની ફી','dashboardNextMonthCard'],
+                dashboardReceiptSearchCard:['🔎 સર્ચ ફી રિપોર્ટ','dashboardReceiptSearchCard']
+            };
             if(action==='dashboardDueReport'){ openDueReport(); return; }
-            navigateTo('pageDashboard');
-            setTimeout(()=>toggleDashboardSection(action),30);
+            const item=map[action];
+            if(item){ openRFeaturePage(item[0],item[1]); return; }
         }
         function navigateFromRMenu(pageId){
             closeRMenu();
             resetInactivityTimer();
             navigateTo(pageId);
         }
+        function openRFeaturePage(title, sourceId){
+            const source=document.getElementById(sourceId);
+            const content=document.getElementById('rFeatureContent');
+            const titleEl=document.getElementById('rFeatureTitle');
+            if(!source||!content)return;
+            // પાછલા featureને તેના મૂળ Dashboardમાં પરત મૂકો.
+            if(rFeatureSource && rFeatureHome && rFeatureSource.parentNode===content){
+                rFeatureHome.appendChild(rFeatureSource);
+            }
+            rFeatureHome = source.parentNode;
+            rFeatureSource = source;
+            content.innerHTML='';
+            content.appendChild(source);
+            source.style.display='block';
+            titleEl.innerText=title;
+            navigateTo('pageRFeature');
+            if(sourceId==='dashboardAdvancedCard' || sourceId==='dashboardReminderCard' || sourceId==='dashboardNextMonthCard') renderDashboardAdvanced();
+            if(sourceId==='dashboardReceiptSearchCard'){
+                const inp=document.getElementById('receiptSearchInput'); if(inp) inp.focus();
+            }
+        }
 
         function toggleDashboardSection(id){
-            const ids=['dashboardAdvancedCard','dashboardReminderCard','dashboardNextMonthCard','dashboardReceiptSearchCard'];
-            ids.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=(x===id && e.style.display==='none')?'block':'none';});
-            const e=document.getElementById(id);
-            if(e && e.style.display==='block') e.scrollIntoView({behavior:'smooth',block:'start'});
+            const map={dashboardAdvancedCard:'📊 સંપૂર્ણ Dashboard',dashboardReminderCard:'🔔 Automatic Reminder List',dashboardNextMonthCard:'📅 આગામી મહિનાની ફી',dashboardReceiptSearchCard:'🔎 સર્ચ ફી રિપોર્ટ'};
+            if(map[id]) openRFeaturePage(map[id],id);
         }
 
         function renderDashboardAdvanced(){
