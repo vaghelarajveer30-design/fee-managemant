@@ -1143,7 +1143,7 @@
             renderStockDropdown();
             renderExpenses();
             
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDateString();
             document.getElementById('recDateVal').value = today;
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
@@ -1475,7 +1475,7 @@
             st.photo = st.photo || '';
             st.endDate = st.endDate || '';
             if (!st.feeHistory || !Array.isArray(st.feeHistory) || st.feeHistory.length === 0) {
-                st.feeHistory = [{ fromDate: st.joinDate || new Date().toISOString().split('T')[0], fee: parseFloat(st.fee) || 0 }];
+                st.feeHistory = [{ fromDate: st.joinDate || localDateString(), fee: parseFloat(st.fee) || 0 }];
             }
             st.feeHistory = st.feeHistory
                 .filter(x => x && x.fromDate)
@@ -1483,7 +1483,7 @@
                 .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
 
             if (!st.attendancePeriods || !Array.isArray(st.attendancePeriods) || st.attendancePeriods.length === 0) {
-                st.attendancePeriods = [{ fromDate: st.joinDate || new Date().toISOString().split('T')[0], toDate: null }];
+                st.attendancePeriods = [{ fromDate: st.joinDate || localDateString(), toDate: null }];
             }
             st.attendancePeriods = st.attendancePeriods
                 .filter(x => x && x.fromDate)
@@ -1496,6 +1496,13 @@
                 .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
         }
 
+        function localDateString(d = new Date()) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
         function dateOnly(str) {
             if (!str) return null;
             const d = new Date(str + 'T00:00:00');
@@ -1506,7 +1513,7 @@
             const d = dateOnly(str);
             if (!d) return str;
             d.setDate(d.getDate() + days);
-            return d.toISOString().split('T')[0];
+            return localDateString(d);
         }
 
         function monthNameGu(monthIndex) {
@@ -1580,13 +1587,13 @@
                 const last = new Date(y, m + 1, 0);
                 const overlapFrom = first > from ? first : from;
                 const overlapTo = last < to ? last : to;
-                const firstCoveredStr = overlapFrom.toISOString().split('T')[0];
+                const firstCoveredStr = localDateString(overlapFrom);
 
                 // A month is charged only when the selected period and a student attendance
                 // period overlap in at least one day.
                 let activeDay = null;
                 for (let d = new Date(overlapFrom); d <= overlapTo; d.setDate(d.getDate()+1)) {
-                    const ds = d.toISOString().split('T')[0];
+                    const ds = localDateString(d);
                     if (isStudentActiveOnDate(st, ds)) { activeDay = ds; break; }
                 }
 
@@ -1620,7 +1627,7 @@
         }
 
         function recalculateStudentTotals() {
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = localDateString();
 
             students.forEach(st => {
                 normalizeStudentRecords(st);
@@ -1777,7 +1784,7 @@
 
         function renderDashboardAdvanced(){
             const now=new Date();
-            const today=new Date().toISOString().split('T')[0];
+            const today=localDateString();
             const monthFrom=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
             const todayPaid=getPaidReceiptsBetween(today,today);
             const monthPaid=getPaidReceiptsBetween(monthFrom,today);
@@ -1815,7 +1822,7 @@
 
         function sendStudentDashboardReminder(id){
             const st=students.find(s=>String(s.id)===String(id)); if(!st)return;
-            const today=new Date().toISOString().split('T')[0];
+            const today=localDateString();
             const from=new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().split('T')[0];
             const info=getReminderFeeInfo(st,from,today);
             let msg=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ* માં *${st.name}* ની ફી બાકી છે.\n\n❗ બાકી: *₹${Math.round(info.due||st.due||0)}*\n📅 બાકી મહિના: ${info.unpaidMonths.map(m=>m.name+' '+m.year+' ₹'+Math.round(m.remaining)).join(', ')||'હાલના સરવૈયા મુજબ બાકી'}\n\nકૃપા કરીને બાકી ફી જમા કરાવવા વિનંતી. 🌸\n\nઆભાર,\n*નિર્મળા નવોદય ક્લાસિસ*`;
@@ -1972,7 +1979,7 @@
             const addPhotoPreview = document.getElementById('inpPhotoPreview');
             addPhotoPreview.src = "";
             addPhotoPreview.style.display = 'none';
-            document.getElementById('inpJoinDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inpJoinDate').value = localDateString();
             document.getElementById('inpEndDate').value = '';
             document.getElementById('inpStd').value = masterSettings.defaultStd || "5";
             document.getElementById('inpCourse').value = masterSettings.defaultCourse || "Navoday";
@@ -2063,15 +2070,15 @@
                             st.feeHistory.push({fromDate:joinDate, fee:fee});
                         }
                     }
-                    if (!st.feeHistory.length) st.feeHistory.push({fromDate:joinDate || new Date().toISOString().split('T')[0], fee:fee});
+                    if (!st.feeHistory.length) st.feeHistory.push({fromDate:joinDate || localDateString(), fee:fee});
                     const latest = st.feeHistory[st.feeHistory.length-1];
-                    if (latest.fromDate <= (joinDate || new Date().toISOString().split('T')[0]) || latest.fromDate <= new Date().toISOString().split('T')[0]) {
+                    if (latest.fromDate <= (joinDate || localDateString()) || latest.fromDate <= localDateString()) {
                         latest.fee = fee;
                     }
                     st.fee = fee;
                 }
             } else {
-                const recordDate = joinDate || new Date().toISOString().split('T')[0];
+                const recordDate = joinDate || localDateString();
                 let newSt = {
                     id: Date.now().toString(),
                     name: name,
@@ -2187,8 +2194,8 @@
             document.getElementById('profPaid').innerText = '₹' + st.paid;
             document.getElementById('profDue').innerText = '₹' + st.due;
 
-            document.getElementById('alertFromDate').value = st.joinDate || new Date().toISOString().split('T')[0];
-            document.getElementById('alertToDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('alertFromDate').value = st.joinDate || localDateString();
+            document.getElementById('alertToDate').value = localDateString();
 
             resetReceiptForm();
             calculateAlertDueFee();
@@ -2279,7 +2286,7 @@
             normalizeStudentRecords(st);
             const box = document.getElementById('rejoinBox');
             if (!box) return;
-            document.getElementById('rejoinDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('rejoinDateInput').value = localDateString();
             document.getElementById('rejoinCourseInput').value = st.course || '';
             document.getElementById('rejoinFeeInput').value = st.fee || '';
             box.style.display = 'block';
@@ -2335,7 +2342,7 @@
             if (!currentStudent) return;
             normalizeStudentRecords(currentStudent);
             document.getElementById('feeChangeBox').style.display = 'block';
-            document.getElementById('feeChangeDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('feeChangeDate').value = localDateString();
             document.getElementById('feeChangeAmount').value = currentStudent.fee || '';
             renderFeeChangeHistory();
         }
@@ -2360,7 +2367,7 @@
             currentStudent.feeHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
 
             // If the change is effective now or in the past, keep the main fee field current.
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDateString();
             if (date <= today) {
                 currentStudent.fee = getFeeForDate(currentStudent, today);
             }
@@ -2529,7 +2536,7 @@
             let paidAmount = prompt("જમા થયેલ રકમ દાખલ કરો:", lastPaid || currentStudent.fee);
             if (paidAmount === null) return;
 
-            const todayStr = formatDate(new Date().toISOString().split('T')[0]);
+            const todayStr = formatDate(localDateString());
             let remainingDue = currentStudent.due;
 
             let thankMsg = `🙏🏻 *આભાર પત્ર - ફી રસીદ*\n\n`;
@@ -2552,7 +2559,7 @@
             const el = document.getElementById('studentDueStyleSummary');
             if (!el) return;
             normalizeStudentRecords(currentStudent);
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDateString();
             const periods = (currentStudent.attendancePeriods || []).slice().sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''));
             const validPeriods = periods.filter(p => p && p.fromDate && p.fromDate <= today && (!p.toDate || p.toDate >= p.fromDate));
 
@@ -2602,7 +2609,7 @@
             const el = document.getElementById('studentFeeOverview');
             if (!el) return;
             normalizeStudentRecords(currentStudent);
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDateString();
             const from = currentStudent.joinDate || today;
             const to = today;
             const info = getReminderFeeInfo(currentStudent, from, to);
@@ -2647,8 +2654,8 @@
 
         function sendStudentFullFeeWhatsApp() {
             if (!currentStudent) return;
-            const from = currentStudent.joinDate || new Date().toISOString().split('T')[0];
-            const to = new Date().toISOString().split('T')[0];
+            const from = currentStudent.joinDate || localDateString();
+            const to = localDateString();
             const info = getReminderFeeInfo(currentStudent, from, to);
             const paidText = info.paidMonths.length ? info.paidMonths.map(m => `${m.name} ${m.year} ₹${Math.round(m.paid)}`).join(', ') : 'કોઈ સંપૂર્ણ જમા મહિનો નથી';
             const dueText = info.unpaidMonths.length ? info.unpaidMonths.map(m => `${m.name} ${m.year} ₹${Math.round(m.remaining)}`).join(', ') : 'કોઈ બાકી મહિનો નથી';
@@ -2663,7 +2670,7 @@
             document.getElementById('editingReceiptId').value = "";
             document.getElementById('btnSaveReceipt').innerText = "🧾 પહોંચ જનરેટ / સેવ કરો";
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = localDateString();
             document.getElementById('recDateVal').value = today;
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
@@ -2812,7 +2819,7 @@
 
             const payment = {
                 id: paymentId,
-                date: receiptObj.date || new Date().toISOString().split('T')[0],
+                date: receiptObj.date || localDateString(),
                 amount: linkedAmount,
                 note: 'ફી પહોંચ #' + String(receiptObj.id) + ' માંથી આપમેળે જમા'
             };
@@ -3394,7 +3401,7 @@
                 qty: qty,
                 price: totalPrice,
                 payType: payType,
-                date: new Date().toISOString().split('T')[0]
+                date: localDateString()
             };
 
             if (!currentStudent.stationery) currentStudent.stationery = [];
@@ -3500,7 +3507,7 @@
                 id: Date.now().toString(),
                 detail: detail,
                 amount: amount,
-                date: new Date().toISOString().split('T')[0]
+                date: localDateString()
             });
 
             saveLocalData();
@@ -3598,7 +3605,7 @@
             if(amount===null)return;
             const val=parseFloat(amount); if(!val || val<=0){alert('સાચી જમા રકમ દાખલ કરો.');return;}
             if(val>due){alert('જમા રકમ બાકી કરતાં વધુ ન હોઈ શકે.');return;}
-            const date=prompt('જમા તારીખ (YYYY-MM-DD):',new Date().toISOString().split('T')[0]); if(!date)return;
+            const date=prompt('જમા તારીખ (YYYY-MM-DD):',localDateString()); if(!date)return;
             const note=prompt('જમા અંગે નોંધ (વૈકલ્પિક):','')||'';
             r.payments=r.payments||[]; r.payments.push({id:Date.now().toString(),date,amount:val,note});
             saveLocalData(); renderLoanPage(); renderDashboard();
@@ -3611,7 +3618,7 @@
         }
 
         function renderLoanPage() {
-            const today=new Date().toISOString().split('T')[0];
+            const today=localDateString();
             const ld=document.getElementById('loanDate'); if(ld && !ld.value)ld.value=today;
             const total=loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
             const paid=loanRecords.reduce((a,r)=>a+loanPaidAmount(r),0);
@@ -3670,7 +3677,7 @@
             const amount=prompt('ગયા વર્ષના બાકીમાંથી આજે કેટલા રૂપિયા જમા કર્યા?',due); if(amount===null)return;
             const val=parseFloat(amount); if(!val||val<=0){alert('સાચી જમા રકમ દાખલ કરો.');return;}
             if(val>due){alert('જમા રકમ બાકી કરતાં વધુ ન હોઈ શકે.');return;}
-            const date=prompt('જમા તારીખ (YYYY-MM-DD):',new Date().toISOString().split('T')[0]); if(!date)return;
+            const date=prompt('જમા તારીખ (YYYY-MM-DD):',localDateString()); if(!date)return;
             const note=prompt('જમા અંગે નોંધ (વૈકલ્પિક):','')||'';
             r.payments=r.payments||[]; r.payments.push({id:Date.now().toString(),date,amount:val,note});
             saveLocalData();
@@ -3781,7 +3788,7 @@
         }
 
         function renderPreviousYearDuePage() {
-            const dateEl=document.getElementById('prevDate'); if(dateEl && !dateEl.value)dateEl.value=new Date().toISOString().split('T')[0];
+            const dateEl=document.getElementById('prevDate'); if(dateEl && !dateEl.value)dateEl.value=localDateString();
             const sel=document.getElementById('prevStudentSelect');
             if(sel){
                 const old=sel.value;
