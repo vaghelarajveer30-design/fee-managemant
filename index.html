@@ -1628,7 +1628,11 @@
                     });
                 }
 
-                st.totalFeeWithStationery = tuition + creditStatAmt;
+                // મુખ્ય વિદ્યાર્થી ફી સરવૈયામાં માત્ર ટ્યુશન ફી ગણાશે.
+                // ઉધાર સ્ટેશનરી અલગથી બતાવવામાં આવે છે; તેથી 01-04 થી 30-06 = 3 મહિના
+                // અને ₹250 પ્રતિ મહિનો હોય તો કુલ ફી ₹750 જ રહેશે.
+                st.stationeryDue = creditStatAmt;
+                st.totalFeeWithStationery = tuition;
 
                 let paidFee = 0;
                 if (st.receipts) {
