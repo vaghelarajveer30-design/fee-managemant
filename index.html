@@ -2605,7 +2605,7 @@
                 .sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''))
                 .filter(p => p && p.fromDate && p.fromDate <= today);
 
-            let totalFee = 0, totalPaid = 0, totalDue = 0;
+            let tuitionTotal = 0, tuitionPaid = 0, tuitionDue = 0;
 
             const rows = periods.map((p, idx) => {
                 const from = p.fromDate;
@@ -2613,9 +2613,13 @@
                 if (!from || to < from) return '';
 
                 const info = getReminderFeeInfo(currentStudent, from, to);
-                totalFee += Number(info.total) || 0;
-                totalPaid += Number(info.paid) || 0;
-                totalDue += Number(info.due) || 0;
+                const periodTuitionTotal = Math.max(0, (Number(info.total) || 0) - (Number(info.stationeryDue) || 0));
+                const periodTuitionDue = Math.max(0, (Number(info.due) || 0) - (Number(info.stationeryDue) || 0));
+                const periodTuitionPaid = Math.max(0, periodTuitionTotal - periodTuitionDue);
+
+                tuitionTotal += periodTuitionTotal;
+                tuitionPaid += periodTuitionPaid;
+                tuitionDue += periodTuitionDue;
 
                 const courseName = p.course || currentStudent.course || 'ટ્યુશન ફી';
                 const monthlyFee = info.months && info.months.length
@@ -2631,23 +2635,36 @@
                                     ${formatDate(from)} થી ${p.toDate && p.toDate < today ? formatDate(p.toDate) : 'હાલ સુધી'}
                                 </div>
                             </div>
-                            <strong style="font-size:17px;color:#d32f2f;white-space:nowrap;">₹${Math.round(Number(info.due) || 0)}</strong>
+                            <strong style="font-size:17px;color:#d32f2f;white-space:nowrap;">₹${Math.round(periodTuitionDue)}</strong>
                         </div>
 
                         <div style="display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:7px;">
                             <span>માસિક ફી: ₹${Math.round(monthlyFee)}</span>
-                            <span>કુલ: ₹${Math.round(Number(info.total) || 0)}</span>
-                            <span style="color:#2e7d32;font-weight:bold;">જમા: ₹${Math.round(Number(info.paid) || 0)}</span>
-                            <span style="color:#d32f2f;font-weight:bold;">બાકી: ₹${Math.round(Number(info.due) || 0)}</span>
+                            <span>કુલ: ₹${Math.round(periodTuitionTotal)}</span>
+                            <span style="color:#2e7d32;font-weight:bold;">જમા: ₹${Math.round(periodTuitionPaid)}</span>
+                            <span style="color:#d32f2f;font-weight:bold;">બાકી: ₹${Math.round(periodTuitionDue)}</span>
                         </div>
                     </div>`;
             }).join('');
 
-            const stationeryDue = (currentStudent.stationery || [])
+            // સ્ટેશનરી કોર્ષના કુલમાં ક્યારેય ઉમેરવી નહીં.
+            // ઉપરના મુખ્ય કુલમાં જ તેનો સરવાળો કરવો અને અહીં વસ્તુનું સાચું નામ બતાવવું.
+            const stationeryItems = (currentStudent.stationery || []).filter(x => x && Number(x.price) > 0);
+            const stationeryTotal = stationeryItems.reduce((a,x) => a + (Number(x.price) || 0), 0);
+            const stationeryDue = stationeryItems
                 .filter(x => x.payType === 'ઉધાર')
                 .reduce((a,x) => a + (Number(x.price) || 0), 0);
+            const stationeryPaid = Math.max(0, stationeryTotal - stationeryDue);
 
-            const grandDue = totalDue + stationeryDue;
+            const grandTotal = tuitionTotal + stationeryTotal;
+            const grandPaid = tuitionPaid + stationeryPaid;
+            const grandDue = tuitionDue + stationeryDue;
+
+            const stationeryHtml = stationeryItems.length ? stationeryItems.map(s => `
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:#f0f2f5;border-radius:8px;margin-top:6px;">
+                    <span>📚 <b>${escapeHtml(s.itemName || 'બુક')}</b>${s.qty ? ` × ${escapeHtml(String(s.qty))}` : ''}</span>
+                    <strong style="white-space:nowrap;">₹${Math.round(Number(s.price) || 0)}</strong>
+                </div>`).join('') : '';
 
             el.innerHTML = `
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -2663,23 +2680,19 @@
 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
                     <div style="background:#1976d2;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
-                        કુલ<br>₹${Math.round(totalFee)}
+                        કુલ<br>₹${Math.round(grandTotal)}
                     </div>
                     <div style="background:#2e7d32;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
-                        જમા<br>₹${Math.round(totalPaid)}
+                        જમા<br>₹${Math.round(grandPaid)}
                     </div>
                     <div style="background:#d32f2f;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
-                        બાકી<br>₹${Math.round(totalDue)}
+                        બાકી<br>₹${Math.round(grandDue)}
                     </div>
                 </div>
 
                 ${rows || '<div style="text-align:center;color:#888;padding:12px;">કોઈ ફી સમયગાળો નથી.</div>'}
 
-                ${stationeryDue > 0 ? `
-                    <div style="display:flex;justify-content:space-between;padding:9px 10px;margin-top:8px;background:#f0f2f5;border-radius:8px;">
-                        <span><b>📚 ઉધાર સ્ટેશનરી</b></span>
-                        <strong>₹${Math.round(stationeryDue)}</strong>
-                    </div>` : ''}
+                ${stationeryHtml}
             `;
         }
 
