@@ -79,6 +79,10 @@
         .finance-due { color:#d32f2f; font-weight:bold; }
         .payment-history { margin-top:8px; }
         .small-btn { border:none; border-radius:5px; padding:5px 8px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; }
+        .r-menu-wrap { position:relative; }
+        .r-menu-btn { border:none; border-radius:8px; background:#7b1fa2; color:#fff; font-weight:bold; font-size:16px; min-width:42px; padding:8px 12px; cursor:pointer; }
+        .r-menu-panel { position:absolute; right:0; top:46px; z-index:9999; width:270px; background:#fff; border:1px solid #ddd; border-radius:10px; padding:10px; box-shadow:0 8px 24px rgba(0,0,0,.2); display:none; }
+        .r-menu-panel .btn { margin-top:5px; font-size:12px; padding:9px 8px; }
 
 
         /* એપ લોક સ્ક્રીન */
@@ -111,7 +115,25 @@
 
     <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
-        <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div class="r-menu-wrap">
+                <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
+                <div id="rMenuPanel" class="r-menu-panel">
+                    <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
+                    <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')">🔔 Automatic Reminder List</button>
+                    <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')">💰 ઉછીના આપેલ રૂપિયા</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pagePreviousYearDue')">📅 ગયા વર્ષના બાકી</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageStationeryReport')">📖 સ્ટેશનરી સ્ટોક</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageAdminExpense')">💸 Admin ખર્ચ</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pageCourseDivision')">📚 કોર્ષ વિભાજન</button>
+                    <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')">⚠️ બાકી ફીની યાદી</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
+                    <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')">🔎 સર્ચ ફી રિપોર્ટ</button>
+                </div>
+            </div>
+            <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
+        </div>
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
 
@@ -228,12 +250,6 @@
 
             <div class="form-group">
                 <input type="text" id="searchInput" class="form-control" placeholder="🔍 નામ / મોબાઈલ / ધોરણ / વિદ્યાર્થી નં. શોધો..." oninput="renderDashboard()">
-            </div>
-
-            <div class="grid-3" style="margin-bottom:10px;">
-                <button class="btn btn-purple" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
-                <button class="btn btn-orange" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardReminderCard')">🔔 રિમાન્ડર લિસ્ટ</button>
-                <button class="btn btn-cyan" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
             </div>
 
             <div class="grid-2" style="margin-bottom: 12px;">
@@ -969,7 +985,26 @@
 
         let appUnlocked = false;
 
+        let inactivityTimer = null;
+        function resetInactivityTimer(){
+            if(!appUnlocked) return;
+            clearTimeout(inactivityTimer);
+            inactivityTimer=setTimeout(()=>{
+                if(appUnlocked){
+                    appUnlocked=false;
+                    closeRMenu();
+                    showAppLock();
+                }
+            }, 10*60*1000);
+        }
+        function setupInactivityAutoLock(){
+            const events=['click','touchstart','keydown','input','scroll','mousemove'];
+            events.forEach(ev=>document.addEventListener(ev,()=>resetInactivityTimer(),{passive:true}));
+        }
+
         function showAppLock() {
+            clearTimeout(inactivityTimer);
+            appUnlocked = false;
             const lock = document.getElementById('appLockScreen');
             if (!lock) return;
             lock.style.display = 'flex';
@@ -1004,6 +1039,7 @@
             document.getElementById('appBrandHead').style.display = 'block';
             document.getElementById('mainAppContainer').style.display = 'block';
             document.getElementById('appLockError').innerText = '';
+            resetInactivityTimer();
         }
 
         function changeAppPassword() {
@@ -1023,6 +1059,7 @@
         }
 
         window.onload = async function() {
+            setupInactivityAutoLock();
             const urlParams = new URLSearchParams(window.location.search);
             const receiptDataParam = urlParams.get('receipt');
             const shortReceiptId = urlParams.get('r');
@@ -1595,6 +1632,29 @@
             const t=new Date(), y=t.getFullYear(), m=t.getMonth();
             const startYear=m>=3?y:y-1;
             return {from:startYear+'-04-01',to:(startYear+1)+'-03-31'};
+        }
+
+        function toggleRMenu(){
+            const p=document.getElementById('rMenuPanel');
+            if(!p)return;
+            p.style.display=p.style.display==='block'?'none':'block';
+            resetInactivityTimer();
+        }
+        function closeRMenu(){
+            const p=document.getElementById('rMenuPanel');
+            if(p)p.style.display='none';
+        }
+        function rMenuAction(action){
+            closeRMenu();
+            resetInactivityTimer();
+            if(action==='dashboardDueReport'){ openDueReport(); return; }
+            navigateTo('pageDashboard');
+            setTimeout(()=>toggleDashboardSection(action),30);
+        }
+        function navigateFromRMenu(pageId){
+            closeRMenu();
+            resetInactivityTimer();
+            navigateTo(pageId);
         }
 
         function toggleDashboardSection(id){
