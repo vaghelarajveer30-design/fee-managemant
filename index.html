@@ -1482,7 +1482,12 @@
             }
             st.attendancePeriods = st.attendancePeriods
                 .filter(x => x && x.fromDate)
-                .map(x => ({ fromDate: x.fromDate, toDate: x.toDate || null }))
+                .map(x => ({
+                    fromDate: x.fromDate,
+                    toDate: x.toDate || null,
+                    ...(x.course ? {course: x.course} : {}),
+                    ...(x.fee != null && parseFloat(x.fee) > 0 ? {fee: parseFloat(x.fee)} : {})
+                }))
                 .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
         }
 
@@ -1509,10 +1514,31 @@
 
         function getFeeForDate(st, dateStr) {
             normalizeStudentRecords(st);
+
+            // રી-જોઈન્ટ/દાખલ સમયગાળાની પોતાની ફી હોય તો એ જ ફી લાગુ કરો.
+            // આથી જૂના સમયગાળાની ₹250 ફી નવી રી-જોઈન્ટની ₹300 ફીમાં ભળતી નથી.
+            let period = null;
+            st.attendancePeriods.forEach(p => {
+                const effectiveTo = p.toDate || ((st.endDate && p.fromDate <= st.endDate) ? st.endDate : null);
+                if (p.fromDate <= dateStr && (!effectiveTo || dateStr <= effectiveTo)) period = p;
+            });
+            if (period && period.fee != null && parseFloat(period.fee) > 0) {
+                return parseFloat(period.fee) || 0;
+            }
+
+            // જૂના ડેટામાં attendancePeriodsમાં fee ન હોય તો feeHistory પરથી ફી લો.
             let chosen = null;
             st.feeHistory.forEach(h => {
                 if (h.fromDate <= dateStr) chosen = h;
             });
+
+            // હાલના ચાલુ રી-જોઈન્ટ પિરિયડના જૂના/અસંગત feeHistory મૂલ્ય કરતાં
+            // વિદ્યાર્થીની હાલની ફી સાચી હોય તો હાલની ફી વાપરો.
+            const lastPeriod = st.attendancePeriods[st.attendancePeriods.length - 1];
+            if (lastPeriod && !lastPeriod.toDate && lastPeriod.fromDate <= dateStr &&
+                lastPeriod.fromDate >= (chosen?.fromDate || '0000-00-00') && parseFloat(st.fee) > 0) {
+                return parseFloat(st.fee) || 0;
+            }
             return chosen ? (parseFloat(chosen.fee) || 0) : (parseFloat(st.fee) || 0);
         }
 
@@ -2264,7 +2290,8 @@
                 return;
             }
 
-            st.attendancePeriods.push({fromDate:rejoinDate, toDate:null});
+            // નવી રી-જોઈન્ટ સાથે નવી કોર્સ અને નવી ફી એ જ સમયગાળામાં સેવ કરો.
+            st.attendancePeriods.push({fromDate:rejoinDate, toDate:null, course:rejoinCourse, fee:rejoinFee});
             st.endDate = '';
             st.status = 'active';
             st.course = rejoinCourse;
