@@ -299,11 +299,11 @@
                     <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
                         <label>વિદ્યાર્થીનું નામ</label>
-                        <input type="text" id="inpName" class="form-control" required placeholder="દા.ત. રવિ">
+                        <input type="text" id="inpName" class="form-control" required autocomplete="name" placeholder="દા.ત. રવિ" oninput="handleStudentNameInput()">
                     </div>
                     <div class="form-group">
                         <label>મોબાઈલ નં</label>
-                        <input type="text" id="inpPhone" class="form-control" placeholder="પછીથી પણ ઉમેરી શકાય">
+                        <input type="tel" id="inpPhone" class="form-control" autocomplete="tel" placeholder="પછીથી પણ ઉમેરી શકાય">
                     </div>
                     <div class="form-group">
                         <label>પપ્પાનું નામ</label>
@@ -1296,7 +1296,83 @@
             window.open(waWebUrl, '_blank');
         }
 
+        // વિદ્યાર્થીનું નામ લખતાં જ એપમાં પહેલેથી સેવ થયેલા વિદ્યાર્થીનો નંબર મળે તો
+        // તે નંબર આપમેળે મોબાઇલ ખાણામાં ભરી દો.
+        // ફોનની મૂળ Contactsમાંથી સીધો નંબર વાંચવો browser securityને કારણે
+        // સામાન્ય HTML/JavaScriptમાં શક્ય નથી. Native Android bridge હોય તો નીચેનો
+        // hook તેને પણ સપોર્ટ કરે છે.
+        let contactLookupTimer = null;
+
+        function normalizeContactName(s) {
+            return String(s || '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function handleStudentNameInput() {
+            clearTimeout(contactLookupTimer);
+            const name = document.getElementById('inpName')?.value?.trim() || '';
+            if (!name) return;
+
+            contactLookupTimer = setTimeout(async () => {
+                const phoneInput = document.getElementById('inpPhone');
+                if (!phoneInput) return;
+
+                // 1) Appમાં પહેલેથી સેવ થયેલા વિદ્યાર્થીનો exact name match.
+                const wanted = normalizeContactName(name);
+                const localMatch = (students || []).find(s =>
+                    normalizeContactName(s.name) === wanted && String(s.phone || '').trim()
+                );
+                if (localMatch) {
+                    phoneInput.value = String(localMatch.phone).trim();
+                    phoneInput.dispatchEvent(new Event('input', {bubbles:true}));
+                    return;
+                }
+
+                // 2) જો Android native wrapper bridge ઉપલબ્ધ હોય તો phone contactsમાંથી
+                // name પ્રમાણે શોધવાનો પ્રયાસ. Native sideએ getContactPhoneByName(name)
+                // function આપેલું હોવું જરૂરી છે.
+                try {
+                    if (window.Android && typeof window.Android.getContactPhoneByName === 'function') {
+                        const result = await Promise.resolve(window.Android.getContactPhoneByName(name));
+                        if (result) {
+                            const phone = String(result).replace(/[^0-9]/g, '');
+                            if (phone.length >= 10) {
+                                phoneInput.value = phone.slice(-10);
+                                phoneInput.dispatchEvent(new Event('input', {bubbles:true}));
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('Native contact lookup unavailable:', e);
+                }
+            }, 250);
+        }
+
         async function selectContactFromPhone() {
+            // Android native bridge (જો appમાં ઉપલબ્ધ હોય)
+            try {
+                if (window.Android && typeof window.Android.pickContact === 'function') {
+                    const result = await Promise.resolve(window.Android.pickContact());
+                    if (result) {
+                        let data = result;
+                        if (typeof result === 'string') {
+                            try { data = JSON.parse(result); } catch (_) {}
+                        }
+                        if (data.name) document.getElementById('inpName').value = data.name;
+                        if (data.phone) {
+                            const p = String(data.phone).replace(/[^0-9]/g, '');
+                            document.getElementById('inpPhone').value = p.length > 10 ? p.slice(-10) : p;
+                        }
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log('Native contact picker unavailable:', e);
+            }
+
+            // Browser Contact Picker API
             if ('contacts' in navigator && 'ContactsManager' in window) {
                 try {
                     const props = ['name', 'tel'];
@@ -1311,13 +1387,15 @@
                             if (phoneNum.length > 10) phoneNum = phoneNum.slice(-10);
                             document.getElementById('inpPhone').value = phoneNum;
                         }
+                        return;
                     }
                 } catch (ex) {
-                    alert('કોન્ટેક્ટ પસંદ કરવામાં ભૂલ થઈ અથવા રદ કરવામાં આવ્યું.');
+                    if (ex && ex.name === 'AbortError') return;
+                    console.log('Browser contact picker error:', ex);
                 }
-            } else {
-                alert('તમારા બ્રાઉઝર/ડિવાઈસમાં ડાયરેક્ટ કોન્ટેક્ટ સિલેક્શન ફીચર સપોર્ટ કરતું નથી. કૃપા કરીને મેન્યુઅલી લખો.');
             }
+
+            alert('આ ડિવાઇસ/બ્રાઉઝરમાં ફોનના Contactsમાંથી સીધું નામ પ્રમાણે નંબર વાંચવાની સુવિધા ઉપલબ્ધ નથી. જો Android એપમાં Contacts permission અને native contact bridge ઉમેરશો તો નામ લખતાં જ નંબર આપમેળે આવી શકશે.');
         }
 
         function updateNetworkStatus() {
