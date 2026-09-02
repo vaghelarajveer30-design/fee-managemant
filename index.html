@@ -2503,21 +2503,46 @@
             if (!currentStudent) return;
             const el = document.getElementById('studentFeeOverview');
             if (!el) return;
-            const from = currentStudent.joinDate || new Date().toISOString().split('T')[0];
-            const to = new Date().toISOString().split('T')[0];
+            normalizeStudentRecords(currentStudent);
+            const today = new Date().toISOString().split('T')[0];
+            const from = currentStudent.joinDate || today;
+            const to = today;
             const info = getReminderFeeInfo(currentStudent, from, to);
-            const paidMonths = info.paidMonths || [];
-            const unpaidMonths = info.unpaidMonths || [];
             const receiptCount = (currentStudent.receipts || []).length;
-            const paidText = paidMonths.length ? paidMonths.map(m => `<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:5px;padding:3px 6px;margin:2px;">✅ ${m.name} ${m.year} ₹${Math.round(m.paid)}</span>`).join('') : '<span style="color:#888;">કોઈ મહિનો સંપૂર્ણ જમા નથી.</span>';
-            const dueText = unpaidMonths.length ? unpaidMonths.map(m => `<span style="display:inline-block;background:#ffebee;color:#d32f2f;border:1px solid #ef9a9a;border-radius:5px;padding:3px 6px;margin:2px;">❗ ${m.name} ${m.year} ₹${Math.round(m.remaining)}</span>`).join('') : '<span style="color:#2e7d32;font-weight:bold;">✅ બધા મહિના જમા.</span>';
             const receiptText = receiptCount ? `🧾 કુલ ${receiptCount} પહોંચ` : '🧾 હજુ કોઈ પહોંચ નથી';
+
+            // દરેક દાખલ/રી-જોઈન્ટ સમયગાળો અલગ ગણવો.
+            // ઉદાહરણ: 01-04-2026 થી 30-06-2026 = માત્ર એપ્રિલ, મે, જૂન (3 મહિના).
+            // ત્યારબાદ 01-07-2026 થી શરૂ થયેલો રી-જોઈન્ટ સમયગાળો અલગ દેખાશે.
+            const periods = (currentStudent.attendancePeriods || []).map((p, idx) => {
+                const pFrom = p.fromDate;
+                const pTo = p.toDate || today;
+                if (!pFrom || pFrom > today || pTo < from) return null;
+                const rangeFrom = pFrom < from ? from : pFrom;
+                const rangeTo = pTo > to ? to : pTo;
+                const pi = getReminderFeeInfo(currentStudent, rangeFrom, rangeTo);
+                return { index: idx + 1, from: rangeFrom, to: rangeTo, closed: !!p.toDate, info: pi };
+            }).filter(Boolean);
+
+            const periodHtml = periods.length ? periods.map((p, i) => {
+                const pm = p.info.paidMonths || [];
+                const um = p.info.unpaidMonths || [];
+                const allMonths = p.info.months || [];
+                const paidText = pm.length ? pm.map(m => `<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:5px;padding:3px 6px;margin:2px;">✅ ${m.name} ${m.year} ₹${Math.round(m.paid)}</span>`).join('') : '<span style="color:#888;">કોઈ મહિનો સંપૂર્ણ જમા નથી.</span>';
+                const dueText = um.length ? um.map(m => `<span style="display:inline-block;background:#ffebee;color:#d32f2f;border:1px solid #ef9a9a;border-radius:5px;padding:3px 6px;margin:2px;">❗ ${m.name} ${m.year} ₹${Math.round(m.remaining)}</span>`).join('') : '<span style="color:#2e7d32;font-weight:bold;">✅ આ સમયગાળાના બધા મહિના જમા.</span>';
+                return `<div style="margin-top:${i ? '10px' : '0'};padding:8px;border:1px solid #d7e3ef;border-radius:7px;background:#fff;">
+                    <div style="font-weight:bold;color:#1565c0;margin-bottom:5px;">${p.index}. 📅 ${formatDate(p.from)} થી ${p.closed ? formatDate(p.to) : 'હાલ ચાલુ'} &nbsp; | &nbsp; કુલ ${allMonths.length} મહિના</div>
+                    <div style="font-size:12px;font-weight:bold;color:#2e7d32;margin-bottom:2px;">જમા થયેલા મહિના:</div>
+                    <div>${paidText}</div>
+                    <div style="font-size:12px;font-weight:bold;color:#d32f2f;margin-top:5px;margin-bottom:2px;">બાકી મહિના:</div>
+                    <div>${dueText}</div>
+                </div>`;
+            }).join('') : '<span style="color:#888;">કોઈ ફી સમયગાળો નથી.</span>';
+
             el.innerHTML = `
                 <div style="font-size:12px;color:#555;margin-bottom:7px;">📅 ${formatDate(from)} થી ${formatDate(to)} સુધી &nbsp; | &nbsp; ${receiptText}</div>
-                <div style="font-size:12px;font-weight:bold;color:#2e7d32;margin-bottom:3px;">જમા થયેલા મહિના:</div>
-                <div>${paidText}</div>
-                <div style="font-size:12px;font-weight:bold;color:#d32f2f;margin-top:7px;margin-bottom:3px;">બાકી મહિના:</div>
-                <div>${dueText}</div>
+                <div style="font-size:12px;font-weight:bold;color:#1565c0;margin-bottom:4px;">દાખલ / રી-જોઈન્ટ પ્રમાણે ફી:</div>
+                ${periodHtml}
                 ${info.stationeryDue > 0 ? `<div style="margin-top:7px;font-size:12px;color:#d32f2f;font-weight:bold;">📚 ઉધાર સ્ટેશનરી: ₹${Math.round(info.stationeryDue)}</div>` : ''}
             `;
         }
