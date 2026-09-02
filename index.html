@@ -1522,12 +1522,15 @@
                 const effectiveTo = p.toDate || ((st.endDate && p.fromDate <= st.endDate) ? st.endDate : null);
                 if (p.fromDate <= dateStr && (!effectiveTo || dateStr <= effectiveTo)) period = p;
             });
-            // હાલનો ચાલુ (છેલ્લો) રી-જોઈન્ટ પિરિયડ હોય તો વિદ્યાર્થીની હાલની ફી
-            // જ સાચી માનવી. જૂના પિરિયડમાં રહેલી ₹250 જેવી જૂની ફી નવા રી-જોઈન્ટમાં
-            // ભળવી નહીં. ઉદાહરણ: 01-07-2026થી નવી ફી ₹300 હોય તો જુલાઈથી ₹300.
+
+            // સૌથી મહત્વનું: હાલનો ચાલુ છેલ્લો રી-જોઈન્ટ પિરિયડ હોય તો
+            // st.fee માં સેવ થયેલી નવી ફી જ વાપરવી. જૂના પિરિયડમાં રહેલી fee
+            // (જેમ કે ₹250) જુલાઈ જેવા નવા રી-જોઈન્ટ મહિનામાં લાગુ ન થવી જોઈએ.
+            // ઉદાહરણ: 01-07-2026થી રી-જોઈન્ટ ફી ₹300 હોય તો જુલાઈ, ઓગસ્ટ,
+            // સપ્ટેમ્બર વગેરે માટે ₹300 જ ગણાશે.
             const lastPeriod = st.attendancePeriods[st.attendancePeriods.length - 1];
-            if (period && lastPeriod === period && !period.toDate &&
-                parseFloat(st.fee) > 0 && period.fromDate <= dateStr) {
+            if (lastPeriod && !lastPeriod.toDate && lastPeriod.fromDate <= dateStr &&
+                parseFloat(st.fee) > 0) {
                 return parseFloat(st.fee) || 0;
             }
 
