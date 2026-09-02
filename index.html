@@ -660,6 +660,7 @@
                         <div class="student-info-cell"><strong>મોબાઈલ નં:</strong> <span id="profPhone">-</span></div>
                         <div class="student-info-cell"><strong>ધોરણ:</strong> <span id="profStd">5</span> | <strong>કોર્સ:</strong> <span id="profCourse">Navoday</span></div>
                         <div class="student-info-cell"><strong>📅 દાખલ તારીખ:</strong> <span id="profJoinDate">-</span></div>
+                        <div class="student-info-cell"><strong>⛔ End તારીખ:</strong> <span id="profEndDate">હાલ ચાલુ</span></div>
                         <div class="student-info-cell"><strong>જન્મ તારીખ:</strong> <span id="profBirthDate">-</span></div>
                         <div class="student-info-cell"><strong>પપ્પાનું નામ:</strong> <span id="profFatherName">-</span></div>
                         <div class="student-info-cell"><strong>માતાનું નામ:</strong> <span id="profMotherName">-</span></div>
@@ -677,6 +678,28 @@
                 <div class="grid-2" style="margin-top: 8px;">
                     <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)">🔄 રી-જોઈન્ટ કરો</button>
                     <button class="btn btn-orange" onclick="openFeeChangeBox()">💰 ફી વધારો/બદલો</button>
+                </div>
+
+                <div id="rejoinBox" class="card" style="display:none; background:#e8f5e9; border-color:#a5d6a7; margin-top:10px; margin-bottom:0;">
+                    <div style="font-weight:bold; color:#2e7d32; font-size:13px; margin-bottom:7px;">🔄 રી-જોઈન્ટની નવી વિગતો</div>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>📅 રી-જોઈન્ટ તારીખ</label>
+                            <input type="date" id="rejoinDateInput" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>📚 કોર્સ</label>
+                            <input type="text" id="rejoinCourseInput" class="form-control" placeholder="કોર્સ">
+                        </div>
+                        <div class="form-group">
+                            <label>💰 માસિક ફી (₹)</label>
+                            <input type="number" id="rejoinFeeInput" class="form-control" min="0">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <button class="btn btn-green" type="button" onclick="saveRejoinDetails(currentStudent.id)">✅ રી-જોઈન્ટ સેવ કરો</button>
+                        <button class="btn btn-gray" type="button" onclick="document.getElementById('rejoinBox').style.display='none'">✖️ બંધ કરો</button>
+                    </div>
                 </div>
 
                 <div class="card" style="background:#f3f8ff; border-color:#bbdefb; margin-top:10px; margin-bottom:0;">
@@ -1445,6 +1468,7 @@
             st.schoolName = st.schoolName || '';
             st.address = st.address || '';
             st.photo = st.photo || '';
+            st.endDate = st.endDate || '';
             if (!st.feeHistory || !Array.isArray(st.feeHistory) || st.feeHistory.length === 0) {
                 st.feeHistory = [{ fromDate: st.joinDate || new Date().toISOString().split('T')[0], fee: parseFloat(st.fee) || 0 }];
             }
@@ -1495,7 +1519,8 @@
         function isStudentActiveOnDate(st, dateStr) {
             normalizeStudentRecords(st);
             return st.attendancePeriods.some(p => {
-                return p.fromDate <= dateStr && (!p.toDate || dateStr <= p.toDate);
+                const effectiveTo = p.toDate || ((st.endDate && p.fromDate <= st.endDate) ? st.endDate : null);
+                return p.fromDate <= dateStr && (!effectiveTo || dateStr <= effectiveTo);
             });
         }
 
@@ -1967,15 +1992,18 @@
                     st.address = address;
                     st.photo = photo;
                     st.joinDate = joinDate;
-                    // End તારીખ આપેલી હોય તો હાલના ચાલુ attendance period પર ફી અહીંથી બંધ થાય.
+                    st.endDate = endDate || '';
+                    // End તારીખ આપેલી હોય તો હાલના લાગુ attendance period પર ફી અહીંથી બંધ થાય.
                     normalizeStudentRecords(st);
                     let openPeriod = st.attendancePeriods.find(p => !p.toDate);
-                    if (!openPeriod && endDate) {
+                    if (!openPeriod) {
                         openPeriod = st.attendancePeriods[st.attendancePeriods.length - 1];
                     }
                     if (openPeriod) {
                         openPeriod.fromDate = openPeriod.fromDate || joinDate;
                         openPeriod.toDate = endDate || null;
+                    } else if (joinDate) {
+                        st.attendancePeriods = [{fromDate:joinDate, toDate:endDate || null}];
                     }
                     st.std = std;
                     st.course = course;
@@ -2009,6 +2037,7 @@
                     address: address,
                     photo: photo,
                     joinDate: joinDate,
+                    endDate: endDate || '',
                     std: std,
                     course: course,
                     feeType: feeType,
@@ -2201,39 +2230,57 @@
             const st = students.find(s => s.id === id);
             if (!st) return;
             normalizeStudentRecords(st);
+            const box = document.getElementById('rejoinBox');
+            if (!box) return;
+            document.getElementById('rejoinDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('rejoinCourseInput').value = st.course || '';
+            document.getElementById('rejoinFeeInput').value = st.fee || '';
+            box.style.display = 'block';
+            box.scrollIntoView({behavior:'smooth', block:'center'});
+        }
 
-            const defaultDate = new Date().toISOString().split('T')[0];
-            const rejoinDate = prompt('રી-જોઈન્ટ તારીખ દાખલ કરો (YYYY-MM-DD):', defaultDate);
-            if (!rejoinDate) return;
+        function saveRejoinDetails(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+            normalizeStudentRecords(st);
 
-            const d = dateOnly(rejoinDate);
-            if (!d) {
-                alert('❌ તારીખ સાચી નથી.');
-                return;
-            }
+            const rejoinDate = document.getElementById('rejoinDateInput').value;
+            const rejoinCourse = document.getElementById('rejoinCourseInput').value.trim();
+            const rejoinFee = parseFloat(document.getElementById('rejoinFeeInput').value) || 0;
+            if (!rejoinDate) { alert('❌ રી-જોઈન્ટ તારીખ પસંદ કરો.'); return; }
+            if (!dateOnly(rejoinDate)) { alert('❌ તારીખ સાચી નથી.'); return; }
+            if (!rejoinCourse) { alert('❌ કોર્સ દાખલ કરો.'); return; }
+            if (rejoinFee <= 0) { alert('❌ સાચી ફી દાખલ કરો.'); return; }
 
             const last = st.attendancePeriods[st.attendancePeriods.length - 1];
             if (last && !last.toDate) {
                 if (rejoinDate <= last.fromDate) {
-                    alert('❌ રી-જોઈન્ટ તારીખ અગાઉની દાખલ તારીખ કરતાં મોટી હોવી જોઈએ.');
+                    alert('❌ રી-જોઈન્ટ તારીખ છેલ્લી દાખલ તારીખ કરતાં મોટી હોવી જોઈએ.');
                     return;
                 }
                 last.toDate = addDaysToDateString(rejoinDate, -1);
-            } else {
-                const lastEnd = st.attendancePeriods.length ? st.attendancePeriods[st.attendancePeriods.length-1].toDate : null;
-                if (lastEnd && rejoinDate <= lastEnd) {
-                    alert('❌ રી-જોઈન્ટ તારીખ અગાઉના સમયગાળા પછીની હોવી જોઈએ.');
-                    return;
-                }
+            } else if (last && last.toDate && rejoinDate <= last.toDate) {
+                alert('❌ રી-જોઈન્ટ તારીખ અગાઉના સમયગાળા પછીની હોવી જોઈએ.');
+                return;
             }
 
             st.attendancePeriods.push({fromDate:rejoinDate, toDate:null});
+            st.endDate = '';
             st.status = 'active';
+            st.course = rejoinCourse;
+            st.fee = rejoinFee;
+            st.feeType = 'માસિક';
+            st.feeHistory = Array.isArray(st.feeHistory) ? st.feeHistory : [];
+            st.feeHistory.push({fromDate:rejoinDate, fee:rejoinFee});
+            st.feeHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
 
-            saveLocalData();
             recalculateStudentTotals();
+            saveLocalData();
+            const box = document.getElementById('rejoinBox');
+            if (box) box.style.display = 'none';
             openStudent(st.id);
-            alert('✅ વિદ્યાર્થીની રી-જોઈન્ટ તારીખ સેવ થઈ ગઈ છે.');
+            renderDashboard();
+            alert('✅ રી-જોઈન્ટ તારીખ, કોર્સ અને ફી સેવ થઈ ગયા છે.');
         }
 
         function openFeeChangeBox() {
