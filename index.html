@@ -122,7 +122,7 @@
             <div class="receipt-card" id="standalonePrintArea">
                 <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
                 <div class="receipt-user-info">
-                    <div><strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="sRName">-</span></div>
+                    <div><strong>🧾 પહોંચ નં.:</strong> <span id="sRReceiptNo">-</span> &nbsp; | &nbsp; <strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="sRName">-</span></div>
                     <div style="margin-top: 4px;">
                         <strong>ધોરણ:</strong> <span id="sRStd">-</span> | 
                         <strong>કોર્સ:</strong> <span id="sRCourse">-</span> | 
@@ -189,7 +189,7 @@
             </div>
 
             <div class="form-group">
-                <input type="text" id="searchInput" class="form-control" placeholder="🔍 નામ અથવા મોબાઈલ નં. શોધો..." oninput="renderDashboard()">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 નામ / મોબાઈલ / ધોરણ / વિદ્યાર્થી નં. શોધો..." oninput="renderDashboard()">
             </div>
 
             <div class="grid-2" style="margin-bottom: 12px;">
@@ -209,6 +209,8 @@
                 <button class="btn btn-orange" onclick="navigateTo('pageStationeryReport')">📖 સ્ટેશનરી રિપોર્ટ & સ્ટોક</button>
                 <button class="btn btn-orange" onclick="navigateTo('pageAdminExpense')">💸 Admin ખર્ચ વિગત</button>
                 <button class="btn btn-purple" onclick="openCourseDivision()">📚 કોર્સ વિભાજન</button>
+                <button class="btn btn-blue" onclick="navigateTo('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
+                <button class="btn btn-red" onclick="openDueReport()">⚠️ બાકી ફીની યાદી</button>
             </div>
 
             <div class="card" style="background: #2e7d32; color: white; margin-top: 12px;">
@@ -511,6 +513,40 @@
             </div>
         </div>
 
+        <div id="pageFeeReports" style="display:none;">
+            <div style="margin-bottom:10px;">
+                <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
+            </div>
+            <div class="card">
+                <h3 style="color:#1565c0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3>
+                <p style="font-size:12px;color:#666;margin:6px 0 10px;">અહીં મુખ્ય વિદ્યાર્થીઓની ફીનું સરવૈયું છે. ગયા વર્ષનું બાકી આ રિપોર્ટમાં સામેલ નથી.</p>
+                <div class="grid-2">
+                    <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="reportFromDate" class="form-control" onchange="renderFeeReports()"></div>
+                    <div class="form-group"><label>કઈ તારીખ સુધી?</label><input type="date" id="reportToDate" class="form-control" onchange="renderFeeReports()"></div>
+                </div>
+                <div class="grid-3" style="margin-top:8px;">
+                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span id="reportTotalFee">₹0</span></div>
+                    <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span id="reportPaidFee">₹0</span></div>
+                    <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span id="reportDueFee">₹0</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <h4>📅 મહિના પ્રમાણે ફી</h4>
+                <div style="overflow-x:auto;"><table><thead><tr><th>મહિનો</th><th>કુલ ફી</th><th>જમા</th><th>બાકી</th></tr></thead><tbody id="monthlyReportBody"></tbody></table></div>
+            </div>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <h4 style="margin:0;">⚠️ બાકી ફીની યાદી</h4>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendDueReportSummaryWhatsApp()">📲 યાદી WhatsApp</button>
+                </div>
+                <div id="dueReportList" style="margin-top:8px;"></div>
+            </div>
+            <div class="card">
+                <h4>📌 આ મહિને કોની ફી લેવાની છે?</h4>
+                <div id="currentMonthDueList"></div>
+            </div>
+        </div>
+
         <div id="pagePreviousYearDue" style="display:none;">
             <div style="margin-bottom:10px;">
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
@@ -733,6 +769,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>પહોંચ નં.</th>
                             <th>તારીખ</th>
                             <th>કુલ</th>
                             <th>જમા</th>
@@ -754,7 +791,7 @@
                 <div class="receipt-card" id="receiptPrintArea">
                     <div class="receipt-header">નિર્મળા નવોદય ક્લાિસિસ</div>
                     <div class="receipt-user-info">
-                        <div><strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="rName">Ravi</span></div>
+                        <div><strong>🧾 પહોંચ નં.:</strong> <span id="rReceiptNo">1</span> &nbsp; | &nbsp; <strong>👤 વિદ્યાર્થીનું નામ:</strong> <span id="rName">Ravi</span></div>
                         <div style="margin-top: 4px;">
                             <strong>ધોરણ:</strong> <span id="rStd">5</span> | 
                             <strong>કોર્સ:</strong> <span id="rCourse">Navoday</span> | 
@@ -841,7 +878,8 @@
             defaultCourse: "Navoday",
             receiptBaseUrl: "",
             password: "",
-            appPassword: ""
+            appPassword: "",
+            nextReceiptNo: 1
         };
 
         let stockList = [
@@ -1002,6 +1040,7 @@
             document.getElementById('appBrandHead').style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
+            document.getElementById('sRReceiptNo').innerText = data.receiptNo || '-';
             document.getElementById('sRName').innerText = data.name || "-";
             document.getElementById('sRStd').innerText = data.std || "-";
             document.getElementById('sRCourse').innerText = data.course || "-";
@@ -1127,7 +1166,9 @@
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
             const encodedText = encodeURIComponent(text);
             
-            const waWebUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedText}`;
+            const waWebUrl = cleanPhone
+                ? `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodedText}`
+                : `https://api.whatsapp.com/send?text=${encodedText}`;
             window.open(waWebUrl, '_blank');
         }
 
@@ -1191,6 +1232,7 @@
             if (!Array.isArray(deletedStudents)) deletedStudents = [];
             if (localStorage.getItem('NNC_master')) masterSettings = Object.assign({}, masterSettings, JSON.parse(localStorage.getItem('NNC_master')));
             students.forEach(st => normalizeStudentRecords(st));
+            ensureReceiptNumbers();
         }
 
         async function backupDataToCloud() {
@@ -1459,7 +1501,7 @@
         }
 
         function navigateTo(pageId) {
-            ['pageDashboard', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageStudentDetails'].forEach(p => {
+            ['pageDashboard', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
@@ -1471,6 +1513,7 @@
             }
             if (pageId === 'pageLoans') renderLoanPage();
             if (pageId === 'pagePreviousYearDue') renderPreviousYearDuePage();
+            if (pageId === 'pageFeeReports') renderFeeReports();
         }
 
         function filterStudents(type) {
@@ -1550,7 +1593,11 @@
             }
 
             if (searchVal !== "") {
-                filteredStudents = filteredStudents.filter(s => s.name.toLowerCase().includes(searchVal) || s.phone.includes(searchVal));
+                filteredStudents = filteredStudents.filter(s => {
+                    const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                        .map(v => String(v || '').toLowerCase()).join(' ');
+                    return haystack.includes(searchVal);
+                });
             }
 
             if (filteredStudents.length === 0) {
@@ -2244,7 +2291,7 @@
         }
 
         function receiptPublicData(receiptObj) {
-            return {name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
+            return {receiptNo:receiptObj.receiptNo || '',name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
         }
 
         async function publishReceiptAndGetLink(receiptObj) {
@@ -2319,6 +2366,30 @@
             (st.receipts || []).forEach(r => syncReceiptToPreviousYearDue(studentId, r));
         }
 
+        function ensureReceiptNumbers() {
+            let maxNo = Math.max(0, parseInt(masterSettings.nextReceiptNo, 10) - 1 || 0);
+            students.forEach(st => {
+                (st.receipts || []).forEach(r => {
+                    const n = parseInt(r.receiptNo, 10);
+                    if (Number.isFinite(n)) maxNo = Math.max(maxNo, n);
+                });
+            });
+            students.forEach(st => {
+                (st.receipts || []).forEach(r => {
+                    if (!r.receiptNo) r.receiptNo = ++maxNo;
+                });
+            });
+            masterSettings.nextReceiptNo = maxNo + 1;
+            saveLocalData();
+        }
+
+        function getNextReceiptNumber() {
+            ensureReceiptNumbers();
+            const n = Math.max(1, parseInt(masterSettings.nextReceiptNo, 10) || 1);
+            masterSettings.nextReceiptNo = n + 1;
+            return n;
+        }
+
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
@@ -2335,9 +2406,12 @@
             const payer = document.getElementById('recPayer').value.trim() || (currentStudent.name + " ના વાલી");
 
             const receiptId = document.getElementById('editingReceiptId').value || Date.now().toString();
+            const existingReceipt = (currentStudent.receipts || []).find(r => String(r.id) === String(receiptId));
+            const receiptNo = existingReceipt?.receiptNo || getNextReceiptNumber();
 
             const newReceipt = {
                 id: receiptId,
+                receiptNo: receiptNo,
                 date: dateVal,
                 fromDate: fromDate,
                 toDate: toDate,
@@ -2378,6 +2452,7 @@
         }
 
         function displayReceiptDataInPreview(receiptObj) {
+            document.getElementById('rReceiptNo').innerText = receiptObj.receiptNo || '-';
             document.getElementById('rName').innerText = currentStudent.name;
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
@@ -2591,6 +2666,7 @@
                 let statusBadge = r.dueVal <= 0 ? '<span style="color:green; font-weight:bold;">પૂર્ણ</span>' : '<span style="color:red; font-weight:bold;">બાકી</span>';
                 tbody.innerHTML += `
                     <tr>
+                        <td>#${r.receiptNo || '-'}</td>
                         <td>${formatDate(r.date)}</td>
                         <td>₹${r.grandTotal}</td>
                         <td>₹${r.paidVal}</td>
@@ -2676,7 +2752,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Fee_Manager_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            const now = new Date();
+            const stamp = now.toISOString().replace(/[:.]/g,'-').replace('T','_').replace('Z','');
+            a.download = `Fee_Manager_Backup_${stamp}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -3147,6 +3225,92 @@
         function deletePreviousYearDue(id) {
             if(!confirm('આ ગયા વર્ષના બાકી ની નોંધ ડિલીટ કરવી છે?'))return;
             previousYearDues=previousYearDues.filter(x=>String(x.id)!==String(id)); saveLocalData(); renderPreviousYearDuePage(); renderDashboard();
+        }
+
+        function openDueReport() {
+            navigateTo('pageFeeReports');
+            setTimeout(() => {
+                const el=document.getElementById('dueReportList');
+                if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+            }, 50);
+        }
+
+        function getMonthDateRange(year, monthIndex) {
+            const from = new Date(year, monthIndex, 1);
+            const to = new Date(year, monthIndex + 1, 0);
+            const pad = n => String(n).padStart(2,'0');
+            return {
+                from: `${from.getFullYear()}-${pad(from.getMonth()+1)}-${pad(from.getDate())}`,
+                to: `${to.getFullYear()}-${pad(to.getMonth()+1)}-${pad(to.getDate())}`
+            };
+        }
+
+        function renderFeeReports() {
+            recalculateStudentTotals();
+            const today = new Date();
+            const pad=n=>String(n).padStart(2,'0');
+            const defaultFrom = `${today.getFullYear()}-04-01`;
+            const defaultTo = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+            const fromEl=document.getElementById('reportFromDate');
+            const toEl=document.getElementById('reportToDate');
+            if(fromEl && !fromEl.value) fromEl.value=defaultFrom;
+            if(toEl && !toEl.value) toEl.value=defaultTo;
+            const from=fromEl?.value || defaultFrom;
+            const to=toEl?.value || defaultTo;
+            if(!from || !to || to<from) return;
+
+            let total=0,paid=0,due=0;
+            students.forEach(st=>{
+                const info=getReminderFeeInfo(st,from,to);
+                total += Number(info.total)||0;
+                paid += Number(info.paid)||0;
+                due += Number(info.due)||0;
+            });
+            document.getElementById('reportTotalFee').innerText='₹'+Math.round(total);
+            document.getElementById('reportPaidFee').innerText='₹'+Math.round(paid);
+            document.getElementById('reportDueFee').innerText='₹'+Math.round(due);
+
+            const monthBody=document.getElementById('monthlyReportBody');
+            const start=new Date(from+'T00:00:00');
+            const end=new Date(to+'T00:00:00');
+            const rows=[];
+            let cursor=new Date(start.getFullYear(),start.getMonth(),1);
+            while(cursor<=end){
+                const range=getMonthDateRange(cursor.getFullYear(),cursor.getMonth());
+                const mf = cursor.getTime()===new Date(start.getFullYear(),start.getMonth(),1).getTime() ? from : range.from;
+                const mt = (cursor.getFullYear()===end.getFullYear() && cursor.getMonth()===end.getMonth()) ? to : range.to;
+                let mtot=0,mpaid=0,mdue=0;
+                students.forEach(st=>{
+                    const info=getReminderFeeInfo(st,mf,mt);
+                    mtot += Number(info.total)||0;
+                    mpaid += Number(info.paid)||0;
+                    mdue += Number(info.due)||0;
+                });
+                const label = new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor);
+                rows.push(`<tr><td>${label}</td><td>₹${Math.round(mtot)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(mpaid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(mdue)}</td></tr>`);
+                cursor.setMonth(cursor.getMonth()+1);
+            }
+            monthBody.innerHTML=rows.join('') || '<tr><td colspan="4">કોઈ માહિતી નથી.</td></tr>';
+
+            const dueList=document.getElementById('dueReportList');
+            const dueStudents=students.filter(st=>Number(st.due)>0).sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
+            dueList.innerHTML=dueStudents.length ? dueStudents.map(st=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(st.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(st.name)}</span><span class="student-badge">${escapeHtml(st.course||'')} (${escapeHtml(st.std||'')})</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;"><span>કુલ: ₹${Math.round(Number(st.totalFeeWithStationery)||0)}</span><span style="color:#2e7d32;font-weight:bold;">જમા: ₹${Math.round(Number(st.paid)||0)}</span><span style="color:#d32f2f;font-weight:bold;">બાકી: ₹${Math.round(Number(st.due)||0)}</span></div></div>`).join('') : '<div style="text-align:center;padding:15px;color:#2e7d32;font-weight:bold;">✅ કોઈ વિદ્યાર્થીની બાકી ફી નથી.</div>';
+
+            const currentMonthRange=getMonthDateRange(today.getFullYear(),today.getMonth());
+            const cmFrom = today.getFullYear()===start.getFullYear() && today.getMonth()===start.getMonth() ? from : currentMonthRange.from;
+            const cmTo = today.getFullYear()===end.getFullYear() && today.getMonth()===end.getMonth() ? to : currentMonthRange.to;
+            const currentDue=students.map(st=>({st,info:getReminderFeeInfo(st,cmFrom,cmTo)})).filter(x=>x.info.due>0).sort((a,b)=>b.info.due-a.info.due);
+            const currentList=document.getElementById('currentMonthDueList');
+            currentList.innerHTML=currentDue.length ? currentDue.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(x.st.name)}</span><span class="student-badge">${escapeHtml(x.st.std||'')}</span></div><div style="margin-top:6px;color:#d32f2f;font-weight:bold;">આ મહિને બાકી: ₹${Math.round(x.info.due)}</div></div>`).join('') : '<div style="text-align:center;padding:15px;color:#2e7d32;font-weight:bold;">✅ આ મહિને કોઈ ફી બાકી નથી.</div>';
+        }
+
+        function sendDueReportSummaryWhatsApp() {
+            const dueStudents=students.filter(st=>Number(st.due)>0).sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
+            if(!dueStudents.length){ alert('✅ કોઈ વિદ્યાર્થીની બાકી ફી નથી.'); return; }
+            let msg='🙏🏻 *નિર્મળા નવોદય ક્લાસિસ - બાકી ફીની યાદી*\\n\\n';
+            dueStudents.forEach((st,i)=>{ msg+=`${i+1}. *${st.name}* (${st.std||'-'}) - બાકી ₹${Math.round(Number(st.due)||0)}\\n`; });
+            msg+='\\nકૃપા કરીને બાકી ફી સમયસર જમા કરાવવા વિનંતી.\\n\\nવાઘેલા રવિ વિનોદભાઈ (9033197515)';
+            openWhatsAppUrl('',msg);
         }
 
         function renderPreviousYearDuePage() {
