@@ -649,6 +649,11 @@
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← પાછા જાઓ</a>
             </div>
 
+            <div class="card" style="padding:10px;">
+                <div style="font-size:18px;font-weight:bold;margin-bottom:10px;color:#222;">💰 વિદ્યાર્થીની બાકી ફી</div>
+                <div id="studentDueStyleSummary"></div>
+            </div>
+
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2 id="profName" style="color:#1565c0;">Ravi</h2>
@@ -1515,42 +1520,40 @@
         function getFeeForDate(st, dateStr) {
             normalizeStudentRecords(st);
 
-            // રી-જોઈન્ટ/દાખલ સમયગાળાની પોતાની ફી હોય તો એ જ ફી લાગુ કરો.
-            // આથી જૂના સમયગાળાની ₹250 ફી નવી રી-જોઈન્ટની ₹300 ફીમાં ભળતી નથી.
+            // જે તારીખ માટે ફી ગણાય છે તે તારીખ જે દાખલ/રી-જોઈન્ટ પિરિયડમાં આવે,
+            // તે પિરિયડની પોતાની fee ને પ્રથમ પ્રાથમિકતા આપવી.
+            // ખાસ કરીને રી-જોઈન્ટ પછીની ફી જૂની ફી સાથે ક્યારેય મિક્સ ન થવી જોઈએ.
             let period = null;
             st.attendancePeriods.forEach(p => {
-                const effectiveTo = p.toDate || ((st.endDate && p.fromDate <= st.endDate) ? st.endDate : null);
-                if (p.fromDate <= dateStr && (!effectiveTo || dateStr <= effectiveTo)) period = p;
+                const effectiveTo = p.toDate || null;
+                if (p.fromDate <= dateStr && (!effectiveTo || dateStr <= effectiveTo)) {
+                    period = p;
+                }
             });
 
-            // સૌથી મહત્વનું: હાલનો ચાલુ છેલ્લો રી-જોઈન્ટ પિરિયડ હોય તો
-            // st.fee માં સેવ થયેલી નવી ફી જ વાપરવી. જૂના પિરિયડમાં રહેલી fee
-            // (જેમ કે ₹250) જુલાઈ જેવા નવા રી-જોઈન્ટ મહિનામાં લાગુ ન થવી જોઈએ.
-            // ઉદાહરણ: 01-07-2026થી રી-જોઈન્ટ ફી ₹300 હોય તો જુલાઈ, ઓગસ્ટ,
-            // સપ્ટેમ્બર વગેરે માટે ₹300 જ ગણાશે.
-            const lastPeriod = st.attendancePeriods[st.attendancePeriods.length - 1];
-            if (lastPeriod && !lastPeriod.toDate && lastPeriod.fromDate <= dateStr &&
-                parseFloat(st.fee) > 0) {
-                return parseFloat(st.fee) || 0;
+            if (period) {
+                const periodFee = parseFloat(period.fee);
+                if (periodFee > 0) return periodFee;
+
+                // જૂના ડેટામાં પિરિયડમાં fee સેવ ન હોય તો આ પિરિયડની શરૂઆતની
+                // તારીખ સુધીની છેલ્લી feeHistory entry લો. આથી 01-07-2026ના
+                // રી-જોઈન્ટની ₹300 fee જુલાઈથી લાગુ થશે, જૂની ₹250 નહીં.
+                let historyFee = null;
+                (st.feeHistory || []).forEach(h => {
+                    if (h.fromDate && h.fromDate <= dateStr) historyFee = parseFloat(h.fee) || 0;
+                });
+                if (historyFee > 0) return historyFee;
             }
 
-            if (period && period.fee != null && parseFloat(period.fee) > 0) {
-                return parseFloat(period.fee) || 0;
-            }
-
-            // જૂના ડેટામાં attendancePeriodsમાં fee ન હોય તો feeHistory પરથી ફી લો.
+            // જો પિરિયડ મળ્યો ન હોય તો પણ જૂના ડેટા માટે feeHistory પરથી
+            // તારીખ પ્રમાણે યોગ્ય fee શોધો.
             let chosen = null;
-            st.feeHistory.forEach(h => {
-                if (h.fromDate <= dateStr) chosen = h;
+            (st.feeHistory || []).forEach(h => {
+                if (h.fromDate && h.fromDate <= dateStr) chosen = h;
             });
+            if (chosen && parseFloat(chosen.fee) > 0) return parseFloat(chosen.fee);
 
-            // હાલના ચાલુ રી-જોઈન્ટ પિરિયડના જૂના/અસંગત feeHistory મૂલ્ય કરતાં
-            // વિદ્યાર્થીની હાલની ફી સાચી હોય તો હાલની ફી વાપરો.
-            if (lastPeriod && !lastPeriod.toDate && lastPeriod.fromDate <= dateStr &&
-                lastPeriod.fromDate >= (chosen?.fromDate || '0000-00-00') && parseFloat(st.fee) > 0) {
-                return parseFloat(st.fee) || 0;
-            }
-            return chosen ? (parseFloat(chosen.fee) || 0) : (parseFloat(st.fee) || 0);
+            return parseFloat(st.fee) || 0;
         }
 
         function isStudentActiveOnDate(st, dateStr) {
@@ -1627,6 +1630,8 @@
                 let tuition = 0;
 
                 if (st.feeType === "માસિક" && firstDate <= todayStr) {
+                    // તમામ દાખલ/રી-જોઈન્ટ પિરિયડ પ્રમાણે મહિના અને fee ગણો.
+                    // End date પછીના મહિના ક્યારેય ઉમેરાશે નહીં.
                     tuition = getTuitionForPeriod(st, firstDate, todayStr).total;
                 } else {
                     tuition = parseFloat(st.fee) || 0;
@@ -2163,6 +2168,7 @@
                 else { profPhoto.src = ''; profPhoto.style.display = 'none'; }
             }
             normalizeStudentRecords(st);
+            renderStudentDueStyleSummary();
             document.getElementById('profFeeRate').innerText = st.fee;
             renderJoinHistory();
             renderFeeChangeHistory();
@@ -2539,6 +2545,56 @@
             thankMsg += `*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
 
             openWhatsAppUrl(currentStudent.phone, thankMsg);
+        }
+
+        function renderStudentDueStyleSummary() {
+            if (!currentStudent) return;
+            const el = document.getElementById('studentDueStyleSummary');
+            if (!el) return;
+            normalizeStudentRecords(currentStudent);
+            const today = new Date().toISOString().split('T')[0];
+            const periods = (currentStudent.attendancePeriods || []).slice().sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''));
+            const validPeriods = periods.filter(p => p && p.fromDate && p.fromDate <= today && (!p.toDate || p.toDate >= p.fromDate));
+
+            let totalFee = 0, totalPaid = 0, totalDue = 0;
+            const rows = [];
+            validPeriods.forEach((p, idx) => {
+                const from = p.fromDate;
+                const to = p.toDate && p.toDate < today ? p.toDate : today;
+                if (to < from) return;
+                const info = getReminderFeeInfo(currentStudent, from, to);
+                totalFee += Number(info.total) || 0;
+                totalPaid += Number(info.paid) || 0;
+                totalDue += Number(info.due) || 0;
+                const fee = (p.fee && Number(p.fee) > 0) ? Number(p.fee) : (info.months && info.months[0] ? Number(info.months[0].fee) : Number(currentStudent.fee)||0);
+                const unpaid = (info.unpaidMonths || []).map(m => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 10px;background:#f0f2f5;border-radius:8px;margin-top:5px;"><span><b>${escapeHtml(p.course || currentStudent.course || 'ટ્યુશન ફી')}</b> • ${escapeHtml(m.name)} ${m.year}</span><strong>₹${Math.round(m.remaining)}</strong></div>`).join('');
+                const paid = (info.paidMonths || []).map(m => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 10px;background:#eef7ef;border-radius:8px;margin-top:5px;color:#2e7d32;"><span>✅ ${escapeHtml(m.name)} ${m.year}</span><strong>₹${Math.round(m.paid)}</strong></div>`).join('');
+                rows.push(`<div style="padding:10px 0;border-bottom:1px solid #e0e0e0;">
+                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+                        <div><div style="font-size:15px;font-weight:bold;color:#222;">${idx+1}. ${escapeHtml(p.course || currentStudent.course || 'ટ્યુશન ફી')}</div><div style="font-size:12px;color:#444;margin-top:2px;">${formatDate(from)} થી ${p.toDate && p.toDate < today ? formatDate(p.toDate) : 'હાલ સુધી'}</div></div>
+                        <strong style="font-size:17px;white-space:nowrap;">₹${Math.round(info.due)}</strong>
+                    </div>
+                    ${unpaid}${paid}
+                    ${!unpaid && !paid ? '<div style="font-size:12px;color:#888;margin-top:6px;">કોઈ માસિક ફી નોંધ નથી.</div>' : ''}
+                    <div style="font-size:11px;color:#666;margin-top:6px;">માસિક ફી: ₹${Math.round(fee)} &nbsp; | &nbsp; કુલ પિરિયડ: ₹${Math.round(info.total)} &nbsp; | &nbsp; જમા: ₹${Math.round(info.paid)}</div>
+                </div>`);
+            });
+
+            const stationeryDue = (currentStudent.stationery || []).filter(x=>x.payType==='ઉધાર').reduce((a,x)=>a+(Number(x.price)||0),0);
+            const grandDue = totalDue + stationeryDue;
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:12px;color:#555;">No. Of Periods</div><strong style="font-size:20px;">${validPeriods.length}</strong></div>
+                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:12px;color:#555;">Total Due Amount</div><strong style="font-size:20px;">₹${Math.round(grandDue)}</strong></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+                    <div style="background:#1976d2;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">કુલ<br>₹${Math.round(totalFee)}</div>
+                    <div style="background:#2e7d32;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">જમા<br>₹${Math.round(totalPaid)}</div>
+                    <div style="background:#d32f2f;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">બાકી<br>₹${Math.round(totalDue)}</div>
+                </div>
+                ${rows.length ? rows.join('') : '<div style="text-align:center;color:#888;padding:12px;">કોઈ ફી સમયગાળો નથી.</div>'}
+                ${stationeryDue>0 ? `<div style="display:flex;justify-content:space-between;padding:9px 10px;margin-top:8px;background:#f0f2f5;border-radius:8px;"><span><b>📚 ઉધાર સ્ટેશનરી</b></span><strong>₹${Math.round(stationeryDue)}</strong></div>` : ''}
+            `;
         }
 
         function renderStudentFeeOverview() {
