@@ -330,9 +330,15 @@
                         <input type="file" id="inpPhoto" class="form-control" accept="image/*" onchange="previewStudentPhoto(event)">
                         <img id="inpPhotoPreview" class="student-photo-preview" style="display:none;" alt="વિદ્યાર્થીનો ફોટો">
                     </div>
-                    <div class="form-group">
-                        <label>📅 દાખલ તારીખ</label>
-                        <input type="date" id="inpJoinDate" class="form-control">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>📅 દાખલ તારીખ</label>
+                            <input type="date" id="inpJoinDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>⛔ End તારીખ (ફી અહીંથી બંધ)</label>
+                            <input type="date" id="inpEndDate" class="form-control">
+                        </div>
                     </div>
                     <div class="grid-2">
                         <div class="form-group">
@@ -1896,6 +1902,7 @@
             addPhotoPreview.src = "";
             addPhotoPreview.style.display = 'none';
             document.getElementById('inpJoinDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inpEndDate').value = '';
             document.getElementById('inpStd').value = masterSettings.defaultStd || "5";
             document.getElementById('inpCourse').value = masterSettings.defaultCourse || "Navoday";
             document.getElementById('inpFeeType').value = "માસિક";
@@ -1914,7 +1921,13 @@
             const schoolName = document.getElementById('inpSchoolName').value.trim();
             const address = document.getElementById('inpAddress').value.trim();
             const joinDate = document.getElementById('inpJoinDate').value;
+            const endDate = document.getElementById('inpEndDate').value;
             const std = document.getElementById('inpStd').value;
+
+            if (joinDate && endDate && endDate < joinDate) {
+                alert('❌ End તારીખ દાખલ તારીખ કરતાં પહેલાંની હોઈ શકે નહીં.');
+                return;
+            }
             const course = document.getElementById('inpCourse').value;
             const feeType = document.getElementById('inpFeeType').value;
             const fee = parseFloat(document.getElementById('inpMonthlyFee').value) || 0;
@@ -1954,6 +1967,16 @@
                     st.address = address;
                     st.photo = photo;
                     st.joinDate = joinDate;
+                    // End તારીખ આપેલી હોય તો હાલના ચાલુ attendance period પર ફી અહીંથી બંધ થાય.
+                    normalizeStudentRecords(st);
+                    let openPeriod = st.attendancePeriods.find(p => !p.toDate);
+                    if (!openPeriod && endDate) {
+                        openPeriod = st.attendancePeriods[st.attendancePeriods.length - 1];
+                    }
+                    if (openPeriod) {
+                        openPeriod.fromDate = openPeriod.fromDate || joinDate;
+                        openPeriod.toDate = endDate || null;
+                    }
                     st.std = std;
                     st.course = course;
                     st.feeType = feeType;
@@ -1996,7 +2019,7 @@
                     stationery: [],
                     receipts: [],
                     feeHistory: [{fromDate:recordDate, fee:fee}],
-                    attendancePeriods: [{fromDate:recordDate, toDate:null}]
+                    attendancePeriods: [{fromDate:recordDate, toDate:endDate || null}]
                 };
                 students.push(newSt);
             }
@@ -2121,6 +2144,9 @@
             if (st.photo) { editPhotoPreview.src = st.photo; editPhotoPreview.style.display = 'block'; }
             else { editPhotoPreview.src = ''; editPhotoPreview.style.display = 'none'; }
             document.getElementById('inpJoinDate').value = st.joinDate || '';
+            normalizeStudentRecords(st);
+            const openPeriodForEdit = st.attendancePeriods.find(p => !p.toDate);
+            document.getElementById('inpEndDate').value = openPeriodForEdit ? '' : (st.attendancePeriods[st.attendancePeriods.length - 1]?.toDate || '');
             document.getElementById('inpStd').value = st.std || '';
             document.getElementById('inpCourse').value = st.course;
             document.getElementById('inpFeeType').value = st.feeType;
