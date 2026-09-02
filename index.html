@@ -80,9 +80,83 @@
         .payment-history { margin-top:8px; }
         .small-btn { border:none; border-radius:5px; padding:5px 8px; color:#fff; font-size:11px; font-weight:bold; cursor:pointer; }
 
+
+        /* એપ લોક સ્ક્રીન */
+        #appLockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            background: linear-gradient(135deg, #f4f6f9, #e3f2fd);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .app-lock-box {
+            width: 100%;
+            max-width: 390px;
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px 20px 24px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            border: 1px solid #dbe7f3;
+        }
+        .app-lock-woman {
+            font-size: 76px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+        .app-lock-title {
+            color: #1565c0;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .app-lock-subtitle {
+            color: #555;
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 14px;
+        }
+        .app-lock-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #bbb;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+        .app-lock-input:focus { border-color: #1565c0; box-shadow: 0 0 0 2px rgba(21,101,192,0.12); }
+        .app-lock-error {
+            min-height: 20px;
+            margin-top: 8px;
+            color: #d32f2f;
+            font-size: 13px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+
+    <!-- એપ લોક સ્ક્રીન: ઓનલાઈન ફી પહોંચની standalone link પર આ સ્ક્રીન દેખાશે નહીં -->
+    <div id="appLockScreen">
+        <div class="app-lock-box">
+            <div class="app-lock-woman">👩🏻‍🦱🙏</div>
+            <div class="app-lock-title">નિર્મળા નવોદય ક્લાસિસ ફી મેનેજમેન્ટ માં તમારું સ્વાગત છે</div>
+            <div class="app-lock-subtitle" id="appLockPrompt">કૃપા કરીને પાસવર્ડ ઇન્ટર કરો</div>
+            <form onsubmit="event.preventDefault(); unlockApp();">
+                <input type="password" id="appLockPassword" class="app-lock-input" autocomplete="current-password" placeholder="પાસવર્ડ દાખલ કરો">
+                <div id="appLockError" class="app-lock-error"></div>
+                <button type="submit" class="btn btn-blue" style="margin-top:8px;">🔓 એપ ખોલો</button>
+            </form>
+            <div id="appLockSetupNote" style="display:none; color:#666; font-size:12px; line-height:1.5; margin-top:8px;">
+                પહેલી વાર એપ ખોલી રહ્યા હો તો નીચે પાસવર્ડ જાતે સેટ કરો.
+            </div>
+        </div>
+    </div>
 
     <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
@@ -301,6 +375,10 @@
                         <label>🔐 ડિલીટ / રીસ્ટોર પાસવર્ડ (તમારો પાસવર્ડ જાતે સેટ કરો):</label>
                         <input type="password" id="mPassword" class="form-control" placeholder="તમારો પાસવર્ડ દાખલ કરો">
                     </div>
+                    <div class="form-group">
+                        <label>🔒 એપ લોક પાસવર્ડ (એપ ખોલવા માટે — જાતે સેટ કરો):</label>
+                        <input type="password" id="mAppPassword" class="form-control" placeholder="એપ ખોલવાનો પાસવર્ડ">
+                    </div>
 
                     <h4 style="margin-top:10px; color:#1565c0;">📚 ડિફોલ્ટ ફી બુક અને કિંમતો</h4>
                     <div class="grid-2">
@@ -324,6 +402,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-purple">💾 સેટિંગ્સ સેવ કરો</button>
+                    <button type="button" class="btn btn-red" onclick="changeAppPassword()">🔒 એપ લોક પાસવર્ડ બદલો</button>
                 </form>
             </div>
 
@@ -814,7 +893,8 @@
             defaultStd: "5",
             defaultCourse: "Navoday",
             receiptBaseUrl: "",
-            password: ""
+            password: "",
+            appPassword: ""
         };
 
         let stockList = [
@@ -891,6 +971,7 @@
 
             updateNetworkStatus();
             loadLocalData();
+            showAppLock();
             recalculateStudentTotals();
             renderDashboard();
             renderStockTable();
@@ -909,8 +990,91 @@
             document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
             document.getElementById('mReceiptBaseUrl').value = masterSettings.receiptBaseUrl || "";
             if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
+            if (document.getElementById('mAppPassword')) document.getElementById('mAppPassword').value = masterSettings.appPassword || "";
             renderCourseDivision();
         };
+
+
+        let appUnlocked = false;
+
+        function showAppLock() {
+            const lock = document.getElementById('appLockScreen');
+            if (!lock) return;
+            lock.style.display = 'flex';
+            document.getElementById('mainAppContainer').style.display = 'none';
+            document.getElementById('appNavbar').style.display = 'none';
+            document.getElementById('appBrandHead').style.display = 'none';
+
+            const hasPassword = String(masterSettings.appPassword || '').length > 0;
+            document.getElementById('appLockPrompt').innerText = hasPassword
+                ? 'કૃપા કરીને પાસવર્ડ ઇન્ટર કરો'
+                : 'પહેલી વાર માટે પાસવર્ડ જાતે સેટ કરો';
+
+            document.getElementById('appLockSetupNote').style.display = hasPassword ? 'none' : 'block';
+            document.getElementById('appLockPassword').value = '';
+            document.getElementById('appLockError').innerText = '';
+            setTimeout(() => document.getElementById('appLockPassword').focus(), 100);
+        }
+
+        function unlockApp() {
+            const input = document.getElementById('appLockPassword');
+            const entered = String(input.value || '');
+
+            if (!String(masterSettings.appPassword || '')) {
+                if (entered.length < 1) {
+                    document.getElementById('appLockError').innerText = '❌ કૃપા કરીને પાસવર્ડ સેટ કરો.';
+                    return;
+                }
+                masterSettings.appPassword = entered;
+                saveLocalData();
+                appUnlocked = true;
+            } else if (entered === String(masterSettings.appPassword)) {
+                appUnlocked = true;
+            } else {
+                document.getElementById('appLockError').innerText = '❌ ખોટો પાસવર્ડ. ફરીથી પ્રયાસ કરો.';
+                input.value = '';
+                input.focus();
+                return;
+            }
+
+            document.getElementById('appLockScreen').style.display = 'none';
+            document.getElementById('appNavbar').style.display = 'flex';
+            document.getElementById('appBrandHead').style.display = 'block';
+            document.getElementById('mainAppContainer').style.display = 'block';
+            document.getElementById('appLockError').innerText = '';
+        }
+
+        function changeAppPassword() {
+            const current = String(masterSettings.appPassword || '');
+            if (current) {
+                const oldPass = prompt('🔐 હાલનો એપ લોક પાસવર્ડ દાખલ કરો:');
+                if (oldPass === null) return;
+                if (oldPass !== current) {
+                    alert('❌ હાલનો પાસવર્ડ ખોટો છે.');
+                    return;
+                }
+            }
+
+            const newPass = prompt('🔒 નવો એપ લોક પાસવર્ડ દાખલ કરો:');
+            if (newPass === null) return;
+            if (!String(newPass).trim()) {
+                alert('❌ પાસવર્ડ ખાલી રાખી શકાતો નથી.');
+                return;
+            }
+
+            const confirmPass = prompt('🔒 નવો પાસવર્ડ ફરીથી દાખલ કરો:');
+            if (confirmPass === null) return;
+            if (newPass !== confirmPass) {
+                alert('❌ બંને પાસવર્ડ સરખા નથી.');
+                return;
+            }
+
+            masterSettings.appPassword = newPass;
+            const field = document.getElementById('mAppPassword');
+            if (field) field.value = newPass;
+            saveLocalData();
+            alert('✅ એપ લોક પાસવર્ડ સફળતાપૂર્વક બદલાઈ ગયો છે.');
+        }
 
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
@@ -1106,6 +1270,7 @@
             if (!Array.isArray(previousYearDues)) previousYearDues = [];
             if (!Array.isArray(deletedStudents)) deletedStudents = [];
             if (localStorage.getItem('NNC_master')) masterSettings = Object.assign({}, masterSettings, JSON.parse(localStorage.getItem('NNC_master')));
+            if (typeof masterSettings.appPassword !== 'string') masterSettings.appPassword = '';
             students.forEach(st => normalizeStudentRecords(st));
         }
 
@@ -2465,6 +2630,7 @@
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
             masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
             masterSettings.password = document.getElementById('mPassword').value;
+            masterSettings.appPassword = document.getElementById('mAppPassword').value;
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
