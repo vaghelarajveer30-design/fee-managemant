@@ -183,7 +183,7 @@
                 </div>
             </div>
 
-            <div class="card" style="background:#f5f7ff;border-color:#c5cae9;">
+            <div id="dashboardAdvancedCard" class="card" style="background:#f5f7ff;border-color:#c5cae9;display:none;">
                 <h3 style="color:#283593;margin-bottom:10px;">📊 સંપૂર્ણ Dashboard</h3>
                 <div class="grid-3">
                     <div class="stat-box" style="background:#00897b;cursor:default;">આજે જમા<br><span id="dashTodayPaid">₹0</span></div>
@@ -196,7 +196,7 @@
                 <div id="dashBackupStatus" style="font-size:12px;margin-top:9px;font-weight:bold;"></div>
             </div>
 
-            <div class="card" style="background:#fff8e1;border-color:#ffcc80;">
+            <div id="dashboardReminderCard" class="card" style="background:#fff8e1;border-color:#ffcc80;display:none;">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <h4 style="margin:0;color:#e65100;">🔔 Automatic Reminder List</h4>
                     <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()">📲 યાદી WhatsApp</button>
@@ -204,12 +204,12 @@
                 <div id="dashboardReminderList" style="margin-top:8px;"></div>
             </div>
 
-            <div class="card" style="background:#e3f2fd;border-color:#90caf9;">
+            <div id="dashboardNextMonthCard" class="card" style="background:#e3f2fd;border-color:#90caf9;display:none;">
                 <h4 style="color:#1565c0;">📅 આગામી મહિનાની ફી</h4>
                 <div id="dashboardNextMonthList" style="margin-top:8px;"></div>
             </div>
 
-            <div class="card">
+            <div id="dashboardReceiptSearchCard" class="card" style="display:none;">
                 <h4>🧾 Receipt Search</h4>
                 <div class="grid-2">
                     <input id="receiptSearchInput" class="form-control" placeholder="રસીદ નં. / નામ / મોબાઈલ" oninput="searchReceiptsDashboard()">
@@ -218,13 +218,22 @@
                 <div id="receiptSearchResults" style="margin-top:8px;"></div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px 0;">
-                <h3 style="font-size: 17px; color: #333;">વિદ્યાર્થીઓની યાદી</h3>
-                <button class="btn btn-blue" style="width: auto; padding: 6px 12px; font-size: 13px;" onclick="openAddStudentModal()">+ નવો વિદ્યાર્થી</button>
+            <div style="margin:15px 0 10px 0;">
+                <h3 style="font-size:17px;color:#333;margin-bottom:8px;">વિદ્યાર્થીઓની યાદી</h3>
+                <div class="grid-2">
+                    <button class="btn btn-blue" style="margin-top:0;" onclick="openAddStudentModal()">➕ નવો વિદ્યાર્થી</button>
+                    <button class="btn btn-gray" style="margin-top:0;" onclick="toggleDashboardSection('dashboardReceiptSearchCard')">🧾 રીસેપ્ટ સર્ચ</button>
+                </div>
             </div>
 
             <div class="form-group">
                 <input type="text" id="searchInput" class="form-control" placeholder="🔍 નામ / મોબાઈલ / ધોરણ / વિદ્યાર્થી નં. શોધો..." oninput="renderDashboard()">
+            </div>
+
+            <div class="grid-3" style="margin-bottom:10px;">
+                <button class="btn btn-purple" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
+                <button class="btn btn-orange" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardReminderCard')">🔔 રિમાન્ડર લિસ્ટ</button>
+                <button class="btn btn-cyan" style="margin-top:0;font-size:12px;padding:9px 5px;" onclick="toggleDashboardSection('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
             </div>
 
             <div class="grid-2" style="margin-bottom: 12px;">
@@ -1586,6 +1595,13 @@
             const t=new Date(), y=t.getFullYear(), m=t.getMonth();
             const startYear=m>=3?y:y-1;
             return {from:startYear+'-04-01',to:(startYear+1)+'-03-31'};
+        }
+
+        function toggleDashboardSection(id){
+            const ids=['dashboardAdvancedCard','dashboardReminderCard','dashboardNextMonthCard','dashboardReceiptSearchCard'];
+            ids.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=(x===id && e.style.display==='none')?'block':'none';});
+            const e=document.getElementById(id);
+            if(e && e.style.display==='block') e.scrollIntoView({behavior:'smooth',block:'start'});
         }
 
         function renderDashboardAdvanced(){
