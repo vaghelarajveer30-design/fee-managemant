@@ -1494,6 +1494,32 @@
                     ...(x.fee != null && parseFloat(x.fee) > 0 ? {fee: parseFloat(x.fee)} : {})
                 }))
                 .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
+
+            // જૂના ડેટામાં attendance period સાથે course સેવ ન થયેલો હોય તો
+            // courseHistory / જૂના first-period માટે English સાચવીએ.
+            // નવી રી-જોઈન્ટ પછી દરેક periodમાં course અલગ સેવ થાય છે.
+            if (!Array.isArray(st.courseHistory)) st.courseHistory = [];
+            st.courseHistory = st.courseHistory
+                .filter(x => x && x.fromDate && x.course)
+                .map(x => ({fromDate:x.fromDate, course:String(x.course)}))
+                .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
+
+            st.attendancePeriods.forEach((p, i) => {
+                if (p.course) return;
+                let chosen = null;
+                st.courseHistory.forEach(h => {
+                    if (h.fromDate <= p.fromDate) chosen = h.course;
+                });
+                if (chosen) {
+                    p.course = chosen;
+                } else if (st.attendancePeriods.length > 1 && i === 0) {
+                    // હાલના જૂના રેકોર્ડમાં પ્રથમ course અલગ હતો અને તેનું નામ
+                    // attendance periodમાં સેવ ન થયું હોય તે કેસ માટે.
+                    p.course = "English";
+                } else {
+                    p.course = st.course || "ટ્યુશન ફી";
+                }
+            });
         }
 
         function localDateString(d = new Date()) {
@@ -2055,8 +2081,17 @@
                     if (openPeriod) {
                         openPeriod.fromDate = openPeriod.fromDate || joinDate;
                         openPeriod.toDate = endDate || null;
+                        openPeriod.course = course;
+                        openPeriod.fee = fee;
                     } else if (joinDate) {
-                        st.attendancePeriods = [{fromDate:joinDate, toDate:endDate || null}];
+                        st.attendancePeriods = [{fromDate:joinDate, toDate:endDate || null, course:course, fee:fee}];
+                    }
+                    st.courseHistory = Array.isArray(st.courseHistory) ? st.courseHistory : [];
+                    if (joinDate) {
+                        const oldCourseHistory = st.courseHistory.find(h => h.fromDate === joinDate);
+                        if (oldCourseHistory) oldCourseHistory.course = course;
+                        else st.courseHistory.push({fromDate:joinDate, course:course});
+                        st.courseHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
                     }
                     st.std = std;
                     st.course = course;
@@ -2101,7 +2136,8 @@
                     stationery: [],
                     receipts: [],
                     feeHistory: [{fromDate:recordDate, fee:fee}],
-                    attendancePeriods: [{fromDate:recordDate, toDate:endDate || null}]
+                    courseHistory: [{fromDate:recordDate, course:course}],
+                    attendancePeriods: [{fromDate:recordDate, toDate:endDate || null, course:course, fee:fee}]
                 };
                 students.push(newSt);
             }
@@ -2319,6 +2355,9 @@
             }
 
             // નવી રી-જોઈન્ટ સાથે નવી કોર્સ અને નવી ફી એ જ સમયગાળામાં સેવ કરો.
+            st.courseHistory = Array.isArray(st.courseHistory) ? st.courseHistory : [];
+            st.courseHistory.push({fromDate:rejoinDate, course:rejoinCourse});
+            st.courseHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
             st.attendancePeriods.push({fromDate:rejoinDate, toDate:null, course:rejoinCourse, fee:rejoinFee});
             st.endDate = '';
             st.status = 'active';
@@ -2558,49 +2597,120 @@
             if (!currentStudent) return;
             const el = document.getElementById('studentDueStyleSummary');
             if (!el) return;
+
             normalizeStudentRecords(currentStudent);
             const today = localDateString();
-            const periods = (currentStudent.attendancePeriods || []).slice().sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''));
-            const validPeriods = periods.filter(p => p && p.fromDate && p.fromDate <= today && (!p.toDate || p.toDate >= p.fromDate));
+            const periods = (currentStudent.attendancePeriods || [])
+                .slice()
+                .sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''))
+                .filter(p => p && p.fromDate && p.fromDate <= today);
 
             let totalFee = 0, totalPaid = 0, totalDue = 0;
-            const rows = [];
-            validPeriods.forEach((p, idx) => {
+
+            const rows = periods.map((p, idx) => {
                 const from = p.fromDate;
                 const to = p.toDate && p.toDate < today ? p.toDate : today;
-                if (to < from) return;
+                if (!from || to < from) return '';
+
                 const info = getReminderFeeInfo(currentStudent, from, to);
                 totalFee += Number(info.total) || 0;
                 totalPaid += Number(info.paid) || 0;
                 totalDue += Number(info.due) || 0;
-                const fee = (p.fee && Number(p.fee) > 0) ? Number(p.fee) : (info.months && info.months[0] ? Number(info.months[0].fee) : Number(currentStudent.fee)||0);
-                const unpaid = (info.unpaidMonths || []).map(m => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 10px;background:#f0f2f5;border-radius:8px;margin-top:5px;"><span><b>${escapeHtml(p.course || currentStudent.course || 'ટ્યુશન ફી')}</b> • ${escapeHtml(m.name)} ${m.year}</span><strong>₹${Math.round(m.remaining)}</strong></div>`).join('');
-                const paid = (info.paidMonths || []).map(m => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 10px;background:#eef7ef;border-radius:8px;margin-top:5px;color:#2e7d32;"><span>✅ ${escapeHtml(m.name)} ${m.year}</span><strong>₹${Math.round(m.paid)}</strong></div>`).join('');
-                rows.push(`<div style="padding:10px 0;border-bottom:1px solid #e0e0e0;">
-                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-                        <div><div style="font-size:15px;font-weight:bold;color:#222;">${idx+1}. ${escapeHtml(p.course || currentStudent.course || 'ટ્યુશન ફી')}</div><div style="font-size:12px;color:#444;margin-top:2px;">${formatDate(from)} થી ${p.toDate && p.toDate < today ? formatDate(p.toDate) : 'હાલ સુધી'}</div></div>
-                        <strong style="font-size:17px;white-space:nowrap;">₹${Math.round(info.due)}</strong>
-                    </div>
-                    ${unpaid}${paid}
-                    ${!unpaid && !paid ? '<div style="font-size:12px;color:#888;margin-top:6px;">કોઈ માસિક ફી નોંધ નથી.</div>' : ''}
-                    <div style="font-size:11px;color:#666;margin-top:6px;">માસિક ફી: ₹${Math.round(fee)} &nbsp; | &nbsp; કુલ પિરિયડ: ₹${Math.round(info.total)} &nbsp; | &nbsp; જમા: ₹${Math.round(info.paid)}</div>
-                </div>`);
-            });
 
-            const stationeryDue = (currentStudent.stationery || []).filter(x=>x.payType==='ઉધાર').reduce((a,x)=>a+(Number(x.price)||0),0);
+                const courseName = p.course || currentStudent.course || 'ટ્યુશન ફી';
+                const allMonths = info.months || [];
+
+                const monthRows = allMonths.map(m => {
+                    const paid = Number(m.paid) || 0;
+                    const remaining = Number(m.remaining) || 0;
+                    const fee = Number(m.fee) || 0;
+
+                    let statusText = '';
+                    let amountText = `₹${Math.round(fee)}`;
+
+                    if (fee > 0 && paid >= fee) {
+                        statusText = `<span style="color:#2e7d32;font-size:11px;font-weight:bold;">✅ જમા</span>`;
+                        amountText = `<span style="color:#2e7d32;font-weight:bold;">₹${Math.round(paid)}</span>`;
+                    } else if (paid > 0 && remaining > 0) {
+                        statusText = `<span style="color:#ef6c00;font-size:11px;font-weight:bold;">⚠️ ₹${Math.round(remaining)} બાકી</span>`;
+                        amountText = `<span style="color:#d32f2f;font-weight:bold;">₹${Math.round(remaining)}</span>`;
+                    } else {
+                        statusText = `<span style="color:#d32f2f;font-size:11px;font-weight:bold;">❗ બાકી</span>`;
+                    }
+
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:#f0f2f5;border-radius:8px;margin-top:5px;">
+                            <span><b>${escapeHtml(courseName)}</b> • ${escapeHtml(m.name)} ${m.year} ${statusText}</span>
+                            <strong style="white-space:nowrap;">${amountText}</strong>
+                        </div>`;
+                }).join('');
+
+                const periodTotal = Number(info.total) || 0;
+                const periodPaid = Number(info.paid) || 0;
+                const periodDue = Number(info.due) || 0;
+
+                return `
+                    <div style="padding:10px 0;border-bottom:1px solid #e0e0e0;">
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+                            <div>
+                                <div style="font-size:16px;font-weight:bold;color:#222;">${idx+1}. ${escapeHtml(courseName)}</div>
+                                <div style="font-size:12px;color:#444;margin-top:2px;">
+                                    ${formatDate(from)} થી ${p.toDate && p.toDate < today ? formatDate(p.toDate) : 'હાલ સુધી'}
+                                </div>
+                            </div>
+                            <strong style="font-size:17px;color:#d32f2f;white-space:nowrap;">₹${Math.round(periodDue)}</strong>
+                        </div>
+
+                        <div style="margin-top:7px;">
+                            ${monthRows || '<div style="font-size:12px;color:#888;padding:6px 0;">આ સમયગાળામાં કોઈ માસિક ફી નથી.</div>'}
+                        </div>
+
+                        <div style="display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:7px;">
+                            <span>માસિક ફી: ₹${Math.round(allMonths.length ? Number(allMonths[0].fee)||0 : Number(p.fee)||0)}</span>
+                            <span>કુલ: ₹${Math.round(periodTotal)}</span>
+                            <span style="color:#2e7d32;font-weight:bold;">જમા: ₹${Math.round(periodPaid)}</span>
+                            <span style="color:#d32f2f;font-weight:bold;">બાકી: ₹${Math.round(periodDue)}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            const stationeryDue = (currentStudent.stationery || [])
+                .filter(x => x.payType === 'ઉધાર')
+                .reduce((a,x) => a + (Number(x.price) || 0), 0);
+
             const grandDue = totalDue + stationeryDue;
+
             el.innerHTML = `
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:12px;color:#555;">No. Of Periods</div><strong style="font-size:20px;">${validPeriods.length}</strong></div>
-                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:12px;color:#555;">Total Due Amount</div><strong style="font-size:20px;">₹${Math.round(grandDue)}</strong></div>
+                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:12px;color:#555;">No. Of Periods</div>
+                        <strong style="font-size:20px;">${periods.length}</strong>
+                    </div>
+                    <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:12px;color:#555;">Total Due Amount</div>
+                        <strong style="font-size:20px;">₹${Math.round(grandDue)}</strong>
+                    </div>
                 </div>
+
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
-                    <div style="background:#1976d2;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">કુલ<br>₹${Math.round(totalFee)}</div>
-                    <div style="background:#2e7d32;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">જમા<br>₹${Math.round(totalPaid)}</div>
-                    <div style="background:#d32f2f;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">બાકી<br>₹${Math.round(totalDue)}</div>
+                    <div style="background:#1976d2;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
+                        કુલ<br>₹${Math.round(totalFee)}
+                    </div>
+                    <div style="background:#2e7d32;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
+                        જમા<br>₹${Math.round(totalPaid)}
+                    </div>
+                    <div style="background:#d32f2f;color:white;border-radius:8px;padding:8px;text-align:center;font-weight:bold;">
+                        બાકી<br>₹${Math.round(totalDue)}
+                    </div>
                 </div>
-                ${rows.length ? rows.join('') : '<div style="text-align:center;color:#888;padding:12px;">કોઈ ફી સમયગાળો નથી.</div>'}
-                ${stationeryDue>0 ? `<div style="display:flex;justify-content:space-between;padding:9px 10px;margin-top:8px;background:#f0f2f5;border-radius:8px;"><span><b>📚 ઉધાર સ્ટેશનરી</b></span><strong>₹${Math.round(stationeryDue)}</strong></div>` : ''}
+
+                ${rows || '<div style="text-align:center;color:#888;padding:12px;">કોઈ ફી સમયગાળો નથી.</div>'}
+
+                ${stationeryDue > 0 ? `
+                    <div style="display:flex;justify-content:space-between;padding:9px 10px;margin-top:8px;background:#f0f2f5;border-radius:8px;">
+                        <span><b>📚 ઉધાર સ્ટેશનરી</b></span>
+                        <strong>₹${Math.round(stationeryDue)}</strong>
+                    </div>` : ''}
             `;
         }
 
