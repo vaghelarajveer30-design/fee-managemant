@@ -94,6 +94,15 @@
         .app-lock-input { width:100%; padding:12px; border:1px solid #bbb; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .app-lock-input:focus { border-color:#1565c0; box-shadow:0 0 0 2px rgba(21,101,192,.12); }
         .app-lock-error { min-height:20px; margin-top:8px; color:#d32f2f; font-size:13px; font-weight:bold; }
+        .fin-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+        .fin-box { background:#fff; border:1px solid #dbe7f3; border-radius:9px; padding:10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+        .fin-box .fin-label { font-size:11px; color:#555; font-weight:bold; }
+        .fin-box .fin-value { font-size:17px; font-weight:bold; margin-top:4px; }
+        .fin-positive { color:#2e7d32; } .fin-negative { color:#d32f2f; } .fin-blue { color:#1565c0; } .fin-orange { color:#e65100; }
+        .ledger-table { font-size:11px; }
+        .low-stock { background:#ffebee !important; color:#b71c1c; font-weight:bold; }
+        .profit-positive { color:#2e7d32; font-weight:bold; } .profit-negative { color:#d32f2f; font-weight:bold; }
+        @media(max-width:360px){.fin-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
@@ -125,6 +134,9 @@
             <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
             <div id="rMenuPanel" class="r-menu-panel">
                     <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFinancialDashboard')">💰 Financial Dashboard</button>
+                    <button class="btn btn-green" onclick="rMenuAction('dashboardWhatsAppCard')">📲 WhatsApp Automation</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageProfitLoss')">📈 Profit / Loss</button>
                     <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')">🔔 Automatic Reminder List</button>
                     <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
                     <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')">💰 ઉછીના આપેલ રૂપિયા</button>
@@ -234,6 +246,17 @@
                     <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()">📲 યાદી WhatsApp</button>
                 </div>
                 <div id="dashboardReminderList" style="margin-top:8px;"></div>
+            </div>
+
+            <div id="dashboardWhatsAppCard" class="card" style="background:#e8f5e9;border-color:#a5d6a7;display:none;">
+                <h4 style="color:#2e7d32;">📲 WhatsApp Automation Center</h4>
+                <div class="grid-2" style="margin-top:8px;">
+                    <button class="btn btn-whatsapp" onclick="sendAllDashboardRemindersWhatsApp()">⚠️ બાકી Reminder</button>
+                    <button class="btn btn-whatsapp" onclick="sendUpcomingMonthRemindersWhatsApp()">📅 આગામી મહિનો</button>
+                    <button class="btn btn-whatsapp" onclick="sendBirthdayRemindersWhatsApp()">🎂 Birthday</button>
+                    <button class="btn btn-whatsapp" onclick="sendAnnualFeeRemindersWhatsApp()">📆 વાર્ષિક Fee</button>
+                </div>
+                <div id="whatsappAutomationSummary" style="font-size:12px;color:#555;margin-top:8px;"></div>
             </div>
 
             <div id="dashboardNextMonthCard" class="card" style="background:#e3f2fd;border-color:#90caf9;display:none;">
@@ -417,9 +440,18 @@
                         <small style="color:#666;">ZIP/APK માંથી WhatsApp લિંક મોકલવી હોય તો પહોંચ ખોલતી HTML વેબ પર હોવી જરૂરી છે.</small>
                     </div>
 
+                    <div class="form-group" style="background:#f3f8ff;padding:8px;border-radius:7px;border:1px solid #bbdefb;">
+                        <label><input type="checkbox" id="mAutoBackup"> ☁️ Auto Cloud Backup (દર 24 કલાકે, Internet હોય ત્યારે)</label>
+                    </div>
                     <button type="submit" class="btn btn-purple">💾 સેટિંગ્સ સેવ કરો</button>
                     <button type="button" class="btn btn-red" onclick="changeAppPassword()">🔐 એપ લોક પાસવર્ડ બદલો</button>
                 </form>
+            </div>
+
+            <div class="card">
+                <h4>☁️ Backup Versions</h4>
+                <div id="backupVersionsList" style="font-size:12px;color:#555;margin:7px 0"></div>
+                <button class="btn btn-gray" type="button" onclick="renderBackupVersions()">🔄 Version List Refresh</button>
             </div>
 
             <div class="card">
@@ -471,6 +503,10 @@
                             <label>જથ્થો (Stock)</label>
                             <input type="number" id="stkQty" class="form-control" required placeholder="50">
                         </div>
+                        <div class="form-group">
+                            <label>⚠️ Minimum Stock</label>
+                            <input type="number" id="stkMinQty" class="form-control" min="0" value="5" placeholder="5">
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-green" id="btnSaveStock">+ સ્ટોક સેવ કરો</button>
                 </form>
@@ -486,11 +522,17 @@
                             <th>વેચાણ</th>
                             <th>નફો</th>
                             <th>સ્ટોક</th>
+                            <th>સ્ટોક મૂલ્ય</th>
                             <th>ક્રિયા</th>
                         </tr>
                     </thead>
                     <tbody id="stockTableBody"></tbody>
                 </table>
+            </div>
+
+            <div class="card">
+                <h4>🛒 Purchase History</h4>
+                <div id="stockPurchaseHistory" style="font-size:12px"></div>
             </div>
 
             <div class="card">
@@ -578,6 +620,31 @@
                 <h4>📋 ઉછીનાની યાદી અને ભરપાઈની વિગત</h4>
                 <div id="loanList"></div>
             </div>
+        </div>
+
+        <div id="pageFinancialDashboard" style="display:none;">
+            <div style="margin-bottom:10px"><a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold">← હોમ પર પાછા જાઓ</a></div>
+            <div class="card"><h3 style="color:#1565c0">💰 સંપૂર્ણ Financial Dashboard</h3><div class="fin-grid" style="margin-top:10px">
+                <div class="fin-box"><div class="fin-label">આજની આવક</div><div id="fdTodayIncome" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">આજનો ખર્ચ</div><div id="fdTodayExpense" class="fin-value fin-negative">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">આજનો નફો</div><div id="fdTodayProfit" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">આ મહિનાની આવક</div><div id="fdMonthIncome" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">આ મહિનાનો ખર્ચ</div><div id="fdMonthExpense" class="fin-value fin-negative">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">આ મહિનાનો નફો</div><div id="fdMonthProfit" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">કુલ બાકી ફી</div><div id="fdDue" class="fin-value fin-negative">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">સ્ટેશનરી નફો</div><div id="fdStockProfit" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">ઉછીના આપેલા</div><div id="fdLoanGiven" class="fin-value fin-blue">₹0</div></div>
+                <div class="fin-box"><div class="fin-label">ઉછીનામાંથી પરત</div><div id="fdLoanReturned" class="fin-value fin-positive">₹0</div></div>
+                <div class="fin-box" style="grid-column:1/-1"><div class="fin-label">💵 હાથમાં / Cash Balance</div><div id="fdCash" class="fin-value fin-blue">₹0</div><div id="fdCashMode" style="font-size:11px;color:#555;margin-top:4px"></div></div>
+            </div></div>
+            <div class="card"><h4>📱 Payment Mode પ્રમાણે આ મહિનાની આવક</h4><table><thead><tr><th>મોડ</th><th>રકમ</th></tr></thead><tbody id="fdModeReport"></tbody></table></div>
+            <div class="card"><h4>📦 Low Stock Alert</h4><div id="fdLowStock"></div></div>
+        </div>
+
+        <div id="pageProfitLoss" style="display:none;">
+            <div style="margin-bottom:10px"><a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold">← હોમ પર પાછા જાઓ</a></div>
+            <div class="card"><h3 style="color:#0097a7">📈 Profit / Loss Report</h3><div class="grid-2" style="margin-top:8px"><input type="date" id="plFrom" class="form-control" onchange="renderProfitLoss()"><input type="date" id="plTo" class="form-control" onchange="renderProfitLoss()"></div><div id="plSummary" style="margin-top:10px"></div></div>
+            <div class="card"><h4>📅 મહિના પ્રમાણે Profit / Loss</h4><table><thead><tr><th>મહિનો</th><th>આવક</th><th>ખર્ચ</th><th>નફો/નુકસાન</th></tr></thead><tbody id="plMonthlyBody"></tbody></table></div>
         </div>
 
         <div id="pageFeeReports" style="display:none;">
@@ -741,6 +808,10 @@
                     </div>
                     <div id="studentFeeOverview" style="margin-top:8px;"></div>
                 </div>
+                <div class="card" style="background:#fff;border-color:#c5cae9;margin-top:10px;margin-bottom:0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h4 style="color:#283593;margin:0">📒 સંપૂર્ણ Student Ledger</h4><button class="btn btn-blue" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0" onclick="printStudentLedger()">🖨️ Print</button></div>
+                    <div id="studentLedger" style="margin-top:8px"></div>
+                </div>
 
                 <div style="background:#fff3e0; padding:10px; border-radius:8px; margin-top:12px; border:1px solid #ffe0b2;">
                     <div style="font-weight:bold; font-size:13px; color:#e65100; margin-bottom:6px;">📲 બાકી ફી એલર્ટ તારીખ ફિલ્ટર:</div>
@@ -855,6 +926,9 @@
                         <option value="રોકડા/ઓન લાઈન">રોકડા/ઓન લાઈન</option>
                         <option value="રોકડા (Cash)">રોકડા (Cash)</option>
                         <option value="ઓન લાઈન (Online)">ઓન લાઈન (Online)</option>
+                        <option value="UPI">📱 UPI</option>
+                        <option value="Bank">🏦 Bank</option>
+                        <option value="અન્ય">અન્ય</option>
                     </select>
                 </div>
 
@@ -982,12 +1056,16 @@
             receiptBaseUrl: "",
             password: "",
             appPassword: "",
-            nextReceiptNo: 1
+            nextReceiptNo: 1,
+            autoBackup: false,
+            lastAutoBackupAt: "",
+            stockPurchases: [],
+            backupVersions: []
         };
 
         let stockList = [
-            { id: "s1", name: "Gyan sadhana", costPrice: 200, sellPrice: 350, qty: 41 },
-            { id: "s2", name: "પરીક્ષા પેપર સેટ", costPrice: 90, sellPrice: 150, qty: 25 }
+            { id: "s1", name: "Gyan sadhana", costPrice: 200, sellPrice: 350, qty: 41, minQty: 5 },
+            { id: "s2", name: "પરીક્ષા પેપર સેટ", costPrice: 90, sellPrice: 150, qty: 25, minQty: 5 }
         ];
 
         let students = [
@@ -1140,6 +1218,8 @@
             recalculateStudentTotals();
             renderDashboard();
             renderStockTable();
+            renderStockPurchaseHistory();
+            renderBackupVersions();
             renderStockDropdown();
             renderExpenses();
             
@@ -1154,6 +1234,7 @@
             document.getElementById('mDefaultStd').value = masterSettings.defaultStd;
             document.getElementById('mDefaultCourse').value = masterSettings.defaultCourse;
             document.getElementById('mReceiptBaseUrl').value = masterSettings.receiptBaseUrl || "";
+            if (document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked = !!masterSettings.autoBackup;
             if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
             renderCourseDivision();
         };
@@ -1412,6 +1493,7 @@
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
 
+        let autoBackupRunning = false;
         function saveLocalData() {
             localStorage.setItem('NNC_students', JSON.stringify(students));
             localStorage.setItem('NNC_stock', JSON.stringify(stockList));
@@ -1420,11 +1502,22 @@
             localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
             localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
             localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+            scheduleAutoBackup();
+        }
+        function scheduleAutoBackup(){
+            if(autoBackupRunning || !masterSettings.autoBackup || !navigator.onLine || !masterSettings.dbUrl) return;
+            const last=masterSettings.lastAutoBackupAt?new Date(masterSettings.lastAutoBackupAt).getTime():0;
+            if(Date.now()-last < 24*60*60*1000) return;
+            setTimeout(async()=>{
+                if(autoBackupRunning)return; autoBackupRunning=true;
+                try{ await backupDataToCloud(true); }catch(e){} finally{autoBackupRunning=false;}
+            },1500);
         }
 
         function loadLocalData() {
             if (localStorage.getItem('NNC_students')) students = JSON.parse(localStorage.getItem('NNC_students'));
             if (localStorage.getItem('NNC_stock')) stockList = JSON.parse(localStorage.getItem('NNC_stock'));
+            stockList.forEach(x=>{ if(x.minQty===undefined) x.minQty=5; });
             if (localStorage.getItem('NNC_expenses')) expenses = JSON.parse(localStorage.getItem('NNC_expenses'));
             if (localStorage.getItem('NNC_loans')) loanRecords = JSON.parse(localStorage.getItem('NNC_loans'));
             if (localStorage.getItem('NNC_previousYearDues')) previousYearDues = JSON.parse(localStorage.getItem('NNC_previousYearDues'));
@@ -1437,7 +1530,7 @@
             ensureReceiptNumbers();
         }
 
-        async function backupDataToCloud() {
+        async function backupDataToCloud(silent=false) {
             if (!navigator.onLine) {
                 alert("ઇન્ટરનેટ જોડાણ નથી. કૃપા કરીને ઓનલાઇન થાઓ.");
                 return;
@@ -1467,11 +1560,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (response.ok) {
+                const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+                if(response.ok){
+                    try{ await fetch(`${dbUrl}/backupVersions/${encodeURIComponent(stamp)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); }catch(e){}
                     masterSettings.lastBackupAt = new Date().toISOString();
-                    saveLocalData();
+                    masterSettings.lastAutoBackupAt = masterSettings.lastBackupAt;
+                    masterSettings.backupVersions = Array.isArray(masterSettings.backupVersions)?masterSettings.backupVersions:[];
+                    masterSettings.backupVersions.push(masterSettings.lastBackupAt);
+                    masterSettings.backupVersions = masterSettings.backupVersions.slice(-20);
+                    localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
                     renderDashboard();
-                    alert("✅ ક્લાઉડ પર સંતોષકારક રીતે બેકઅપ સેવ થઈ ગયું છે!");
+                    if(!silent) alert("✅ ક્લાઉડ પર સંતોષકારક રીતે બેકઅપ સેવ થઈ ગયું છે!");
                 } else {
                     alert("❌ ક્લાઉડ બેકઅપ લેવામાં ભૂલ થઈ. Error: " + response.statusText);
                 }
@@ -1534,6 +1633,7 @@
                 if (document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
                 if (document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
                 if (document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
+                if (document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked=!!masterSettings.autoBackup;
                 if (document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
                 alert('✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!');
             } catch(err) {
@@ -1798,7 +1898,7 @@
                 rFeatureSource.style.display='none';
                 rFeatureSource=null; rFeatureHome=null;
             }
-            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageStudentDetails'].forEach(p => {
+            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageFinancialDashboard', 'pageProfitLoss', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
@@ -1811,6 +1911,7 @@
             if (pageId === 'pageLoans') renderLoanPage();
             if (pageId === 'pagePreviousYearDue') renderPreviousYearDuePage();
             if (pageId === 'pageFeeReports') renderFeeReports();
+            if (pageId === 'pageMasterSettings') renderBackupVersions();
         }
 
         function filterStudents(type) {
@@ -1853,86 +1954,70 @@
         let rFeatureSource = null;
 
         function rMenuAction(action){
-            closeRMenu();
-            resetInactivityTimer();
+            closeRMenu(); resetInactivityTimer();
             const map={
                 dashboardAdvancedCard:['📊 સંપૂર્ણ Dashboard','dashboardAdvancedCard'],
                 dashboardReminderCard:['🔔 Automatic Reminder List','dashboardReminderCard'],
                 dashboardNextMonthCard:['📅 આગામી મહિનાની ફી','dashboardNextMonthCard'],
-                dashboardReceiptSearchCard:['🔎 સર્ચ ફી રિપોર્ટ','dashboardReceiptSearchCard']
+                dashboardReceiptSearchCard:['🔎 સર્ચ ફી રિપોર્ટ','dashboardReceiptSearchCard'],
+                dashboardWhatsAppCard:['📲 WhatsApp Automation Center','dashboardWhatsAppCard']
             };
             if(action==='dashboardDueReport'){ openDueReport(); return; }
-            const item=map[action];
-            if(item){ openRFeaturePage(item[0],item[1]); return; }
+            const item=map[action]; if(item){ openRFeaturePage(item[0],item[1]); return; }
         }
-        function navigateFromRMenu(pageId){
-            closeRMenu();
-            resetInactivityTimer();
-            navigateTo(pageId);
-        }
+        function navigateFromRMenu(pageId){ closeRMenu(); resetInactivityTimer(); navigateTo(pageId); }
         function openRFeaturePage(title, sourceId){
-            const source=document.getElementById(sourceId);
-            const content=document.getElementById('rFeatureContent');
-            const titleEl=document.getElementById('rFeatureTitle');
+            const source=document.getElementById(sourceId), content=document.getElementById('rFeatureContent'), titleEl=document.getElementById('rFeatureTitle');
             if(!source||!content)return;
-            // પાછલા featureને તેના મૂળ Dashboardમાં પરત મૂકો.
-            if(rFeatureSource && rFeatureHome && rFeatureSource.parentNode===content){
-                rFeatureHome.appendChild(rFeatureSource);
-            }
-            rFeatureHome = source.parentNode;
-            rFeatureSource = source;
-            content.innerHTML='';
-            content.appendChild(source);
-            source.style.display='block';
-            titleEl.innerText=title;
+            if(rFeatureSource && rFeatureHome && rFeatureSource.parentNode===content) rFeatureHome.appendChild(rFeatureSource);
+            rFeatureHome=source.parentNode; rFeatureSource=source; content.innerHTML=''; content.appendChild(source); source.style.display='block'; titleEl.innerText=title;
             navigateTo('pageRFeature');
-            if(sourceId==='dashboardAdvancedCard' || sourceId==='dashboardReminderCard' || sourceId==='dashboardNextMonthCard') renderDashboardAdvanced();
-            if(sourceId==='dashboardReceiptSearchCard'){
-                const inp=document.getElementById('receiptSearchInput'); if(inp) inp.focus();
-            }
+            if(['dashboardAdvancedCard','dashboardReminderCard','dashboardNextMonthCard','dashboardWhatsAppCard'].includes(sourceId)) renderDashboardAdvanced();
+            if(sourceId==='dashboardReceiptSearchCard'){ const inp=document.getElementById('receiptSearchInput'); if(inp) inp.focus(); }
         }
+        function toggleDashboardSection(id){ const map={dashboardAdvancedCard:'📊 સંપૂર્ણ Dashboard',dashboardReminderCard:'🔔 Automatic Reminder List',dashboardNextMonthCard:'📅 આગામી મહિનાની ફી',dashboardReceiptSearchCard:'🔎 સર્ચ ફી રિપોર્ટ',dashboardWhatsAppCard:'📲 WhatsApp Automation Center'}; if(map[id])openRFeaturePage(map[id],id); }
 
-        function toggleDashboardSection(id){
-            const map={dashboardAdvancedCard:'📊 સંપૂર્ણ Dashboard',dashboardReminderCard:'🔔 Automatic Reminder List',dashboardNextMonthCard:'📅 આગામી મહિનાની ફી',dashboardReceiptSearchCard:'🔎 સર્ચ ફી રિપોર્ટ'};
-            if(map[id]) openRFeaturePage(map[id],id);
+        function getDateOnly(d){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+        function sumReceiptsByMode(from,to){
+            const out={cash:0,upi:0,bank:0,other:0,total:0};
+            students.forEach(st=>(st.receipts||[]).forEach(r=>{
+                if(!r.date || r.date<from || r.date>to) return;
+                const a=Number(r.paidVal)||0; out.total+=a;
+                const m=String(r.payMode||'').toLowerCase();
+                if(m.includes('cash')||m.includes('રોકડા')) out.cash+=a;
+                else if(m.includes('upi')||m.includes('gpay')||m.includes('phonepe')||m.includes('paytm')) out.upi+=a;
+                else if(m.includes('bank')||m.includes('બેંક')) out.bank+=a;
+                else if(m.includes('online')||m.includes('ઓન લાઈન')||m.includes('ઓનલાઈન')) out.upi+=a;
+                else out.other+=a;
+            })); return out;
         }
-
+        function sumStationerySales(from,to){ let sales=0,cost=0,cash=0; students.forEach(st=>(st.stationery||[]).forEach(x=>{if(x.date>=from&&x.date<=to){const qty=Number(x.qty)||0;const sell=Number(x.price)||0;const item=stockList.find(z=>z.name===x.itemName);sales+=sell;cost+=(Number(x.unitCost ?? item?.costPrice)||0)*qty;if(x.payType==='રોકડ')cash+=sell;}}));return {sales,cost,profit:sales-cost,cash}; }
+        function sumExpenses(from,to){ return expenses.reduce((a,x)=>a+((x.date>=from&&x.date<=to)?(Number(x.amount)||0):0),0); }
+        function sumLoans(from,to){ let given=0,returned=0; loanRecords.forEach(r=>{if(r.date>=from&&r.date<=to)given+=Number(r.totalAmount)||0;(r.payments||[]).forEach(x=>{if(x.date>=from&&x.date<=to)returned+=Number(x.amount)||0;});});return {given,returned}; }
+        function renderFinancialDashboard(){
+            const now=new Date(), today=localDateString(), mf=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+            const feeToday=sumReceiptsByMode(today,today), feeMonth=sumReceiptsByMode(mf,today), stockToday=sumStationerySales(today,today), stockMonth=sumStationerySales(mf,today);
+            const expToday=sumExpenses(today,today), expMonth=sumExpenses(mf,today), loansToday=sumLoans(today,today), loansMonth=sumLoans(mf,today);
+            const totalDue=students.reduce((a,s)=>a+(Number(s.due)||0),0), loanDue=loanRecords.reduce((a,r)=>a+loanDueAmount(r),0);
+            const cashToday=feeToday.cash+stockToday.cash+loansToday.returned-expToday-loansToday.given;
+            const cashMonth=feeMonth.cash+stockMonth.cash+loansMonth.returned-expMonth-loansMonth.given;
+            const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+            set('fdTodayIncome',formatDashboardMoney(feeToday.total+stockToday.sales+loansToday.returned)); set('fdTodayExpense',formatDashboardMoney(expToday+loansToday.given)); set('fdTodayProfit',formatDashboardMoney(feeToday.total+stockToday.profit-expToday));
+            set('fdMonthIncome',formatDashboardMoney(feeMonth.total+stockMonth.sales+loansMonth.returned)); set('fdMonthExpense',formatDashboardMoney(expMonth+loansMonth.given)); set('fdMonthProfit',formatDashboardMoney(feeMonth.total+stockMonth.profit-expMonth));
+            set('fdDue',formatDashboardMoney(totalDue)); set('fdStockProfit',formatDashboardMoney(stockMonth.profit)); set('fdLoanGiven',formatDashboardMoney(loanRecords.reduce((a,r)=>a+(Number(r.totalAmount)||0),0))); set('fdLoanReturned',formatDashboardMoney(loanRecords.reduce((a,r)=>a+loanPaidAmount(r),0))); set('fdCash',formatDashboardMoney(cashMonth));
+            set('fdCashMode',`Cash ₹${Math.round(feeMonth.cash+stockMonth.cash)} | UPI ₹${Math.round(feeMonth.upi)} | Bank ₹${Math.round(feeMonth.bank)} | અન્ય ₹${Math.round(feeMonth.other)}`);
+            const mode=document.getElementById('fdModeReport'); if(mode) mode.innerHTML=`<tr><td>💵 Cash</td><td>₹${Math.round(feeMonth.cash+stockMonth.cash)}</td></tr><tr><td>📱 UPI / Online</td><td>₹${Math.round(feeMonth.upi)}</td></tr><tr><td>🏦 Bank</td><td>₹${Math.round(feeMonth.bank)}</td></tr><tr><td>અન્ય</td><td>₹${Math.round(feeMonth.other)}</td></tr><tr style="font-weight:bold"><td>કુલ</td><td>₹${Math.round(feeMonth.total+stockMonth.sales)}</td></tr>`;
+            const low=document.getElementById('fdLowStock'); if(low) low.innerHTML=stockList.filter(x=>(Number(x.qty)||0)<=Number(x.minQty||5)).map(x=>`<div class="finance-card low-stock">⚠️ ${escapeHtml(x.name)} — માત્ર ${x.qty} નંગ બાકી</div>`).join('')||'<div style="color:#2e7d32;text-align:center">✅ કોઈ Low Stock નથી.</div>';
+        }
         function renderDashboardAdvanced(){
-            const now=new Date();
-            const today=localDateString();
-            const monthFrom=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
-            const todayPaid=getPaidReceiptsBetween(today,today);
-            const monthPaid=getPaidReceiptsBetween(monthFrom,today);
-            const dueStudents=students.filter(s=>Number(s.due)>0);
-            const active=students.filter(s=>s.status==='active').length;
-            const inactive=students.filter(s=>s.status==='inactive').length;
+            const now=new Date(), today=localDateString(), monthFrom=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`, todayPaid=getPaidReceiptsBetween(today,today), monthPaid=getPaidReceiptsBetween(monthFrom,today), dueStudents=students.filter(s=>Number(s.due)>0), active=students.filter(s=>s.status==='active').length, inactive=students.filter(s=>s.status==='inactive').length;
             const set=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
-            set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid));
-            set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0)));
-            set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
-
-            const backup=document.getElementById('dashBackupStatus');
-            if(backup){
-                if(masterSettings.lastBackupAt){
-                    const d=new Date(masterSettings.lastBackupAt); const days=Math.floor((Date.now()-d.getTime())/86400000);
-                    backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');
-                    backup.style.color=days>=7?'#d32f2f':'#2e7d32';
-                } else { backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.'; backup.style.color='#d32f2f'; }
-            }
-
-            const reminder=document.getElementById('dashboardReminderList');
-            if(reminder){
-                const list=dueStudents.sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
-                reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer;"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold;">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px;" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold;">✅ કોઈ બાકી ફી નથી.</div>';
-            }
-
-            const next=document.getElementById('dashboardNextMonthList');
-            if(next){
-                const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(), m=(now.getMonth()+1)%12;
-                const from=new Date(y,m,1).toISOString().split('T')[0], to=new Date(y,m+1,0).toISOString().split('T')[0];
-                const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);
-                next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold;">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555;">નવી લાગુ ફી: ${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666;">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
-            }
+            set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid)); set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0))); set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
+            renderFinancialDashboard();
+            const backup=document.getElementById('dashBackupStatus'); if(backup){ if(masterSettings.lastBackupAt){const d=new Date(masterSettings.lastBackupAt);const days=Math.floor((Date.now()-d.getTime())/86400000);backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');backup.style.color=days>=7?'#d32f2f':'#2e7d32';}else{backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.';backup.style.color='#d32f2f';} }
+            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
+            const next=document.getElementById('dashboardNextMonthList'); if(next){const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0];const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555">${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';}
+            const wa=document.getElementById('whatsappAutomationSummary'); if(wa){const birthdays=students.filter(s=>s.birthDate&&s.birthDate.slice(5)===today.slice(5)).length;wa.innerText=`આજે Birthday: ${birthdays} | બાકી વિદ્યાર્થીઓ: ${dueStudents.length} | કુલ બાકી: ₹${Math.round(students.reduce((a,s)=>a+(Number(s.due)||0),0))}`;}
         }
 
         function sendStudentDashboardReminder(id){
@@ -2326,6 +2411,7 @@
             calculateAlertDueFee();
             renderStudentFeeOverview();
             renderStudentStationeryList();
+            renderStudentLedger();
             renderFeeHistoryTable();
 
             document.getElementById('previewContainer').style.display = 'none';
@@ -3383,10 +3469,16 @@
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
             masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
             masterSettings.password = document.getElementById('mPassword').value;
+            masterSettings.autoBackup = !!document.getElementById('mAutoBackup')?.checked;
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
             navigateTo('pageDashboard');
+        }
+
+        function renderBackupVersions(){
+            const el=document.getElementById('backupVersionsList'); if(!el)return; const list=masterSettings.backupVersions||[];
+            el.innerHTML=list.length?list.slice().reverse().map((x,i)=>`<div style="padding:5px;border-bottom:1px solid #eee">${i+1}. ${new Date(x).toLocaleString('gu-IN')}</div>`).join(''):'હજી કોઈ Backup Version નથી.';
         }
 
         function downloadJSONBackup() {
@@ -3458,14 +3550,19 @@
             const costPrice = parseFloat(document.getElementById('stkCostPrice').value) || 0;
             const sellPrice = parseFloat(document.getElementById('stkSellPrice').value) || 0;
             const qty = parseInt(document.getElementById('stkQty').value) || 0;
+            const minQty = parseInt(document.getElementById('stkMinQty').value) || 0;
 
+            let purchaseQty = 0;
             if (id) {
                 let item = stockList.find(s => s.id === id);
+                const oldQty = item ? (Number(item.qty)||0) : 0;
                 if (item) {
                     item.name = name;
                     item.costPrice = costPrice;
                     item.sellPrice = sellPrice;
                     item.qty = qty;
+                    item.minQty = minQty;
+                    purchaseQty = Math.max(0, qty-oldQty);
                 }
             } else {
                 stockList.push({
@@ -3473,12 +3570,19 @@
                     name: name,
                     costPrice: costPrice,
                     sellPrice: sellPrice,
-                    qty: qty
+                    qty: qty,
+                    minQty: minQty
                 });
+                purchaseQty = qty;
             }
 
+            if(purchaseQty>0){
+                masterSettings.stockPurchases = Array.isArray(masterSettings.stockPurchases)?masterSettings.stockPurchases:[];
+                masterSettings.stockPurchases.push({date:localDateString(),itemName:name,qty:purchaseQty,costPrice:costPrice,totalCost:costPrice*purchaseQty});
+            }
             saveLocalData();
             renderStockTable();
+            renderStockPurchaseHistory();
             renderStockDropdown();
             
             document.getElementById('editStockId').value = "";
@@ -3486,6 +3590,7 @@
             document.getElementById('stkCostPrice').value = "";
             document.getElementById('stkSellPrice').value = "";
             document.getElementById('stkQty').value = "";
+            document.getElementById('stkMinQty').value = "5";
             document.getElementById('stkFormTitle').innerText = "📦 સ્ટોકમાં નવો માલ ઉમેરો";
             document.getElementById('btnSaveStock').innerText = "+ સ્ટોક સેવ કરો";
 
@@ -3497,19 +3602,22 @@
             tbody.innerHTML = '';
 
             if (stockList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">કોઈ સ્ટોક પ્રાપ્ય નથી.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">કોઈ સ્ટોક પ્રાપ્ય નથી.</td></tr>';
                 return;
             }
 
             stockList.forEach(s => {
                 const profit = s.sellPrice - s.costPrice;
+                const stockValue = (Number(s.costPrice)||0) * (Number(s.qty)||0);
+                const low = (Number(s.qty)||0) <= Number(s.minQty ?? 5);
                 tbody.innerHTML += `
                     <tr>
                         <td>${s.name}</td>
                         <td>₹${s.costPrice}</td>
                         <td>₹${s.sellPrice}</td>
                         <td style="color:green; font-weight:bold;">₹${profit}</td>
-                        <td><strong>${s.qty}</strong></td>
+                        <td class="${low?'low-stock':''}"><strong>${s.qty}</strong>${low?' ⚠️':''}</td>
+                        <td>₹${Math.round(stockValue)}</td>
                         <td>
                             <button style="padding:2px 6px; font-size:11px; background:#1976d2; color:white; border:none; border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
                             <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px;" onclick="deleteStock('${s.id}')">🗑️</button>
@@ -3517,6 +3625,12 @@
                     </tr>
                 `;
             });
+        }
+
+        function renderStockPurchaseHistory(){
+            const el=document.getElementById('stockPurchaseHistory'); if(!el)return;
+            const list=Array.isArray(masterSettings.stockPurchases)?masterSettings.stockPurchases:[];
+            el.innerHTML=list.length?`<table><thead><tr><th>તારીખ</th><th>વસ્તુ</th><th>નંગ</th><th>કુલ ખરીદ</th></tr></thead><tbody>${list.slice().reverse().map(x=>`<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.itemName||'-')}</td><td>${x.qty||0}</td><td>₹${Math.round(x.totalCost||0)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:#888;text-align:center">હજી ખરીદીની નોંધ નથી.</div>';
         }
 
         function editStock(id) {
@@ -3530,6 +3644,7 @@
             document.getElementById('stkCostPrice').value = item.costPrice;
             document.getElementById('stkSellPrice').value = item.sellPrice;
             document.getElementById('stkQty').value = item.qty;
+            document.getElementById('stkMinQty').value = item.minQty ?? 5;
         }
 
         function deleteStock(id) {
@@ -3581,6 +3696,7 @@
                 itemName: stockItem.name,
                 qty: qty,
                 price: totalPrice,
+                unitCost: Number(stockItem.costPrice)||0,
                 payType: payType,
                 date: localDateString()
             };
@@ -3591,6 +3707,7 @@
             saveLocalData();
             recalculateStudentTotals();
             renderStockTable();
+            renderStockPurchaseHistory();
             renderStockDropdown();
             renderStudentStationeryList();
 
@@ -3967,6 +4084,34 @@
             msg+='\\nકૃપા કરીને બાકી ફી સમયસર જમા કરાવવા વિનંતી.\\n\\nવાઘેલા રવિ વિનોદભાઈ (9033197515)';
             openWhatsAppUrl('',msg);
         }
+
+        function renderStudentLedger(){
+            const el=document.getElementById('studentLedger'); if(!el||!currentStudent)return;
+            const st=currentStudent, rows=[]; let running=0;
+            (st.receipts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(r=>{
+                running += Number(r.paidVal)||0;
+                rows.push(`<tr><td>${formatDate(r.date)}</td><td>🧾 #${escapeHtml(r.receiptNo||'-')}</td><td>${escapeHtml((r.months||[]).map(m=>m.name+' '+m.year).join(', ')||'-')}</td><td>₹${Math.round(r.grandTotal||0)}</td><td style="color:#2e7d32;font-weight:bold">₹${Math.round(r.paidVal||0)}</td><td style="color:#d32f2f">₹${Math.round(r.dueVal||0)}</td><td>${escapeHtml(r.payMode||'-')}</td></tr>`);
+            });
+            (st.stationery||[]).forEach(x=>rows.push(`<tr><td>${formatDate(x.date)}</td><td>📚 સ્ટેશનરી</td><td>${escapeHtml(x.itemName)} × ${x.qty}</td><td>₹${Math.round(x.price||0)}</td><td>${x.payType==='રોકડ'?`₹${Math.round(x.price||0)}`:'₹0'}</td><td>${x.payType==='ઉધાર'?`₹${Math.round(x.price||0)}`:'₹0'}</td><td>${escapeHtml(x.payType||'-')}</td></tr>`));
+            const prev=previousYearDues.filter(x=>String(x.studentId)===String(st.id));
+            prev.forEach(x=>rows.push(`<tr><td>${formatDate(x.date)}</td><td>📅 ગયા વર્ષનું બાકી</td><td>${escapeHtml(x.detail||'ગયા વર્ષનું બાકી')}</td><td>₹${Math.round(x.totalAmount||0)}</td><td style="color:#2e7d32">₹${Math.round(previousPaidAmount(x))}</td><td style="color:#d32f2f">₹${Math.round(previousDueAmount(x))}</td><td>Previous Year</td></tr>`));
+            const total=Number(st.totalFeeWithStationery||st.fee)||0, paid=Number(st.paid)||0, due=Number(st.due)||0;
+            el.innerHTML=`<div class="grid-3" style="margin-bottom:8px"><div class="stat-box" style="background:#1976d2">કુલ બનેલી ફી<br>₹${Math.round(total)}</div><div class="stat-box" style="background:#388e3c">કુલ જમા<br>₹${Math.round(paid)}</div><div class="stat-box" style="background:#d32f2f">કુલ બાકી<br>₹${Math.round(due)}</div></div><div style="overflow-x:auto"><table class="ledger-table"><thead><tr><th>તારીખ</th><th>નોંધ</th><th>મહિનો/વિગત</th><th>કુલ</th><th>જમા</th><th>બાકી</th><th>મોડ</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="7">હજી Ledger માં નોંધ નથી.</td></tr>'}</tbody></table></div>`;
+        }
+        function printStudentLedger(){
+            if(!currentStudent)return; renderStudentLedger(); const html=document.getElementById('studentLedger')?.innerHTML||''; const w=window.open('','_blank'); if(!w)return; w.document.write(`<html><head><meta charset="UTF-8"><title>Student Ledger</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:center}h2{text-align:center}</style></head><body><h2>નિર્મળા નવોદય ક્લાસિસ - ${escapeHtml(currentStudent.name)} Ledger</h2>${html}</body></html>`); w.document.close(); w.print(); }
+        function renderProfitLoss(){
+            const today=new Date(), fromEl=document.getElementById('plFrom'), toEl=document.getElementById('plTo');
+            if(fromEl&&!fromEl.value)fromEl.value=`${today.getFullYear()}-04-01`; if(toEl&&!toEl.value){const fy=today.getMonth()>=3?today.getFullYear()+1:today.getFullYear();toEl.value=`${fy}-03-31`;}
+            const from=fromEl.value,to=toEl.value;if(!from||!to)return; const fee=sumReceiptsByMode(from,to).total, stock=sumStationerySales(from,to), exp=sumExpenses(from,to), loan=sumLoans(from,to), income=fee+stock.sales+loan.returned, costs=exp+stock.cost+loan.given, profit=fee+stock.profit+loan.returned-exp-loan.given;
+            const ps=document.getElementById('plSummary'); if(ps)ps.innerHTML=`<div class="fin-grid"><div class="fin-box"><div class="fin-label">કુલ આવક</div><div class="fin-value fin-positive">₹${Math.round(income)}</div></div><div class="fin-box"><div class="fin-label">કુલ ખર્ચ / બહાર ગયેલ</div><div class="fin-value fin-negative">₹${Math.round(costs)}</div></div><div class="fin-box" style="grid-column:1/-1"><div class="fin-label">ચોખ્ખો નફો / નુકસાન</div><div class="fin-value ${profit>=0?'fin-positive':'fin-negative'}">₹${Math.round(profit)}</div></div></div>`;
+            const body=document.getElementById('plMonthlyBody'); if(!body)return; let d=new Date(from+'T00:00:00'), end=new Date(to+'T00:00:00'), rows=''; while(d<=end){const y=d.getFullYear(),m=d.getMonth(),r=getMonthDateRange(y,m),mf=r.from<from?from:r.from,mt=r.to>to?to:r.to,f=sumReceiptsByMode(mf,mt).total,ss=sumStationerySales(mf,mt),e=sumExpenses(mf,mt),l=sumLoans(mf,mt),inc=f+ss.sales+l.returned,ct=e+ss.cost+l.given,pr=inc-ct;rows+=`<tr><td>${new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(d)}</td><td>₹${Math.round(inc)}</td><td>₹${Math.round(ct)}</td><td class="${pr>=0?'profit-positive':'profit-negative'}">₹${Math.round(pr)}</td></tr>`;d.setMonth(d.getMonth()+1);}body.innerHTML=rows||'<tr><td colspan="4">કોઈ માહિતી નથી.</td></tr>';
+        }
+        function sendUpcomingMonthRemindersWhatsApp(){
+            const now=new Date(),y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0]; const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.unpaidMonths?.length); if(!list.length){alert('આગામી મહિનાની કોઈ Reminder યાદી નથી.');return;} let msg='🙏🏻 *નિર્મળા નવોદય ક્લાસિસ - આગામી મહિનાની ફી*\n\n';list.forEach((x,i)=>msg+=`${i+1}. ${x.st.name} — ₹${Math.round(x.info.due||0)}\n`);openWhatsAppUrl('',msg);
+        }
+        function sendBirthdayRemindersWhatsApp(){const mmdd=localDateString().slice(5),list=students.filter(s=>s.birthDate&&s.birthDate.slice(5)===mmdd&&s.phone);if(!list.length){alert('આજે Birthday ધરાવતા મોબાઈલવાળા વિદ્યાર્થીઓ નથી.');return;}let msg='🎂 *નિર્મળા નવોદય ક્લાસિસ તરફથી જન્મદિવસની શુભેચ્છા*\n\n';list.forEach(s=>msg+=`🎉 ${s.name}\n`);openWhatsAppUrl('',msg);}
+        function sendAnnualFeeRemindersWhatsApp(){const list=students.filter(s=>String(s.feeType||'').includes('વાર્ષિક')&&Number(s.due)>0);if(!list.length){alert('બાકી વાર્ષિક ફી ધરાવતા વિદ્યાર્થીઓ નથી.');return;}let msg='📆 *વાર્ષિક ફી Reminder*\n\n';list.forEach((s,i)=>msg+=`${i+1}. ${s.name} — ₹${Math.round(s.due||0)}\n`);openWhatsAppUrl('',msg);}
 
         function renderPreviousYearDuePage() {
             const dateEl=document.getElementById('prevDate'); if(dateEl && !dateEl.value)dateEl.value=localDateString();
