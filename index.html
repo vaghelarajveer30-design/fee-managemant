@@ -528,6 +528,25 @@
                     </thead>
                     <tbody id="stockTableBody"></tbody>
                 </table>
+                <div class="card" style="background:#f8fbff;border-color:#90caf9;margin-top:10px;margin-bottom:0;">
+                    <h4 style="color:#1565c0;text-align:center;margin-bottom:8px;">📊 આખા સ્ટોકનો કુલ સરવાળો</h4>
+                    <div class="grid-2">
+                        <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ સ્ટોક<br><span id="totalCurrentStockQty">0 નંગ</span></div>
+                        <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalCurrentStockCost">₹0</span></div>
+                        <div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ કિંમત<br><span id="totalCurrentStockSale">₹0</span></div>
+                        <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ નફો<br><span id="totalCurrentStockProfit">₹0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
+                <h4 style="color:#e65100;text-align:center;margin-bottom:8px;">🛒 અત્યાર સુધીના કુલ વેચાણનો સરવાળો</h4>
+                <div class="grid-2">
+                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વેચેલો સ્ટોક<br><span id="totalSoldStockQty">0 નંગ</span></div>
+                    <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalSoldStockCost">₹0</span></div>
+                    <div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ કિંમત<br><span id="totalSoldStockSale">₹0</span></div>
+                    <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ નફો<br><span id="totalSoldStockProfit">₹0</span></div>
+                </div>
             </div>
 
             <div class="card">
@@ -3700,22 +3719,53 @@
             const tbody = document.getElementById('stockTableBody');
             tbody.innerHTML = '';
 
+            let totalQty = 0, totalCost = 0, totalSale = 0;
+            stockList.forEach(s => {
+                const qty = Number(s.qty) || 0;
+                const cost = Number(s.costPrice) || 0;
+                const sell = Number(s.sellPrice) || 0;
+                totalQty += qty;
+                totalCost += cost * qty;
+                totalSale += sell * qty;
+            });
+
+            const setSummary = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            };
+            setSummary('totalCurrentStockQty', totalQty + ' નંગ');
+            setSummary('totalCurrentStockCost', '₹' + Math.round(totalCost));
+            setSummary('totalCurrentStockSale', '₹' + Math.round(totalSale));
+            setSummary('totalCurrentStockProfit', '₹' + Math.round(totalSale - totalCost));
+
+            const soldRows = getAllStationerySalesRecords();
+            let soldQty = 0, soldCost = 0, soldSale = 0;
+            soldRows.forEach(x => {
+                soldQty += Number(x.qty) || 0;
+                soldCost += (Number(x.unitCost) || 0) * (Number(x.qty) || 0);
+                soldSale += Number(x.price) || 0;
+            });
+            setSummary('totalSoldStockQty', soldQty + ' નંગ');
+            setSummary('totalSoldStockCost', '₹' + Math.round(soldCost));
+            setSummary('totalSoldStockSale', '₹' + Math.round(soldSale));
+            setSummary('totalSoldStockProfit', '₹' + Math.round(soldSale - soldCost));
+
             if (stockList.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7">કોઈ સ્ટોક પ્રાપ્ય નથી.</td></tr>';
                 return;
             }
 
             stockList.forEach(s => {
-                const profit = s.sellPrice - s.costPrice;
+                const profit = (Number(s.sellPrice)||0) - (Number(s.costPrice)||0);
                 const stockValue = (Number(s.costPrice)||0) * (Number(s.qty)||0);
                 const low = (Number(s.qty)||0) <= Number(s.minQty ?? 5);
                 tbody.innerHTML += `
                     <tr>
-                        <td>${s.name}</td>
-                        <td>₹${s.costPrice}</td>
-                        <td>₹${s.sellPrice}</td>
+                        <td>${escapeHtml(s.name || '')}</td>
+                        <td>₹${Number(s.costPrice)||0}</td>
+                        <td>₹${Number(s.sellPrice)||0}</td>
                         <td style="color:green; font-weight:bold;">₹${profit}</td>
-                        <td class="${low?'low-stock':''}"><strong>${s.qty}</strong>${low?' ⚠️':''}</td>
+                        <td class="${low?'low-stock':''}"><strong>${Number(s.qty)||0}</strong>${low?' ⚠️':''}</td>
                         <td>₹${Math.round(stockValue)}</td>
                         <td>
                             <button style="padding:2px 6px; font-size:11px; background:#1976d2; color:white; border:none; border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
