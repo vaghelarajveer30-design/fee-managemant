@@ -544,7 +544,7 @@
                             <th>વસ્તુ</th>
                             <th>નંગ</th>
                             <th>કિંમત</th>
-                            <th>પ્રકાર</th>
+                            <th>પ્રકાર</th><th>ક્રિયા</th>
                         </tr>
                     </thead>
                     <tbody id="issuedReportTableBody"></tbody>
@@ -552,6 +552,73 @@
                 <div style="margin-top:10px; font-size:14px; font-weight:bold; color:#1565c0; text-align:right;">
                     કુલ આપેલી સ્ટેશનરી નો સરવાળો: <span id="totalStationeryIssuedAmt" style="color:red;">₹0</span>
                 </div>
+            </div>
+
+            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
+                <h4 style="color:#e65100;">🛍️ બહારના ગ્રાહકને સ્ટેશનરી વેચાણ</h4>
+                <p style="font-size:12px;color:#666;margin:5px 0 9px;">વિદ્યાર્થી ન હોય તો પણ નામ વગર સ્ટેશનરી વેચી શકો છો. વેચાણ થતાં જ સ્ટોકમાંથી જથ્થો ઘટશે.</p>
+                <form onsubmit="event.preventDefault(); sellStationeryToOutsideCustomer();">
+                    <div class="form-group">
+                        <label>ગ્રાહકનું નામ (વૈકલ્પિક)</label>
+                        <input type="text" id="outsideSaleName" class="form-control" placeholder="નામ ન લખવું હોય તો ખાલી રાખો">
+                    </div>
+                    <div class="form-group">
+                        <label>સ્ટોકમાંથી વસ્તુ પસંદ કરો</label>
+                        <select id="outsideSaleItem" class="form-control"></select>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>જથ્થો (નંગ)</label>
+                            <input type="number" id="outsideSaleQty" class="form-control" value="1" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>ચૂકવણી પ્રકાર</label>
+                            <select id="outsideSalePayType" class="form-control">
+                                <option value="રોકડ">રોકડ</option>
+                                <option value="UPI">UPI</option>
+                                <option value="બેંક">બેંક</option>
+                                <option value="ઉધાર">ઉધાર</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-orange">🛒 બહારનું વેચાણ સેવ કરો</button>
+                </form>
+            </div>
+
+            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
+                <h4 style="color:#1565c0;">📊 સ્ટેશનરી Dashboard / Sales Report</h4>
+                <div class="grid-2" style="margin-top:8px;">
+                    <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="stkReportFrom" class="form-control" onchange="renderStationeryAnalytics()"></div>
+                    <div class="form-group"><label>કઈ તારીખ સુધી?</label><input type="date" id="stkReportTo" class="form-control" onchange="renderStationeryAnalytics()"></div>
+                </div>
+                <div class="grid-2" style="margin-top:4px;">
+                    <div class="stat-box" style="background:#1976d2;cursor:default;">વેચેલા નંગ<br><span id="stkAnalyticQty">0</span></div>
+                    <div class="stat-box" style="background:#2e7d32;cursor:default;">વેચાણ રકમ<br><span id="stkAnalyticSales">₹0</span></div>
+                    <div class="stat-box" style="background:#00897b;cursor:default;">નફો<br><span id="stkAnalyticProfit">₹0</span></div>
+                    <div class="stat-box" style="background:#e65100;cursor:default;">રોકડ/UPI/બેંક<br><span id="stkAnalyticModes">₹0</span></div>
+                </div>
+                <div style="margin-top:10px;overflow-x:auto;">
+                    <h5 style="color:#555;margin-bottom:5px;">📦 વસ્તુ પ્રમાણે વેચાણ</h5>
+                    <div id="stkItemWiseReport"></div>
+                </div>
+                <div style="margin-top:10px;overflow-x:auto;">
+                    <h5 style="color:#555;margin-bottom:5px;">📅 તારીખ પ્રમાણે વેચાણ</h5>
+                    <div id="stkDateWiseReport"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h4>📒 સ્ટેશનરી Stock Ledger</h4>
+                <div id="stationeryStockLedger" style="font-size:12px;"></div>
+            </div>
+
+            <div class="card">
+                <h4>📊 બહારના ગ્રાહકના સ્ટેશનરી વેચાણનો રિપોર્ટ</h4>
+                <div class="grid-2" style="margin-bottom:8px;">
+                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વેચેલો સ્ટોક<br><span id="externalSoldQty">0 નંગ</span></div>
+                    <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ વેચેલી રકમ<br><span id="externalSoldAmount">₹0</span></div>
+                </div>
+                <div id="externalStationerySalesReport" style="font-size:12px;"></div>
             </div>
         </div>
 
@@ -1060,6 +1127,7 @@
             autoBackup: false,
             lastAutoBackupAt: "",
             stockPurchases: [],
+            externalStationerySales: [],
             backupVersions: []
         };
 
@@ -1526,6 +1594,8 @@
             if (!Array.isArray(previousYearDues)) previousYearDues = [];
             if (!Array.isArray(deletedStudents)) deletedStudents = [];
             if (localStorage.getItem('NNC_master')) masterSettings = Object.assign({}, masterSettings, JSON.parse(localStorage.getItem('NNC_master')));
+            if (!Array.isArray(masterSettings.externalStationerySales)) masterSettings.externalStationerySales = [];
+            if (!Array.isArray(masterSettings.stockPurchases)) masterSettings.stockPurchases = [];
             students.forEach(st => normalizeStudentRecords(st));
             ensureReceiptNumbers();
         }
@@ -1907,6 +1977,10 @@
             if (pageId === 'pageStationeryReport') {
                 renderStockTable();
                 renderIssuedStationeryReport();
+                renderOutsideSaleDropdown();
+                renderExternalStationerySalesReport();
+                renderStationeryAnalytics();
+                renderStationeryStockLedger();
             }
             if (pageId === 'pageLoans') renderLoanPage();
             if (pageId === 'pagePreviousYearDue') renderPreviousYearDuePage();
@@ -1991,7 +2065,30 @@
                 else out.other+=a;
             })); return out;
         }
-        function sumStationerySales(from,to){ let sales=0,cost=0,cash=0; students.forEach(st=>(st.stationery||[]).forEach(x=>{if(x.date>=from&&x.date<=to){const qty=Number(x.qty)||0;const sell=Number(x.price)||0;const item=stockList.find(z=>z.name===x.itemName);sales+=sell;cost+=(Number(x.unitCost ?? item?.costPrice)||0)*qty;if(x.payType==='રોકડ')cash+=sell;}}));return {sales,cost,profit:sales-cost,cash}; }
+        function sumStationerySales(from,to){
+            let sales=0,cost=0,cash=0;
+            students.forEach(st=>(st.stationery||[]).forEach(x=>{
+                if(x.date>=from&&x.date<=to){
+                    const qty=Number(x.qty)||0;
+                    const sell=Number(x.price)||0;
+                    const item=stockList.find(z=>z.name===x.itemName);
+                    sales+=sell;
+                    cost+=(Number(x.unitCost ?? item?.costPrice)||0)*qty;
+                    if(x.payType==='રોકડ')cash+=sell;
+                }
+            }));
+            const external=Array.isArray(masterSettings.externalStationerySales)?masterSettings.externalStationerySales:[];
+            external.forEach(x=>{
+                if(x.date>=from&&x.date<=to){
+                    const qty=Number(x.qty)||0;
+                    const sell=Number(x.price)||0;
+                    sales+=sell;
+                    cost+=(Number(x.unitCost)||0)*qty;
+                    if(x.payType==='રોકડ')cash+=sell;
+                }
+            });
+            return {sales,cost,profit:sales-cost,cash};
+        }
         function sumExpenses(from,to){ return expenses.reduce((a,x)=>a+((x.date>=from&&x.date<=to)?(Number(x.amount)||0):0),0); }
         function sumLoans(from,to){ let given=0,returned=0; loanRecords.forEach(r=>{if(r.date>=from&&r.date<=to)given+=Number(r.totalAmount)||0;(r.payments||[]).forEach(x=>{if(x.date>=from&&x.date<=to)returned+=Number(x.amount)||0;});});return {given,returned}; }
         function renderFinancialDashboard(){
@@ -3534,6 +3631,8 @@
                     renderDashboard();
                     renderStockTable();
                     renderStockDropdown();
+                    renderOutsideSaleDropdown();
+                    renderExternalStationerySalesReport();
                     renderExpenses();
                     if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || '';
                     alert("ડેટા સફળતાપૂર્વક અપલોડ અને રીસ્ટોર થઈ ગયો છે!");
@@ -3671,6 +3770,161 @@
             });
         }
 
+        function renderOutsideSaleDropdown() {
+            const select = document.getElementById('outsideSaleItem');
+            if (!select) return;
+            select.innerHTML = '';
+            if (!stockList.length) {
+                select.innerHTML = '<option value="">કોઈ સ્ટોક પ્રાપ્ય નથી</option>';
+                return;
+            }
+            stockList.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)} (કિંમત: ₹${s.sellPrice} | બાકી સ્ટોક: ${s.qty})</option>`;
+            });
+        }
+
+        function sellStationeryToOutsideCustomer() {
+            const stockId = document.getElementById('outsideSaleItem')?.value;
+            const qty = parseInt(document.getElementById('outsideSaleQty')?.value) || 0;
+            const name = (document.getElementById('outsideSaleName')?.value || '').trim();
+            const payType = document.getElementById('outsideSalePayType')?.value || 'રોકડ';
+            const stockItem = stockList.find(s => String(s.id) === String(stockId));
+
+            if (!stockItem) {
+                alert('કૃપા કરીને સ્ટોકમાંથી વસ્તુ પસંદ કરો.');
+                return;
+            }
+            if (qty <= 0) {
+                alert('કૃપા કરીને સાચો જથ્થો દાખલ કરો.');
+                return;
+            }
+            if (Number(stockItem.qty) < qty) {
+                alert(`સ્ટોકમાં પૂરતો જથ્થો નથી. પ્રાપ્ય જથ્થો: ${stockItem.qty}`);
+                return;
+            }
+
+            const totalPrice = (Number(stockItem.sellPrice) || 0) * qty;
+            stockItem.qty = (Number(stockItem.qty) || 0) - qty;
+
+            masterSettings.externalStationerySales = Array.isArray(masterSettings.externalStationerySales) ? masterSettings.externalStationerySales : [];
+            masterSettings.externalStationerySales.push({
+                id: Date.now().toString(),
+                customerName: name,
+                itemName: stockItem.name,
+                itemId: stockItem.id,
+                qty: qty,
+                price: totalPrice,
+                unitPrice: Number(stockItem.sellPrice) || 0,
+                unitCost: Number(stockItem.costPrice) || 0,
+                payType: payType,
+                date: localDateString()
+            });
+
+            saveLocalData();
+            renderStockTable();
+            renderStockDropdown();
+            renderOutsideSaleDropdown();
+            renderExternalStationerySalesReport();
+            renderFinancialDashboard();
+
+            document.getElementById('outsideSaleName').value = '';
+            document.getElementById('outsideSaleQty').value = '1';
+            alert('બહારના ગ્રાહકનું સ્ટેશનરી વેચાણ સેવ થઈ ગયું છે અને સ્ટોકમાંથી જથ્થો ઘટી ગયો છે.');
+        }
+
+        function renderExternalStationerySalesReport() {
+            const el = document.getElementById('externalStationerySalesReport');
+            if (!el) return;
+            const list = Array.isArray(masterSettings.externalStationerySales) ? masterSettings.externalStationerySales : [];
+            let totalQty = 0, totalAmt = 0;
+            list.forEach(x => { totalQty += Number(x.qty) || 0; totalAmt += Number(x.price) || 0; });
+
+            const qtyEl = document.getElementById('externalSoldQty');
+            const amtEl = document.getElementById('externalSoldAmount');
+            if (qtyEl) qtyEl.innerText = totalQty + ' નંગ';
+            if (amtEl) amtEl.innerText = '₹' + Math.round(totalAmt);
+
+            if (!list.length) {
+                el.innerHTML = '<div style="text-align:center;color:#888;padding:8px;">હજી બહારના ગ્રાહકનું વેચાણ નથી.</div>';
+                return;
+            }
+            el.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>તારીખ</th><th>ગ્રાહક</th><th>વસ્તુ</th><th>નંગ</th><th>રકમ</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody>${list.slice().reverse().map((x,ri) => { const realIndex=list.length-1-ri; const sid=x.id||('external-'+realIndex); return `<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.customerName || 'નામ વગર')}</td><td>${escapeHtml(x.itemName || '-')}</td><td>${Number(x.qty)||0}</td><td>₹${Math.round(Number(x.price)||0)}</td><td>${escapeHtml(x.payType || '-')}</td><td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('external','','${sid}')">↩️</button></td></tr>`; }).join('')}</tbody></table></div>`;
+        }
+
+        function getAllStationerySalesRecords(){
+            const rows=[];
+            students.forEach(st=>(st.stationery||[]).forEach((x,i)=>rows.push({
+                type:'student', studentId:st.id, saleId:x.id||('legacy-'+st.id+'-'+i), date:x.date||'', itemName:x.itemName||'-', qty:Number(x.qty)||0,
+                price:Number(x.price)||0, unitPrice:Number(x.unitPrice ?? ((Number(x.qty)||0)?Number(x.price||0)/Number(x.qty):0))||0,
+                unitCost:Number(x.unitCost)||0, payType:x.payType||'ઉધાર', customerName:st.name||'વિદ્યાર્થી'
+            })));
+            (Array.isArray(masterSettings.externalStationerySales)?masterSettings.externalStationerySales:[]).forEach((x,i)=>rows.push({
+                type:'external', saleId:x.id||('external-'+i), date:x.date||'', itemName:x.itemName||'-', qty:Number(x.qty)||0,
+                price:Number(x.price)||0, unitPrice:Number(x.unitPrice)||0, unitCost:Number(x.unitCost)||0,
+                payType:x.payType||'રોકડ', customerName:x.customerName||'નામ વગર'
+            }));
+            return rows;
+        }
+
+        function renderStationeryAnalytics(){
+            const fromEl=document.getElementById('stkReportFrom'), toEl=document.getElementById('stkReportTo');
+            if(!fromEl||!toEl)return;
+            const today=localDateString();
+            if(!fromEl.value) fromEl.value=today.slice(0,8)+'01';
+            if(!toEl.value) toEl.value=today;
+            const from=fromEl.value,to=toEl.value;
+            const rows=getAllStationerySalesRecords().filter(x=>x.date>=from&&x.date<=to);
+            let qty=0,sales=0,cost=0,received=0;
+            const itemMap={},dateMap={};
+            rows.forEach(x=>{
+                qty+=x.qty; sales+=x.price; cost+=x.unitCost*x.qty;
+                if(x.payType!=='ઉધાર') received+=x.price;
+                itemMap[x.itemName]=itemMap[x.itemName]||{qty:0,sales:0,profit:0};
+                itemMap[x.itemName].qty+=x.qty; itemMap[x.itemName].sales+=x.price; itemMap[x.itemName].profit+=x.price-x.unitCost*x.qty;
+                dateMap[x.date]=dateMap[x.date]||{qty:0,sales:0}; dateMap[x.date].qty+=x.qty; dateMap[x.date].sales+=x.price;
+            });
+            const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+            set('stkAnalyticQty',qty); set('stkAnalyticSales','₹'+Math.round(sales)); set('stkAnalyticProfit','₹'+Math.round(sales-cost)); set('stkAnalyticModes','₹'+Math.round(received));
+            const itemEl=document.getElementById('stkItemWiseReport');
+            const itemRows=Object.entries(itemMap).sort((a,b)=>b[1].sales-a[1].sales);
+            itemEl.innerHTML=itemRows.length?`<table><thead><tr><th>વસ્તુ</th><th>નંગ</th><th>વેચાણ</th><th>નફો</th></tr></thead><tbody>${itemRows.map(([n,v])=>`<tr><td>${escapeHtml(n)}</td><td>${v.qty}</td><td>₹${Math.round(v.sales)}</td><td style="color:green;font-weight:bold">₹${Math.round(v.profit)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:#888;text-align:center">આ તારીખમાં વેચાણ નથી.</div>';
+            const dateEl=document.getElementById('stkDateWiseReport');
+            const dateRows=Object.entries(dateMap).sort((a,b)=>b[0].localeCompare(a[0]));
+            dateEl.innerHTML=dateRows.length?`<table><thead><tr><th>તારીખ</th><th>નંગ</th><th>વેચાણ</th></tr></thead><tbody>${dateRows.map(([d,v])=>`<tr><td>${formatDate(d)}</td><td>${v.qty}</td><td>₹${Math.round(v.sales)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:#888;text-align:center">આ તારીખમાં વેચાણ નથી.</div>';
+        }
+
+        function renderStationeryStockLedger(){
+            const el=document.getElementById('stationeryStockLedger'); if(!el)return;
+            const rows=[];
+            (Array.isArray(masterSettings.stockPurchases)?masterSettings.stockPurchases:[]).forEach(x=>rows.push({date:x.date||'',item:x.itemName||'-',inQty:Number(x.qty)||0,outQty:0,detail:'ખરીદી'}));
+            getAllStationerySalesRecords().forEach(x=>rows.push({date:x.date||'',item:x.itemName||'-',inQty:0,outQty:x.qty,detail:(x.type==='student'?'વિદ્યાર્થી':'બહારનું વેચાણ')}));
+            rows.sort((a,b)=>b.date.localeCompare(a.date));
+            el.innerHTML=rows.length?`<div style="overflow-x:auto"><table class="ledger-table"><thead><tr><th>તારીખ</th><th>વસ્તુ</th><th>આવક</th><th>વેચાણ</th><th>નોંધ</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.item)}</td><td style="color:green;font-weight:bold">${x.inQty||0}</td><td style="color:red;font-weight:bold">${x.outQty||0}</td><td>${x.detail}</td></tr>`).join('')}</tbody></table></div>`:'<div style="color:#888;text-align:center">હજી Ledger ઉપલબ્ધ નથી.</div>';
+        }
+
+        function returnStationerySale(type, studentId, saleId){
+            if(!confirm('આ સ્ટેશનરી વેચાણ Return કરવું છે? સ્ટોક પાછો ઉમેરાશે.')) return;
+            let sale=null;
+            if(type==='student'){
+                const st=students.find(s=>String(s.id)===String(studentId));
+                if(!st||!Array.isArray(st.stationery)) return;
+                const idx=st.stationery.findIndex((x,i)=>String(x.id||('legacy-'+st.id+'-'+i))===String(saleId));
+                if(idx<0){alert('વેચાણ મળ્યું નથી.');return;}
+                sale=st.stationery[idx];
+                st.stationery.splice(idx,1);
+            }else{
+                const list=Array.isArray(masterSettings.externalStationerySales)?masterSettings.externalStationerySales:[];
+                const idx=list.findIndex((x,i)=>String(x.id||('external-'+i))===String(saleId));
+                if(idx<0){alert('વેચાણ મળ્યું નથી.');return;}
+                sale=list[idx]; list.splice(idx,1); masterSettings.externalStationerySales=list;
+            }
+            const stock=stockList.find(x=>x.name===sale.itemName);
+            if(stock) stock.qty=(Number(stock.qty)||0)+(Number(sale.qty)||0);
+            saveLocalData(); recalculateStudentTotals(); renderStockTable(); renderStockDropdown(); renderOutsideSaleDropdown(); renderIssuedStationeryReport(); renderExternalStationerySalesReport(); renderStationeryAnalytics(); renderStationeryStockLedger(); renderFinancialDashboard();
+            if(currentStudent) openStudent(currentStudent.id);
+            alert('સ્ટેશનરી Return થઈ ગઈ છે અને સ્ટોક પાછો ઉમેરાયો છે.');
+        }
+
         function giveStationeryToStudent() {
             if (!currentStudent) return;
             const stockId = document.getElementById('selectStationeryItem').value;
@@ -3710,6 +3964,9 @@
             renderStockPurchaseHistory();
             renderStockDropdown();
             renderStudentStationeryList();
+            renderIssuedStationeryReport();
+            renderStationeryAnalytics();
+            renderStationeryStockLedger();
 
             openStudent(currentStudent.id);
             alert("વિદ્યાર્થીને સ્ટેશનરી આપાઈ ગઈ છે!");
@@ -3733,7 +3990,7 @@
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
                         <td>
                             <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="deleteStudentStationery('${s.id}')">🗑️</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')">↩️ Return</button>
                         </td>
                     </tr>
                 `;
@@ -3779,6 +4036,7 @@
                                 <td>${s.qty}</td>
                                 <td>₹${s.price}</td>
                                 <td>${s.payType}</td>
+                                <td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('student','${st.id}','${s.id}')">↩️</button></td>
                             </tr>
                         `;
                     });
@@ -3786,7 +4044,7 @@
             });
 
             if (tbody.innerHTML === '') {
-                tbody.innerHTML = '<tr><td colspan="5" style="color:#888;">કોઈ સ્ટેશનરી રિપોર્ટ પ્રાપ્ય નથી.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="color:#888;">કોઈ સ્ટેશનરી રિપોર્ટ પ્રાપ્ય નથી.</td></tr>';
             }
 
             document.getElementById('totalStationeryIssuedAmt').innerText = '₹' + totalAmt;
