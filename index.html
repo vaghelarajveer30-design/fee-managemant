@@ -549,6 +549,12 @@
                 </div>
             </div>
 
+            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
+                <h4 style="color:#1565c0;">📋 વસ્તુ પ્રમાણે સંપૂર્ણ ભાવ વિગત</h4>
+                <p style="font-size:12px;color:#666;margin:5px 0 8px;">દરેક વસ્તુના કુલ નંગ પ્રમાણે ખરીદ કિંમત, વેચાણ કિંમત અને નફો જોવા માટે અલગ પેજ ખોલો.</p>
+                <button class="btn btn-blue" onclick="navigateTo('pageStationeryDetails')">📋 વિગતવાર સ્ટોક / નફો જુઓ</button>
+            </div>
+
             <div class="card">
                 <h4>🛒 Purchase History</h4>
                 <div id="stockPurchaseHistory" style="font-size:12px"></div>
@@ -638,6 +644,24 @@
                     <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ વેચેલી રકમ<br><span id="externalSoldAmount">₹0</span></div>
                 </div>
                 <div id="externalStationerySalesReport" style="font-size:12px;"></div>
+            </div>
+        </div>
+
+        <div id="pageStationeryDetails" style="display:none;">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી પર પાછા જાઓ</a>
+                <strong style="color:#1565c0;font-size:15px;">📋 વસ્તુ પ્રમાણે વિગત</strong>
+            </div>
+
+            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
+                <h3 style="color:#1565c0;text-align:center;">📦 હાલના સ્ટોકની દરેક વસ્તુની સંપૂર્ણ ગણતરી</h3>
+                <p style="font-size:12px;color:#666;text-align:center;margin:6px 0 10px;">ઉદાહરણ: નવોદય બુક 20 નંગ હોય તો 20 × ખરીદ કિંમત, 20 × વેચાણ કિંમત અને કુલ નફો.</p>
+                <div id="stationeryCurrentItemWiseDetail"></div>
+            </div>
+
+            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
+                <h3 style="color:#e65100;text-align:center;">🛒 વેચાયેલી દરેક વસ્તુની સંપૂર્ણ ગણતરી</h3>
+                <div id="stationerySoldItemWiseDetail"></div>
             </div>
         </div>
 
@@ -1987,7 +2011,7 @@
                 rFeatureSource.style.display='none';
                 rFeatureSource=null; rFeatureHome=null;
             }
-            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageFinancialDashboard', 'pageProfitLoss', 'pageStudentDetails'].forEach(p => {
+            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageStationeryDetails', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageFinancialDashboard', 'pageProfitLoss', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
@@ -2000,6 +2024,9 @@
                 renderExternalStationerySalesReport();
                 renderStationeryAnalytics();
                 renderStationeryStockLedger();
+            }
+            if (pageId === 'pageStationeryDetails') {
+                renderStationeryItemWiseDetails();
             }
             if (pageId === 'pageLoans') renderLoanPage();
             if (pageId === 'pagePreviousYearDue') renderPreviousYearDuePage();
@@ -3941,6 +3968,73 @@
             const dateEl=document.getElementById('stkDateWiseReport');
             const dateRows=Object.entries(dateMap).sort((a,b)=>b[0].localeCompare(a[0]));
             dateEl.innerHTML=dateRows.length?`<table><thead><tr><th>તારીખ</th><th>નંગ</th><th>વેચાણ</th></tr></thead><tbody>${dateRows.map(([d,v])=>`<tr><td>${formatDate(d)}</td><td>${v.qty}</td><td>₹${Math.round(v.sales)}</td></tr>`).join('')}</tbody></table>`:'<div style="color:#888;text-align:center">આ તારીખમાં વેચાણ નથી.</div>';
+        }
+
+        function renderStationeryItemWiseDetails(){
+            const currentEl=document.getElementById('stationeryCurrentItemWiseDetail');
+            const soldEl=document.getElementById('stationerySoldItemWiseDetail');
+            if(!currentEl || !soldEl) return;
+
+            // હાલના સ્ટોકમાં દરેક વસ્તુ: નંગ × ખરીદ/વેચાણ ભાવ અને કુલ નફો
+            if(!stockList.length){
+                currentEl.innerHTML='<div style="text-align:center;color:#888;padding:10px;">હાલમાં કોઈ સ્ટોક નથી.</div>';
+            }else{
+                let rows='', tQty=0,tCost=0,tSale=0;
+                stockList.forEach(s=>{
+                    const qty=Number(s.qty)||0;
+                    const cost=Number(s.costPrice)||0;
+                    const sale=Number(s.sellPrice)||0;
+                    const totalCost=cost*qty;
+                    const totalSale=sale*qty;
+                    const profit=totalSale-totalCost;
+                    tQty+=qty;tCost+=totalCost;tSale+=totalSale;
+                    rows+=`<tr>
+                        <td style="font-weight:bold;color:#1565c0;">${escapeHtml(s.name||'-')}</td>
+                        <td>${qty}</td>
+                        <td>₹${Math.round(cost)}</td>
+                        <td>₹${Math.round(totalCost)}</td>
+                        <td>₹${Math.round(sale)}</td>
+                        <td>₹${Math.round(totalSale)}</td>
+                        <td style="color:${profit>=0?'green':'red'};font-weight:bold;">₹${Math.round(profit)}</td>
+                    </tr>`;
+                });
+                rows+=`<tr style="background:#e8f5e9;font-weight:bold;">
+                    <td>કુલ</td><td>${tQty}</td><td>-</td><td>₹${Math.round(tCost)}</td><td>-</td><td>₹${Math.round(tSale)}</td><td style="color:green;">₹${Math.round(tSale-tCost)}</td>
+                </tr>`;
+                currentEl.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>વસ્તુ</th><th>સ્ટોક નંગ</th><th>એક નંગ ખરીદ</th><th>કુલ ખરીદ</th><th>એક નંગ વેચાણ</th><th>કુલ વેચાણ</th><th>કુલ નફો</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }
+
+            // વેચાયેલી વસ્તુ પ્રમાણે: વેચેલા નંગ × ખરીદ/વેચાણ ભાવ અને કુલ નફો
+            const map={};
+            getAllStationerySalesRecords().forEach(x=>{
+                const name=x.itemName||'-';
+                if(!map[name]) map[name]={qty:0,cost:0,sale:0};
+                const qty=Number(x.qty)||0;
+                const cost=(Number(x.unitCost)||0)*qty;
+                const sale=Number(x.price)||0;
+                map[name].qty+=qty; map[name].cost+=cost; map[name].sale+=sale;
+            });
+            const entries=Object.entries(map).sort((a,b)=>b[1].sale-a[1].sale);
+            if(!entries.length){
+                soldEl.innerHTML='<div style="text-align:center;color:#888;padding:10px;">હજી કોઈ સ્ટેશનરી વેચાણ નથી.</div>';
+            }else{
+                let rows='',tQty=0,tCost=0,tSale=0;
+                entries.forEach(([name,v])=>{
+                    const profit=v.sale-v.cost;tQty+=v.qty;tCost+=v.cost;tSale+=v.sale;
+                    const avgCost=v.qty?v.cost/v.qty:0, avgSale=v.qty?v.sale/v.qty:0;
+                    rows+=`<tr>
+                        <td style="font-weight:bold;color:#e65100;">${escapeHtml(name)}</td>
+                        <td>${v.qty}</td>
+                        <td>₹${Math.round(avgCost)}</td>
+                        <td>₹${Math.round(v.cost)}</td>
+                        <td>₹${Math.round(avgSale)}</td>
+                        <td>₹${Math.round(v.sale)}</td>
+                        <td style="color:${profit>=0?'green':'red'};font-weight:bold;">₹${Math.round(profit)}</td>
+                    </tr>`;
+                });
+                rows+=`<tr style="background:#fff3e0;font-weight:bold;"><td>કુલ</td><td>${tQty}</td><td>-</td><td>₹${Math.round(tCost)}</td><td>-</td><td>₹${Math.round(tSale)}</td><td style="color:green;">₹${Math.round(tSale-tCost)}</td></tr>`;
+                soldEl.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>વસ્તુ</th><th>વેચેલા નંગ</th><th>સરેરાશ ખરીદ</th><th>કુલ ખરીદ</th><th>સરેરાશ વેચાણ</th><th>કુલ વેચાણ</th><th>કુલ નફો</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }
         }
 
         function renderStationeryStockLedger(){
