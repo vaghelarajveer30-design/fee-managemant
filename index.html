@@ -866,6 +866,9 @@
 
             <div class="card">
                 <h4 style="color:#333; margin-bottom:8px;">📖 વિદ્યાર્થીને સ્ટેશનરી આપો</h4>
+                <div style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:6px;margin-bottom:8px;">
+                    🧾 દરેક બુક / સ્ટેશનરીની સામે <b>પહોંચ</b> બટનથી અલગ પહોંચ બનાવી શકાય છે.
+                </div>
                 <div class="form-group">
                     <label>સ્ટોકમાંથી વસ્તુ પસંદ કરો:</label>
                     <select id="selectStationeryItem" class="form-control"></select>
@@ -902,8 +905,25 @@
 
             <div class="card">
                 <h4 style="color:#333; margin-bottom:10px;" id="receiptFormHeading">💳 નવી પહોંચ બનાવો / સુધારો</h4>
+                <div style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-bottom:9px;">
+                    🧾 3 વિકલ્પ: <b>ફક્ત મહિનાની ફી</b> | <b>ફક્ત એક બુક/સ્ટેશનરી</b> | <b>બંને સાથે</b>
+                </div>
                 <input type="hidden" id="editingReceiptId" value="">
                 
+                <div class="form-group">
+                    <label>🧾 પહોંચનો પ્રકાર</label>
+                    <select id="recReceiptType" class="form-control" onchange="onReceiptTypeChange()">
+                        <option value="both">📚 + 📅 બંને સાથે</option>
+                        <option value="monthly">📅 ફક્ત મહિનાની ફી</option>
+                        <option value="stationery">📚 ફક્ત સ્ટેશનરી</option>
+                    </select>
+                </div>
+                <div class="form-group" id="recStationerySelectWrap" style="display:none;">
+                    <label>📚 સ્ટેશનરી / બુક પસંદ કરો</label>
+                    <select id="recStationerySelect" class="form-control" onchange="onReceiptStationeryChange()"></select>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">એક બુક/વસ્તુની અલગ પહોંચ માટે તે વસ્તુ પસંદ કરો. “બંને સાથે”માં પણ પસંદ કરેલી વસ્તુ જ જોડાશે.</div>
+                </div>
+
                 <div class="form-group">
                     <label>પહોંચ તારીખ</label>
                     <input type="date" id="recDateVal" class="form-control">
@@ -1101,6 +1121,63 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <button class="btn btn-blue" onclick="applyRestoreChoices()">🔄 પસંદગી પ્રમાણે કરો</button>
                 <button class="btn btn-gray" onclick="closeRestoreChoiceModal()">❌ રદ કરો</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="stationeryReceiptModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:430px;width:94%;max-height:92vh;overflow-y:auto;padding:12px;">
+            <div id="stationeryReceiptPrintArea" style="background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;font-family:Arial,'Noto Sans Gujarati',sans-serif;">
+                <div style="text-align:center;border-bottom:2px solid #1565c0;padding-bottom:8px;margin-bottom:10px;">
+                    <div style="font-size:21px;font-weight:bold;color:#1565c0;">નિર્મળા નવોદય ક્લાસિસ</div>
+                    <div style="font-size:17px;font-weight:bold;color:#333;">📚 સ્ટેશનરી પહોંચ</div>
+                </div>
+
+                <div style="font-size:13px;line-height:1.8;">
+                    <div><b>પહોંચ નં.:</b> <span id="srReceiptNo">-</span></div>
+                    <div><b>વિદ્યાર્થી:</b> <span id="srStudentName">-</span></div>
+                    <div><b>ધોરણ:</b> <span id="srStudentStd">-</span> &nbsp; | &nbsp; <b>કોર્સ:</b> <span id="srStudentCourse">-</span></div>
+                    <div><b>તારીખ:</b> <span id="srDate">-</span></div>
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;">
+                    <thead>
+                        <tr>
+                            <th style="border:1px solid #bbb;padding:7px;background:#eef4fb;text-align:left;">વસ્તુ</th>
+                            <th style="border:1px solid #bbb;padding:7px;background:#eef4fb;text-align:center;">નંગ</th>
+                            <th style="border:1px solid #bbb;padding:7px;background:#eef4fb;text-align:right;">રકમ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="srItemName" style="border:1px solid #bbb;padding:8px;">-</td>
+                            <td id="srQty" style="border:1px solid #bbb;padding:8px;text-align:center;">1</td>
+                            <td id="srAmount" style="border:1px solid #bbb;padding:8px;text-align:right;font-weight:bold;">₹0</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="border:1px solid #bbb;padding:8px;text-align:right;font-weight:bold;">કુલ</td>
+                            <td id="srTotal" style="border:1px solid #bbb;padding:8px;text-align:right;font-weight:bold;color:#1565c0;">₹0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div style="margin-top:10px;padding:8px;background:#f7f7f7;border-radius:7px;font-size:13px;">
+                    <b>ચૂકવણી:</b> <span id="srPayType">-</span>
+                </div>
+
+                <div style="margin-top:24px;display:flex;justify-content:space-between;font-size:12px;">
+                    <span>વિદ્યાર્થી/વાલીની સહી</span>
+                    <span>સહી / સિક્કો</span>
+                </div>
+                <div style="height:28px;"></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+                <button class="btn btn-blue" onclick="printStationeryReceipt()">🖨️ પ્રિન્ટ / PDF</button>
+                <button class="btn btn-gray" onclick="closeStationeryReceipt()">❌ બંધ કરો</button>
             </div>
         </div>
     </div>
@@ -1333,25 +1410,33 @@
             document.getElementById('sRPeriodTo').innerText = formatDate(data.toDate);
 
             const tbody = document.getElementById('sRTableBody');
-            const monthRows = Array.isArray(data.months) && data.months.length
-                ? data.months.map((m,i) => `<tr><td>${i+1}</td><td>${m.name} ${m.year}</td><td>₹${m.fee}</td></tr>`).join('')
-                : `<tr><td>1</td><td>ટ્યુશન ફી (${formatDate(data.fromDate)} થી ${formatDate(data.toDate)})</td><td>₹${data.tuitionFee}</td></tr>`;
+            const type = data.receiptType ||
+                ((Number(data.tuitionFee) > 0 && Number(data.statFee) > 0) ? 'both' :
+                (Number(data.statFee) > 0 ? 'stationery' : 'monthly'));
+            let rows = [], n = 1;
 
-            tbody.innerHTML = monthRows;
-
-            if (data.statFee > 0) {
-                const startNo = (Array.isArray(data.months) ? data.months.length : 1) + 1;
-                const items = Array.isArray(data.stationeryItems) ? data.stationeryItems : [];
-                if (items.length) {
-                    items.forEach((x, idx) => {
-                        const itemTotal = Number(x.price || ((Number(x.unitPrice) || 0) * (Number(x.qty) || 0)));
-                        const unit = Number(x.unitPrice || (itemTotal / (Number(x.qty) || 1)));
-                        tbody.innerHTML += `<tr><td>${startNo + idx}</td><td>${escapeHtml(x.itemName)} (${x.qty} × ₹${unit})</td><td>₹${itemTotal}</td></tr>`;
-                    });
-                } else {
-                    tbody.innerHTML += `<tr><td>${startNo}</td><td>સ્ટેશનરી</td><td>₹${data.statFee}</td></tr>`;
+            if (type === 'monthly' || type === 'both') {
+                if (Array.isArray(data.months) && data.months.length) {
+                    data.months.forEach(m => rows.push(`<tr><td>${n++}</td><td>${escapeHtml(m.name)} ${m.year}</td><td>₹${Math.round(Number(m.fee)||0)}</td></tr>`));
+                } else if (Number(data.tuitionFee) > 0) {
+                    rows.push(`<tr><td>${n++}</td><td>ટ્યુશન ફી</td><td>₹${Math.round(Number(data.tuitionFee)||0)}</td></tr>`);
                 }
             }
+
+            if (type === 'stationery' || type === 'both') {
+                const items = Array.isArray(data.stationeryItems) ? data.stationeryItems : [];
+                items.forEach(x => {
+                    const qty = Number(x.qty) || 1;
+                    const itemTotal = Number(x.price || ((Number(x.unitPrice)||0) * qty)) || 0;
+                    const unit = Number(x.unitPrice || (itemTotal / qty)) || 0;
+                    rows.push(`<tr><td>${n++}</td><td>${escapeHtml(x.itemName || 'સ્ટેશનરી')} (${qty} × ₹${Math.round(unit)})</td><td>₹${Math.round(itemTotal)}</td></tr>`);
+                });
+                if (!items.length && Number(data.statFee) > 0) {
+                    rows.push(`<tr><td>${n++}</td><td>સ્ટેશનરી</td><td>₹${Math.round(Number(data.statFee)||0)}</td></tr>`);
+                }
+            }
+
+            tbody.innerHTML = rows.join('') || '<tr><td colspan="3">કોઈ વિગત નથી.</td></tr>';
 
             document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
             document.getElementById('sRPaidVal').innerText = '₹' + data.paidVal;
@@ -3498,6 +3583,84 @@
             openWhatsAppUrl(currentStudent.phone, msg);
         }
 
+        function populateReceiptStationerySelect(selectedId) {
+            const el = document.getElementById('recStationerySelect');
+            if (!el) return;
+            const items = (currentStudent && Array.isArray(currentStudent.stationery))
+                ? currentStudent.stationery.filter(x => x && Number(x.price) > 0) : [];
+
+            if (!items.length) {
+                el.innerHTML = '<option value="">કોઈ સ્ટેશનરી નોંધ ઉપલબ્ધ નથી</option>';
+                return;
+            }
+
+            el.innerHTML = items.map((x, i) => {
+                const id = String(x.id || ('legacy-' + i));
+                const qty = Number(x.qty) || 1;
+                const amount = Number(x.price) || 0;
+                return `<option value="${escapeHtml(id)}">${escapeHtml(x.itemName || 'સ્ટેશનરી')} × ${qty} — ₹${Math.round(amount)} (${x.payType || 'ઉધાર'})</option>`;
+            }).join('');
+
+            if (selectedId != null && items.some((x,i) => String(x.id || ('legacy-' + i)) === String(selectedId))) {
+                el.value = String(selectedId);
+            }
+        }
+
+        function getSelectedReceiptStationeryItems() {
+            if (!currentStudent || !Array.isArray(currentStudent.stationery)) return [];
+            const sel = document.getElementById('recStationerySelect');
+            if (!sel || !sel.value) return [];
+
+            const idx = currentStudent.stationery.findIndex((x,i) =>
+                String(x.id || ('legacy-' + i)) === String(sel.value)
+            );
+            if (idx < 0) return [];
+
+            const x = currentStudent.stationery[idx];
+            const qty = Number(x.qty) || 1;
+            const amount = Number(x.price) || 0;
+            return [{
+                sourceId: x.id || ('legacy-' + currentStudent.id + '-' + idx),
+                itemName: x.itemName || 'સ્ટેશનરી',
+                qty: qty,
+                price: amount,
+                unitPrice: Number(x.unitPrice) || (qty ? amount / qty : amount),
+                payType: x.payType || 'ઉધાર'
+            }];
+        }
+
+        function onReceiptTypeChange() {
+            const type = document.getElementById('recReceiptType')?.value || 'both';
+            const wrap = document.getElementById('recStationerySelectWrap');
+            if (wrap) wrap.style.display = (type === 'stationery' || type === 'both') ? 'block' : 'none';
+
+            if (type === 'stationery') {
+                document.getElementById('recAutoFee').value = 0;
+                populateReceiptStationerySelect(document.getElementById('recStationerySelect')?.value);
+                onReceiptStationeryChange();
+            } else if (type === 'monthly') {
+                document.getElementById('recStationeryFee').value = 0;
+                autoCalculateMonthsFee();
+            } else {
+                populateReceiptStationerySelect(document.getElementById('recStationerySelect')?.value);
+                autoCalculateMonthsFee();
+                onReceiptStationeryChange();
+            }
+            calculateReceiptTotals();
+        }
+
+        function onReceiptStationeryChange() {
+            const type = document.getElementById('recReceiptType')?.value || 'both';
+            if (type === 'monthly') {
+                document.getElementById('recStationeryFee').value = 0;
+            } else {
+                const items = getSelectedReceiptStationeryItems();
+                document.getElementById('recStationeryFee').value =
+                    Math.round(items.reduce((sum,x) => sum + (Number(x.price) || 0), 0));
+            }
+            calculateReceiptTotals();
+        }
+
         function resetReceiptForm() {
             document.getElementById('receiptFormHeading').innerText = "💳 નવી પહોંચ બનાવો / સુધારો";
             document.getElementById('editingReceiptId').value = "";
@@ -3507,23 +3670,19 @@
             document.getElementById('recDateVal').value = today;
             document.getElementById('recFromDate').value = today;
             document.getElementById('recToDate').value = today;
-
             document.getElementById('recAutoFee').value = currentStudent ? (currentStudent.fee || 350) : 350;
-            
-            let creditStatAmt = 0;
-            if (currentStudent && currentStudent.stationery) {
-                currentStudent.stationery.forEach(s => {
-                    if (s.payType === 'ઉધાર') creditStatAmt += parseFloat(s.price) || 0;
-                });
-            }
-            document.getElementById('recStationeryFee').value = creditStatAmt;
+
+            populateReceiptStationerySelect();
+            document.getElementById('recReceiptType').value = "both";
+            const wrap = document.getElementById('recStationerySelectWrap');
+            if (wrap) wrap.style.display = 'block';
 
             document.getElementById('recPayMode').value = "રોકડા/ઓન લાઈન";
             document.getElementById('recPayer').value = currentStudent ? currentStudent.name + " ના વાલી" : "";
-            
             document.getElementById('recPaidInput').value = "0";
-            autoCalculateMonthsFee();
 
+            autoCalculateMonthsFee();
+            onReceiptStationeryChange();
             calculateReceiptTotals();
         }
 
@@ -3595,7 +3754,7 @@
         }
 
         function receiptPublicData(receiptObj) {
-            return {receiptNo:receiptObj.receiptNo || '',name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
+            return {receiptNo:receiptObj.receiptNo || '',receiptType:receiptObj.receiptType || '',name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
         }
 
         async function publishReceiptAndGetLink(receiptObj) {
@@ -3697,17 +3856,30 @@
         function buildReceiptPreview() {
             if (!currentStudent) return;
 
+            const receiptType = document.getElementById('recReceiptType')?.value || 'both';
             const dateVal = document.getElementById('recDateVal').value;
             const fromDate = document.getElementById('recFromDate').value;
             const toDate = document.getElementById('recToDate').value;
-            const tuitionInfo = getTuitionForPeriod(currentStudent, fromDate, toDate);
-            const tuitionFee = tuitionInfo.total;
-            const statFee = parseFloat(document.getElementById('recStationeryFee').value) || 0;
+
+            let tuitionInfo = { total: 0, months: [] };
+            if (receiptType === 'monthly' || receiptType === 'both') {
+                tuitionInfo = getTuitionForPeriod(currentStudent, fromDate, toDate);
+            }
+
+            const tuitionFee = receiptType === 'stationery' ? 0 : (Number(tuitionInfo.total) || 0);
+            const selectedStationery = receiptType === 'monthly' ? [] : getSelectedReceiptStationeryItems();
+            const statFee = selectedStationery.reduce((sum,x) => sum + (Number(x.price) || 0), 0);
             const grandTotal = tuitionFee + statFee;
+
             const paidVal = parseFloat(document.getElementById('recPaidInput').value) || 0;
             const dueVal = Math.max(0, grandTotal - paidVal);
             const payMode = document.getElementById('recPayMode').value;
             const payer = document.getElementById('recPayer').value.trim() || (currentStudent.name + " ના વાલી");
+
+            if (grandTotal <= 0) {
+                alert("⚠️ પહોંચ બનાવવા માટે ફી અથવા સ્ટેશનરી પસંદ કરો.");
+                return;
+            }
 
             const receiptId = document.getElementById('editingReceiptId').value || Date.now().toString();
             const existingReceipt = (currentStudent.receipts || []).find(r => String(r.id) === String(receiptId));
@@ -3716,9 +3888,10 @@
             const newReceipt = {
                 id: receiptId,
                 receiptNo: receiptNo,
+                receiptType: receiptType,
                 date: dateVal,
-                fromDate: fromDate,
-                toDate: toDate,
+                fromDate: receiptType === 'stationery' ? '' : fromDate,
+                toDate: receiptType === 'stationery' ? '' : toDate,
                 tuitionFee: tuitionFee,
                 statFee: statFee,
                 grandTotal: grandTotal,
@@ -3726,33 +3899,27 @@
                 dueVal: dueVal,
                 payMode: payMode,
                 payer: payer,
-                months: tuitionInfo.months.map(m => ({name:m.name, year:m.year, fee:m.fee})),
-                stationeryItems: (currentStudent.stationery || []).filter(x => x.payType === 'ઉધાર').map(x => ({itemName:x.itemName, qty:x.qty, price:x.price, unitPrice:Number(x.price || 0) / (Number(x.qty) || 1)}))
+                months: receiptType === 'stationery'
+                    ? []
+                    : tuitionInfo.months.map(m => ({name:m.name, year:m.year, fee:m.fee})),
+                stationeryItems: selectedStationery.map(x => ({
+                    sourceId:x.sourceId, itemName:x.itemName, qty:x.qty, price:x.price,
+                    unitPrice:x.unitPrice, payType:x.payType
+                }))
             };
 
             if (!currentStudent.receipts) currentStudent.receipts = [];
-            
             const existingIdx = currentStudent.receipts.findIndex(r => r.id === receiptId);
-            if (existingIdx >= 0) {
-                currentStudent.receipts[existingIdx] = newReceipt;
-            } else {
-                currentStudent.receipts.push(newReceipt);
-            }
+            if (existingIdx >= 0) currentStudent.receipts[existingIdx] = newReceipt;
+            else currentStudent.receipts.push(newReceipt);
 
-            // વિદ્યાર્થી Active હોય કે Inactive, જો ગયા વર્ષનું બાકી નોંધાયેલું હોય
-            // તો આ જ જમા રકમ ત્યાં પણ આપમેળે દેખાડો અને બાકી ઘટાડો.
             syncReceiptToPreviousYearDue(currentStudent.id, newReceipt);
-
             saveLocalData();
             recalculateStudentTotals();
             renderFeeHistoryTable();
-            // Home dashboard, Active/Inactive lists અને કુલ જમા બોક્સ તરત અપડેટ કરો.
             renderDashboard();
             renderPreviousYearDuePage();
-
             displayReceiptDataInPreview(newReceipt);
-            
-            // પહોંચ જનરેટ થયા પછી મોકલવાનું કામ વપરાશકર્તા બટનથી કરશે; આપમેળે WhatsApp નહીં ખૂલે.
         }
 
         function displayReceiptDataInPreview(receiptObj) {
@@ -3761,35 +3928,45 @@
             document.getElementById('rStd').innerText = currentStudent.std;
             document.getElementById('rCourse').innerText = currentStudent.course;
             document.getElementById('rPayDate').innerText = formatDate(receiptObj.date);
-            document.getElementById('rPeriodFrom').innerText = formatDate(receiptObj.fromDate);
-            document.getElementById('rPeriodTo').innerText = formatDate(receiptObj.toDate);
+            document.getElementById('rPeriodFrom').innerText = receiptObj.fromDate ? formatDate(receiptObj.fromDate) : '-';
+            document.getElementById('rPeriodTo').innerText = receiptObj.toDate ? formatDate(receiptObj.toDate) : '-';
 
             const tbody = document.getElementById('receiptTableBody');
-            const monthRows = Array.isArray(receiptObj.months) && receiptObj.months.length
-                ? receiptObj.months.map((m,i) => `<tr><td>${i+1}</td><td>${m.name} ${m.year}</td><td>₹${m.fee}</td></tr>`).join('')
-                : `<tr><td>1</td><td>ટ્યુશન ફી (${formatDate(receiptObj.fromDate)} થી ${formatDate(receiptObj.toDate)})</td><td>₹${receiptObj.tuitionFee}</td></tr>`;
+            const type = receiptObj.receiptType ||
+                ((Number(receiptObj.tuitionFee) > 0 && Number(receiptObj.statFee) > 0) ? 'both' :
+                (Number(receiptObj.statFee) > 0 ? 'stationery' : 'monthly'));
 
-            tbody.innerHTML = monthRows;
+            let rows = [], no = 1;
 
-            if (receiptObj.statFee > 0) {
-                const startNo = (Array.isArray(receiptObj.months) ? receiptObj.months.length : 1) + 1;
-                const items = receiptObj.stationeryItems || [];
-                if (items.length) {
-                    items.forEach((x, idx) => {
-                        const itemTotal = Number(x.price || ((Number(x.unitPrice) || 0) * (Number(x.qty) || 0)));
-                        const unit = Number(x.unitPrice || (itemTotal / (Number(x.qty) || 1)));
-                        tbody.innerHTML += `<tr><td>${startNo + idx}</td><td>${escapeHtml(x.itemName)} (${x.qty} × ₹${unit})</td><td>₹${itemTotal}</td></tr>`;
-                    });
-                } else {
-                    tbody.innerHTML += `<tr><td>${startNo}</td><td>સ્ટેશનરી</td><td>₹${receiptObj.statFee}</td></tr>`;
+            if (type === 'monthly' || type === 'both') {
+                if (Array.isArray(receiptObj.months) && receiptObj.months.length) {
+                    receiptObj.months.forEach(m => rows.push(
+                        `<tr><td>${no++}</td><td>${escapeHtml(m.name)} ${m.year}</td><td>₹${Math.round(Number(m.fee)||0)}</td></tr>`
+                    ));
+                } else if (Number(receiptObj.tuitionFee) > 0) {
+                    rows.push(`<tr><td>${no++}</td><td>ટ્યુશન ફી</td><td>₹${Math.round(Number(receiptObj.tuitionFee)||0)}</td></tr>`);
                 }
             }
 
-            document.getElementById('rTotalVal').innerText = '₹' + receiptObj.grandTotal;
-            document.getElementById('rPaidVal').innerText = '₹' + receiptObj.paidVal;
-            document.getElementById('rDueVal').innerText = '₹' + receiptObj.dueVal;
-            document.getElementById('rMode').innerText = receiptObj.payMode;
-            document.getElementById('rPayer').innerText = receiptObj.payer;
+            if (type === 'stationery' || type === 'both') {
+                const items = Array.isArray(receiptObj.stationeryItems) ? receiptObj.stationeryItems : [];
+                items.forEach(x => {
+                    const qty = Number(x.qty) || 1;
+                    const itemTotal = Number(x.price || ((Number(x.unitPrice)||0) * qty)) || 0;
+                    const unit = Number(x.unitPrice || (itemTotal / qty)) || 0;
+                    rows.push(`<tr><td>${no++}</td><td>${escapeHtml(x.itemName || 'સ્ટેશનરી')} (${qty} × ₹${Math.round(unit)})</td><td>₹${Math.round(itemTotal)}</td></tr>`);
+                });
+                if (!items.length && Number(receiptObj.statFee) > 0) {
+                    rows.push(`<tr><td>${no++}</td><td>સ્ટેશનરી</td><td>₹${Math.round(Number(receiptObj.statFee)||0)}</td></tr>`);
+                }
+            }
+
+            tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="3" style="color:#888;">કોઈ વિગત નથી.</td></tr>`;
+            document.getElementById('rTotalVal').innerText = '₹' + Math.round(Number(receiptObj.grandTotal)||0);
+            document.getElementById('rPaidVal').innerText = '₹' + Math.round(Number(receiptObj.paidVal)||0);
+            document.getElementById('rDueVal').innerText = '₹' + Math.round(Number(receiptObj.dueVal)||0);
+            document.getElementById('rMode').innerText = receiptObj.payMode || '-';
+            document.getElementById('rPayer').innerText = receiptObj.payer || '-';
 
             const onlineLink = generateReceiptShareableLink(receiptObj);
             document.getElementById('receiptGeneratedUrl').value = onlineLink;
@@ -3803,51 +3980,7 @@
             const previewContainer = document.getElementById('previewContainer');
             previewContainer.style.display = 'block';
             previewContainer.scrollIntoView({ behavior: 'smooth' });
-
             generateReceiptCanvas();
-        }
-
-        // Offline/Online બંનેમાં પહોંચની Image બનાવવા માટેનું ફંક્શન.
-        // કોઈ External Library જરૂરી નથી; તેથી Internet વગર પણ કામ કરશે.
-        function receiptElementToBlob(element) {
-            return new Promise((resolve, reject) => {
-                try {
-                    if (!element) throw new Error('ફી પહોંચ મળી નથી.');
-                    const rect = element.getBoundingClientRect();
-                    const width = Math.max(360, Math.ceil(rect.width || element.offsetWidth || 360));
-                    const height = Math.max(200, Math.ceil(element.scrollHeight || element.offsetHeight || 200));
-                    const clone = element.cloneNode(true);
-                    clone.style.width = width + 'px';
-                    clone.style.height = height + 'px';
-                    clone.style.margin = '0';
-                    clone.style.position = 'static';
-                    clone.style.background = '#ffffff';
-                    clone.style.boxSizing = 'border-box';
-                    clone.querySelectorAll('*').forEach(el => { el.style.boxSizing = 'border-box'; });
-
-                    // Include the same CSS used by the live receipt so the PNG matches the on-screen receipt.
-                    const cssText = Array.from(document.querySelectorAll('style')).map(st => st.textContent || '').join('\n');
-                    const html = new XMLSerializer().serializeToString(clone);
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject x="0" y="0" width="${width}" height="${height}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Segoe UI,Arial,sans-serif;background:#fff;width:${width}px;min-height:${height}px;margin:0;padding:0;"><style>${cssText}</style>${html}</div></foreignObject></svg>`;
-                    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-                    const img = new Image();
-                    img.onload = function(){
-                        try {
-                            const canvas = document.createElement('canvas');
-                            const scale = Math.min(2, Math.max(1, 1400 / width));
-                            canvas.width = Math.round(width * scale);
-                            canvas.height = Math.round(height * scale);
-                            const ctx = canvas.getContext('2d');
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(0,0,canvas.width,canvas.height);
-                            ctx.drawImage(img,0,0,canvas.width,canvas.height);
-                            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Image blob તૈયાર થઈ નથી.')), 'image/png');
-                        } catch (e) { reject(e); }
-                    };
-                    img.onerror = function(){ reject(new Error('Image તૈયાર કરવામાં બ્રાઉઝર દ્વારા અવરોધ આવ્યો.')); };
-                    img.src = dataUrl;
-                } catch(e) { reject(e); }
-            });
         }
 
         function generateReceiptCanvas() {
@@ -4012,7 +4145,26 @@
             document.getElementById('recDueInput').value = r.dueVal;
             document.getElementById('recPayMode').value = r.payMode;
             document.getElementById('recPayer').value = r.payer;
-            autoCalculateMonthsFee();
+
+            const editType = r.receiptType ||
+                ((Number(r.tuitionFee)||0) > 0 && (Number(r.statFee)||0) > 0 ? 'both' :
+                ((Number(r.statFee)||0) > 0 ? 'stationery' : 'monthly'));
+            document.getElementById('recReceiptType').value = editType;
+            populateReceiptStationerySelect();
+
+            const firstItem = Array.isArray(r.stationeryItems) && r.stationeryItems.length ? r.stationeryItems[0] : null;
+            if (firstItem) {
+                const sel = document.getElementById('recStationerySelect');
+                if (sel) sel.value = String(firstItem.sourceId || '');
+            }
+
+            onReceiptTypeChange();
+            if (editType === 'stationery') {
+                document.getElementById('recAutoFee').value = 0;
+                calculateReceiptTotals();
+            } else {
+                autoCalculateMonthsFee();
+            }
         }
 
         function deleteReceipt(receiptId) {
@@ -4587,6 +4739,81 @@
             alert("વિદ્યાર્થીને સ્ટેશનરી આપાઈ ગઈ છે!");
         }
 
+        function openStationeryReceipt(statId) {
+            if (!currentStudent || !Array.isArray(currentStudent.stationery)) {
+                alert("❌ વિદ્યાર્થીની સ્ટેશનરી માહિતી મળી નથી.");
+                return;
+            }
+
+            const item = currentStudent.stationery.find(s => String(s.id) === String(statId));
+            if (!item) {
+                alert("❌ સ્ટેશનરી નોંધ મળી નથી.");
+                return;
+            }
+
+            const qty = Number(item.qty) || 1;
+            const amount = Number(item.price) || 0;
+            const unitPrice = Number(item.unitPrice) || (qty ? amount / qty : amount);
+            const receiptNo = "S-" + String(item.id || Date.now()).slice(-8);
+
+            document.getElementById("srReceiptNo").innerText = receiptNo;
+            document.getElementById("srStudentName").innerText = currentStudent.name || "-";
+            document.getElementById("srStudentStd").innerText = currentStudent.std || "-";
+            document.getElementById("srStudentCourse").innerText = currentStudent.course || "-";
+            document.getElementById("srDate").innerText = formatDate(item.date || localDateString());
+            document.getElementById("srItemName").innerText =
+                `${item.itemName || "સ્ટેશનરી"} (₹${Math.round(unitPrice)} × ${qty})`;
+            document.getElementById("srQty").innerText = qty;
+            document.getElementById("srAmount").innerText = "₹" + Math.round(amount);
+            document.getElementById("srTotal").innerText = "₹" + Math.round(amount);
+            document.getElementById("srPayType").innerText = item.payType || "-";
+
+            const modal = document.getElementById("stationeryReceiptModal");
+            if (modal) modal.style.display = "flex";
+        }
+
+        function closeStationeryReceipt() {
+            const modal = document.getElementById("stationeryReceiptModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        function printStationeryReceipt() {
+            const area = document.getElementById("stationeryReceiptPrintArea");
+            if (!area) return;
+
+            const css = `
+                @page { size: A5 portrait; margin: 10mm; }
+                * { box-sizing:border-box; }
+                body { margin:0; padding:0; background:#fff; font-family:Arial,'Noto Sans Gujarati',sans-serif; }
+                table { page-break-inside:avoid; }
+            `;
+
+            const w = window.open("", "_blank");
+            if (!w) {
+                alert("⚠️ પ્રિન્ટ વિન્ડો ખોલી શકાઈ નથી. Browserમાં pop-up મંજૂર કરો.");
+                return;
+            }
+
+            w.document.open();
+            w.document.write(`
+                <!doctype html>
+                <html lang="gu">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>સ્ટેશનરી પહોંચ - ${escapeHtml(currentStudent?.name || "Student")}</title>
+                    <style>${css}</style>
+                </head>
+                <body>${area.outerHTML}</body>
+                </html>
+            `);
+            w.document.close();
+
+            setTimeout(() => {
+                w.focus();
+                w.print();
+            }, 350);
+        }
+
         function renderStudentStationeryList() {
             const tbody = document.getElementById('studentStationeryList');
             tbody.innerHTML = '';
@@ -4605,6 +4832,7 @@
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
                         <td>
                             <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="openStationeryReceipt('${s.id}')">🧾 પહોંચ</button>
                             <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')">↩️ Return</button>
                         </td>
                     </tr>
