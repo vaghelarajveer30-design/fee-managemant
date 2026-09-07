@@ -235,7 +235,10 @@
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Firebase)</div>
                 <div class="grid-2">
                     <button type="button" class="btn btn-green" onclick="event.preventDefault(); event.stopPropagation(); backupDataToCloud(); return false;">📥 બેકઅપ ડેટા લેવો</button>
-                    <button type="button" class="btn btn-blue" onclick="event.preventDefault(); event.stopPropagation(); restoreDataFromCloud(); return false;">🔄 ડેટા રીસ્ટોર કરવો</button>
+                    <div id="webinatoRestoreButton" role="button" tabindex="0"
+        style="background:#1976d2;color:#fff;border-radius:8px;padding:10px 14px;font-weight:bold;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;user-select:none;-webkit-user-select:none;"
+        onclick="restoreDataFromCloud(); return false;"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restoreDataFromCloud();return false;}">🔄 ડેટા રીસ્ટોર કરવો</div>
                 </div>
             </div>
 
@@ -2573,6 +2576,30 @@ document.addEventListener('submit', function(e) {
             }
         }
 
+        (function installWebinatoRestoreBridge(){
+            const bind = () => {
+                const el = document.getElementById('webinatoRestoreButton');
+                if(!el || el.dataset.bridgeBound==='1') return;
+                const run = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if(e.type==='touchend' || e.type==='click') {
+                        if(el.dataset.restoreTap==='1') return;
+                        el.dataset.restoreTap='1';
+                        setTimeout(()=>{el.dataset.restoreTap='0';},700);
+                        restoreDataFromCloud();
+                    }
+                    return false;
+                };
+                el.addEventListener('click', run, true);
+                el.addEventListener('touchend', run, true);
+                el.addEventListener('pointerup', run, true);
+                el.dataset.bridgeBound='1';
+            };
+            if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind);
+            else bind();
+        })();
+
         async function restoreDataFromCloud() {
             if (!verifyMasterPassword('ડેટા રીસ્ટોર')) return;
 
@@ -2584,7 +2611,7 @@ document.addEventListener('submit', function(e) {
             if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
             cloudSyncQueued = false;
 
-            const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
+            const btns = document.querySelectorAll('#webinatoRestoreButton');
             btns.forEach(b => { b.disabled=true; b.innerText='⏳ ડેટા શોધી રહ્યા છીએ...'; });
 
             try {
