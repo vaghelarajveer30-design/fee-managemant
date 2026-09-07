@@ -4652,12 +4652,61 @@
 
         function renderStudentLedger(){
             const el=document.getElementById('studentLedger'); if(!el||!currentStudent)return;
-            const st=currentStudent, rows=[]; let running=0;
-            (st.receipts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(r=>{
-                running += Number(r.paidVal)||0;
-                rows.push(`<tr><td>${formatDate(r.date)}</td><td>🧾 #${escapeHtml(r.receiptNo||'-')}</td><td>${escapeHtml((r.months||[]).map(m=>m.name+' '+m.year).join(', ')||'-')}</td><td>₹${Math.round(r.grandTotal||0)}</td><td style="color:#2e7d32;font-weight:bold">₹${Math.round(r.paidVal||0)}</td><td style="color:#d32f2f">₹${Math.round(r.dueVal||0)}</td><td>${escapeHtml(r.payMode||'-')}</td></tr>`);
+            const st=currentStudent, rows=[];
+
+            // જો બુક/સ્ટેશનરીની રકમ receiptમાં સામેલ હોય તો તેને ledgerમાં
+            // ફરી અલગ stationery row તરીકે ન ગણવી. એટલે એક જ બુક બે વાર નહીં ગણાય.
+            const receipts=(st.receipts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+            const receiptStationeryKeys=new Set();
+            const receiptStationeryAmountsByDate={};
+
+            receipts.forEach(r=>{
+                const statFee=Number(r.statFee)||0;
+                const items=Array.isArray(r.stationeryItems)?r.stationeryItems:[];
+                items.forEach(x=>{
+                    const itemName=String(x.itemName||'').trim().toLowerCase();
+                    const qty=Number(x.qty)||1;
+                    const price=Number(x.price)||0;
+                    receiptStationeryKeys.add(`${String(r.date||'')}|${itemName}|${qty}|${price}`);
+                });
+                if(statFee>0){
+                    const d=String(r.date||'');
+                    receiptStationeryAmountsByDate[d]=(receiptStationeryAmountsByDate[d]||0)+statFee;
+                }
             });
-            (st.stationery||[]).forEach(x=>rows.push(`<tr><td>${formatDate(x.date)}</td><td>📚 સ્ટેશનરી</td><td>${escapeHtml(x.itemName)} × ${x.qty}</td><td>₹${Math.round(x.price||0)}</td><td>${x.payType==='રોકડ'?`₹${Math.round(x.price||0)}`:'₹0'}</td><td>${x.payType==='ઉધાર'?`₹${Math.round(x.price||0)}`:'₹0'}</td><td>${escapeHtml(x.payType||'-')}</td></tr>`));
+
+            // Receiptમાં ટ્યુશન + સ્ટેશનરી સાથે હોય તો એક જ combined entry.
+            receipts.forEach(r=>{
+                const months=(r.months||[]).map(m=>m.name+' '+m.year).join(', ')||'-';
+                const hasStationery=(Number(r.statFee)||0)>0 || (Array.isArray(r.stationeryItems)&&r.stationeryItems.length>0);
+                const note=hasStationery
+                    ? `🧾 #${escapeHtml(r.receiptNo||'-')} + 📚 સ્ટેશનરી`
+                    : `🧾 #${escapeHtml(r.receiptNo||'-')}`;
+                rows.push(`<tr><td>${formatDate(r.date)}</td><td>${note}</td><td>${escapeHtml(months)}</td><td>₹${Math.round(r.grandTotal||0)}</td><td style="color:#2e7d32;font-weight:bold">₹${Math.round(r.paidVal||0)}</td><td style="color:#d32f2f">₹${Math.round(r.dueVal||0)}</td><td>${escapeHtml(r.payMode||'-')}</td></tr>`);
+            });
+
+            // Receiptમાં પહેલેથી આવેલી stationeryને અલગ rowમાં ફરી ન ઉમેરો.
+            // જૂના recordsમાં stationeryItems ન હોય પણ statFee હોય તો date+amountથી dedupe.
+            const usedCombinedAmount={};
+            (st.stationery||[]).forEach(x=>{
+                const amount=Number(x.price)||0; if(amount<=0)return;
+                const date=String(x.date||'');
+                const itemName=String(x.itemName||'').trim().toLowerCase();
+                const qty=Number(x.qty)||1;
+                const exactKey=`${date}|${itemName}|${qty}|${amount}`;
+
+                if(receiptStationeryKeys.has(exactKey)) return;
+
+                const combinedTotal=receiptStationeryAmountsByDate[date]||0;
+                const used=usedCombinedAmount[date]||0;
+                if(combinedTotal>0 && used+amount<=combinedTotal){
+                    usedCombinedAmount[date]=used+amount;
+                    return;
+                }
+
+                rows.push(`<tr><td>${formatDate(x.date)}</td><td>📚 સ્ટેશનરી</td><td>${escapeHtml(x.itemName)} × ${x.qty}</td><td>₹${Math.round(amount)}</td><td>${x.payType==='રોકડ'?`₹${Math.round(amount)}`:'₹0'}</td><td>${x.payType==='ઉધાર'?`₹${Math.round(amount)}`:'₹0'}</td><td>${escapeHtml(x.payType||'-')}</td></tr>`);
+            });
+
             const prev=previousYearDues.filter(x=>String(x.studentId)===String(st.id));
             prev.forEach(x=>rows.push(`<tr><td>${formatDate(x.date)}</td><td>📅 ગયા વર્ષનું બાકી</td><td>${escapeHtml(x.detail||'ગયા વર્ષનું બાકી')}</td><td>₹${Math.round(x.totalAmount||0)}</td><td style="color:#2e7d32">₹${Math.round(previousPaidAmount(x))}</td><td style="color:#d32f2f">₹${Math.round(previousDueAmount(x))}</td><td>Previous Year</td></tr>`));
             const total=Number(st.totalFeeWithStationery||st.fee)||0, paid=Number(st.paid)||0, due=Number(st.due)||0;
