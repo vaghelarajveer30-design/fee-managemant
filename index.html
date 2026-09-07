@@ -1772,6 +1772,8 @@
         let cloudSyncInFlight = false;
         let cloudSyncQueued = false;
         let cloudRestoreInProgress = false;
+        // Prevent automatic cloud sync from overwriting Firebase while restore is being fetched/confirmed.
+        let restoreModeActive = false;
 
         function setCloudSyncStatus(text, ok=true) {
             const el = document.getElementById('cloudSyncBadge');
@@ -1796,15 +1798,26 @@
 
         function saveLocalData() {
             // Local storage is the primary/offline database.
-            // Therefore every change is saved here before any network request.
-            localStorage.setItem('NNC_storage_initialized', '1');
-            localStorage.setItem('NNC_students', JSON.stringify(students));
-            localStorage.setItem('NNC_stock', JSON.stringify(stockList));
-            localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
-            localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
-            localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
-            localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
-            localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+            // Save locally first, but verify that the browser actually accepted it.
+            try {
+                localStorage.setItem('NNC_storage_initialized', '1');
+                localStorage.setItem('NNC_students', JSON.stringify(students));
+                localStorage.setItem('NNC_stock', JSON.stringify(stockList));
+                localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
+                localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
+                localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
+                localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
+                localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+
+                const check = JSON.parse(localStorage.getItem('NNC_students') || '[]');
+                if (!Array.isArray(check) || check.length !== students.length) {
+                    throw new Error('Local storage verification failed');
+                }
+            } catch (e) {
+                console.error('Local storage save failed:', e);
+                setCloudSyncStatus('☁️ LOCAL SAVE ERROR', false);
+                return false;
+            }
 
             // If offline, the change stays queued locally and will sync
             // automatically as soon as the connection comes back.
@@ -1813,6 +1826,7 @@
             } else {
                 setCloudSyncStatus('☁️ PENDING', false);
             }
+            return true;
         }
 
         function queueCloudSync(delay=800) {
@@ -1825,7 +1839,7 @@
         }
 
         async function syncLocalDataToCloud() {
-            if (cloudRestoreInProgress) {
+            if (cloudRestoreInProgress || restoreModeActive) {
                 setCloudSyncStatus('☁️ RESTORING…', true);
                 return false;
             }
@@ -1892,6 +1906,10 @@
 
         async function autoSyncWhenOnline() {
             updateNetworkStatus();
+            if (cloudRestoreInProgress || restoreModeActive || window.pendingCloudRestoreData) {
+                setCloudSyncStatus('☁️ RESTORE WAIT', true);
+                return;
+            }
             if (navigator.onLine) {
                 setCloudSyncStatus('☁️ SYNCING…', true);
 
@@ -1969,48 +1987,90 @@
         }
 
         async function fetchCloudBackupData() {
-            // Restore માટે Firebaseના મુખ્ય backup અને backupVersions બંનેમાંથી
-            // સાચો data payload શોધો. Firebaseમાં ક્યારેક wrapper/object format હોય
-            // તો તેને પણ સીધો ઓળખી શકાય તે રીતે normalize કરીએ છીએ.
             const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
             const urls=[configured, RECOVERY_DB_URL].filter((u,i,a)=>u && a.indexOf(u)===i);
             if(!urls.length) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
 
             let lastErr=null;
+
+            // જૂના/નવા તમામ backup formatsને એક જ usable formatમાં ફેરવો.
             const normalizePayload = (raw) => {
-                if(!raw || typeof raw !== 'object') return null;
-                if(cloudBackupHasRealData(raw)) return raw;
-                // શક્ય wrapper formats
-                const candidates=[raw.data, raw.backup, raw.payload, raw.value];
+                if(raw === null || raw === undefined) return null;
+
+                // ક્યારેક Firebaseમાં JSON string તરીકે data સેવ થયેલું હોય છે.
+                if(typeof raw === "string"){
+                    try { raw=JSON.parse(raw); } catch(e) { return null; }
+                }
+                if(!raw || typeof raw !== "object") return null;
+
+                const candidates=[
+                    raw,
+                    raw.data,
+                    raw.backup,
+                    raw.payload,
+                    raw.value,
+                    raw.result,
+                    raw.result?.data
+                ];
+
+                const asArray = (v) => {
+                    if(Array.isArray(v)) return v;
+                    if(v && typeof v==="object") return Object.values(v);
+                    return [];
+                };
+
                 for(const c of candidates){
-                    if(c && typeof c==='object' && cloudBackupHasRealData(c)) return c;
+                    if(!c || typeof c!=="object") continue;
+
+                    // students/stock/etc object-key format હોય તો arrayમાં ફેરવો.
+                    const normalized=Object.assign({},c);
+                    if(!Array.isArray(normalized.students) && normalized.students && typeof normalized.students==="object")
+                        normalized.students=asArray(normalized.students);
+                    if(!Array.isArray(normalized.stockList) && normalized.stockList && typeof normalized.stockList==="object")
+                        normalized.stockList=asArray(normalized.stockList);
+                    if(!Array.isArray(normalized.expenses) && normalized.expenses && typeof normalized.expenses==="object")
+                        normalized.expenses=asArray(normalized.expenses);
+                    if(!Array.isArray(normalized.loanRecords) && normalized.loanRecords && typeof normalized.loanRecords==="object")
+                        normalized.loanRecords=asArray(normalized.loanRecords);
+                    if(!Array.isArray(normalized.previousYearDues) && normalized.previousYearDues && typeof normalized.previousYearDues==="object")
+                        normalized.previousYearDues=asArray(normalized.previousYearDues);
+                    if(!Array.isArray(normalized.deletedStudents) && normalized.deletedStudents && typeof normalized.deletedStudents==="object")
+                        normalized.deletedStudents=asArray(normalized.deletedStudents);
+
+                    if(cloudBackupHasRealData(normalized)) return normalized;
                 }
                 return null;
             };
 
+            // Root, /backup અને /data — જુના versions માટે fallback.
+            const paths=["","/backup","/data","/backupData"];
+
             for(const dbUrl of urls){
-                try{
-                    const raw=await fetchJsonWithFallback(dbUrl + "/backup.json");
-                    const data=normalizePayload(raw);
-                    if(data) return data;
-                    lastErr=new Error("આ Firebase backupમાં ઉપયોગી ડેટા નથી.");
-                }catch(e){ lastErr=e; }
+                for(const path of paths){
+                    try{
+                        const raw=await fetchJsonWithFallback(dbUrl + path + ".json");
+                        const data=normalizePayload(raw);
+                        if(data) return data;
+                        lastErr=new Error((path || "/") + " માં ઉપયોગી backup data નથી.");
+                    }catch(e){ lastErr=e; }
+                }
             }
 
-            // /backup ખાલી હોય તો backupVersionsમાંથી સૌથી નવી ઉપયોગી copy લો.
+            // /backupVersionsમાંથી સૌથી નવી valid copy શોધો.
             for(const dbUrl of urls){
                 try{
                     const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
                     if(versions && typeof versions==="object"){
                         const candidates=Object.entries(versions)
-                            .map(([key,value])=>({key,value}))
-                            .map(x=>({key:x.key,data:normalizePayload(x.value)}))
+                            .map(([key,value])=>({key,data:normalizePayload(value)}))
                             .filter(x=>x.data);
+
                         candidates.sort((a,b)=>{
                             const ta=String(a.data.timestamp || a.key || '');
                             const tb=String(b.data.timestamp || b.key || '');
                             return tb.localeCompare(ta);
                         });
+
                         if(candidates.length) return candidates[0].data;
                     }
                 }catch(e){ lastErr=e; }
@@ -2020,19 +2080,71 @@
             return null;
         }
 
+        async function testFirebaseRestoreConnection() {
+            const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
+            const dbUrl=configured || RECOVERY_DB_URL;
+
+            if(!dbUrl){
+                alert("❌ Firebase Database URL ઉપલબ્ધ નથી.");
+                return;
+            }
+
+            restoreModeActive=true;
+            cloudRestoreInProgress=true;
+
+            try{
+                const checks=[
+                    {name:"Firebase Root",url:dbUrl+"/.json"},
+                    {name:"Main Backup",url:dbUrl+"/backup.json"},
+                    {name:"Backup Versions",url:dbUrl+"/backupVersions.json"}
+                ];
+
+                let report=[];
+                for(const c of checks){
+                    try{
+                        const raw=await fetchJsonWithFallback(c.url);
+                        const normalized=(c.name==="Backup Versions") ? raw : raw;
+                        let info="ખાલી";
+                        if(normalized && typeof normalized==="object"){
+                            const data=(c.name==="Backup Versions") ? null : normalized;
+                            if(data && cloudBackupHasRealData(data)){
+                                info="✅ ઉપયોગી વિદ્યાર્થી/ડેટા મળ્યો";
+                            }else if(c.name==="Backup Versions"){
+                                const count=normalized ? Object.keys(normalized).length : 0;
+                                info=count ? `✅ ${count} versions મળ્યા` : "ખાલી";
+                            }else{
+                                info=`object મળ્યો, પરંતુ students/stock વગેરે મળ્યા નથી`;
+                            }
+                        }
+                        report.push(`${c.name}: ${info}`);
+                    }catch(e){
+                        report.push(`${c.name}: ❌ ${e.message}`);
+                    }
+                }
+
+                alert("🔎 Firebase Restore તપાસ\n\n" + report.join("\n") +
+                      "\n\nજો અહીં HTTP 401/403 આવે છે તો Firebase Rules/Authentication કારણ છે.");
+            }finally{
+                cloudRestoreInProgress=false;
+                restoreModeActive=false;
+            }
+        }
+
         function cloudBackupHasRealData(data) {
             if (!data || typeof data !== "object") return false;
+            const hasItems = (v) => Array.isArray(v) ? v.length > 0 : !!(v && typeof v==="object" && Object.keys(v).length > 0);
             return (
-                (Array.isArray(data.students) && data.students.length > 0) ||
-                (Array.isArray(data.stockList) && data.stockList.length > 0) ||
-                (Array.isArray(data.expenses) && data.expenses.length > 0) ||
-                (Array.isArray(data.loanRecords) && data.loanRecords.length > 0) ||
-                (Array.isArray(data.previousYearDues) && data.previousYearDues.length > 0) ||
-                (Array.isArray(data.deletedStudents) && data.deletedStudents.length > 0)
+                hasItems(data.students) ||
+                hasItems(data.stockList) ||
+                hasItems(data.expenses) ||
+                hasItems(data.loanRecords) ||
+                hasItems(data.previousYearDues) ||
+                hasItems(data.deletedStudents)
             );
         }
 
         function openRestoreChoiceModal(data, autoRecovery=false) {
+            restoreModeActive = true;
             window.pendingCloudRestoreData = data;
             window.pendingCloudRestoreAuto = !!autoRecovery;
 
@@ -2063,6 +2175,7 @@
             if(modal) modal.style.display="none";
             window.pendingCloudRestoreData=null;
             window.pendingCloudRestoreAuto=false;
+            if (!cloudRestoreInProgress) restoreModeActive = false;
         }
 
         async function applyRestoreChoices() {
@@ -2165,6 +2278,38 @@
             localStorage.setItem('NNC_deletedStudents',JSON.stringify(deletedStudents));
             localStorage.setItem('NNC_master',JSON.stringify(masterSettings));
 
+            // Verify localStorage really contains the restored data.
+            const verifyStored = (key, expected) => {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (raw === null) return false;
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(expected)) return Array.isArray(parsed) && parsed.length === expected.length;
+                    if (expected && typeof expected === "object") return !!parsed && typeof parsed === "object";
+                    return true;
+                } catch(e) {
+                    return false;
+                }
+            };
+
+            const storageMap = {
+                students: "NNC_students",
+                stockList: "NNC_stock",
+                expenses: "NNC_expenses",
+                loanRecords: "NNC_loans",
+                previousYearDues: "NNC_previousYearDues",
+                deletedStudents: "NNC_deletedStudents",
+                masterSettings: "NNC_master"
+            };
+
+            for (const key of selectedRestore) {
+                if (data[key] !== undefined && !verifyStored(storageMap[key], data[key])) {
+                    cloudRestoreInProgress=false;
+                    restoreModeActive=false;
+                    throw new Error("Restore પછી localStorageમાં '" + key + "' સેવ થયું નથી.");
+                }
+            }
+
             currentStudent=students[0]||null;
             recalculateStudentTotals();
             renderDashboard(); renderStockTable(); renderStockDropdown();
@@ -2179,18 +2324,49 @@
             if(document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked=!!masterSettings.autoBackup;
             if(document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
 
+            // Keep restore mode locked until the page reloads, so no background sync
+            // can upload an old in-memory state between saving and reload.
+            cloudRestoreInProgress = true;
             closeRestoreChoiceModal();
             cloudRestoreInProgress = false;
+            restoreModeActive = true;
             cloudSyncQueued = false;
             if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
             setCloudSyncStatus('☁️ RESTORED', true);
 
-            // મહત્વનું: Restore પછી આખી એપ ફરીથી localStorageમાંથી શરૂ કરીએ.
-            // આથી જૂના in-memory arrays/filters કારણે restored data ન દેખાવાની
-            // સમસ્યા દૂર થાય છે. Reload પછી NNC_storage_initialized હોવાથી
-            // automatic recovery ફરીથી popup નહીં ખોલે.
-            alert("✅ પસંદ કરેલો ડેટા સફળતાપૂર્વક રીસ્ટોર થયો. એપ હવે restored data સાથે ફરી શરૂ થશે.");
-            window.location.reload();
+            // મહત્વનું: Androidમાં downloaded content:// HTML ફાઇલને reload કરવાથી
+            // localStorage ક્યારેક અલગ/temporary storageમાં ખુલે છે. તેથી Restore પછી
+            // હવે page RELOAD નહીં કરીએ. સીધું restored data memory + UIમાં બતાવીએ છીએ.
+            // localStorage પહેલેથી ઉપર સેવ થઈ ગયું છે.
+            currentFilter = null;
+            currentCourseFilter = null;
+            currentFeeTypeFilter = null;
+            currentStudent = students[0] || null;
+
+            try {
+                recalculateStudentTotals();
+                renderDashboard();
+                renderStockTable();
+                renderStockPurchaseHistory();
+                renderBackupVersions();
+                renderStockDropdown();
+                renderExpenses();
+                renderCourseDivision();
+                renderStudentList();
+                if (typeof updateNetworkStatus === "function") updateNetworkStatus();
+            } catch (uiErr) {
+                console.warn("Restore UI refresh warning:", uiErr);
+            }
+
+            // Modal/restore flags બંધ કરો, પરંતુ cloud sync તરત ન ચલાવવો.
+            window.pendingCloudRestoreData = null;
+            window.pendingCloudRestoreAuto = false;
+            cloudRestoreInProgress = false;
+            restoreModeActive = true;
+            cloudSyncQueued = false;
+            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
+
+            alert("✅ Restore સફળ થયું. " + students.length + " વિદ્યાર્થીઓનો ડેટા એપમાં તરત પાછો આવી ગયો છે.\n\n⚠️ આ વખતે એપ reload કરવામાં આવી નથી, જેથી downloaded HTMLમાં restore data ગાયબ ન થાય.");
         }
 
         async function createSafetyBackupVersion(data) {
@@ -2294,17 +2470,28 @@
         async function restoreDataFromCloud() {
             if (!verifyMasterPassword('ડેટા રીસ્ટોર')) return;
 
+            // Freeze automatic sync BEFORE reading Firebase. Otherwise the current
+            // local/default data can overwrite the very backup we are trying to restore.
+            restoreModeActive = true;
+            cloudRestoreInProgress = true;
+            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
+            cloudSyncQueued = false;
+
             const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
             btns.forEach(b => { b.disabled=true; b.innerText='⏳ ડેટા શોધી રહ્યા છીએ...'; });
 
             try {
                 const data=await fetchCloudBackupData();
                 if (!data || typeof data !== 'object' || !cloudBackupHasRealData(data)) {
+                    restoreModeActive = false;
+                    cloudRestoreInProgress = false;
                     alert('⚠️ Firebaseમાં કોઈ ઉપયોગી બેકઅપ મળ્યો નથી.');
                     return;
                 }
                 openRestoreChoiceModal(data,false);
             } catch(err) {
+                restoreModeActive = false;
+                cloudRestoreInProgress = false;
                 alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
             } finally {
                 btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
@@ -4587,36 +4774,71 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.students) students = data.students;
-                    if (data.stockList) stockList = data.stockList;
-                    if (data.expenses) expenses = data.expenses;
-                    if (data.loanRecords) loanRecords = data.loanRecords;
-                    if (data.previousYearDues) previousYearDues = data.previousYearDues;
-                    deletedStudents = Array.isArray(data.deletedStudents) ? data.deletedStudents : [];
-                    if (deletedStudents.length) {
-                        const existingIds = new Set(students.map(s => String(s.id)));
-                        deletedStudents.forEach(st => {
-                            if (!st || st.id == null || existingIds.has(String(st.id))) return;
-                            st.status = st._deletedFromStatus || st.status || 'active';
-                            delete st._deletedFromStatus;
-                            students.push(st);
-                        });
-                        deletedStudents = [];
-                    }
-                    if (data.masterSettings) masterSettings = Object.assign({}, masterSettings, data.masterSettings);
+                    if (!data || typeof data !== 'object') throw new Error('Invalid JSON');
 
-                    saveLocalData();
-                    recalculateStudentTotals();
-                    renderDashboard();
-                    renderStockTable();
-                    renderStockDropdown();
-                    renderOutsideSaleDropdown();
-                    renderExternalStationerySalesReport();
-                    renderExpenses();
-                    if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || '';
-                    alert("ડેટા સફળતાપૂર્વક અપલોડ અને રીસ્ટોર થઈ ગયો છે!");
+                    // JSON backup restore is a full local restore. Keep Recycle Bin
+                    // separate; do not silently move deleted students back to Active.
+                    if (Array.isArray(data.students)) students = JSON.parse(JSON.stringify(data.students));
+                    if (Array.isArray(data.stockList)) stockList = JSON.parse(JSON.stringify(data.stockList));
+                    if (Array.isArray(data.expenses)) expenses = JSON.parse(JSON.stringify(data.expenses));
+                    if (Array.isArray(data.loanRecords)) loanRecords = JSON.parse(JSON.stringify(data.loanRecords));
+                    if (Array.isArray(data.previousYearDues)) previousYearDues = JSON.parse(JSON.stringify(data.previousYearDues));
+                    if (Array.isArray(data.deletedStudents)) deletedStudents = JSON.parse(JSON.stringify(data.deletedStudents));
+                    if (data.masterSettings && typeof data.masterSettings === 'object') {
+                        masterSettings = Object.assign({}, masterSettings, JSON.parse(JSON.stringify(data.masterSettings)));
+                    }
+                    if (!masterSettings.dbUrl) masterSettings.dbUrl = RECOVERY_DB_URL;
+
+                    students.forEach(st => normalizeStudentRecords(st));
+                    ensureReceiptNumbers();
+
+                    // Save directly before any cloud sync.
+                    localStorage.setItem('NNC_storage_initialized','1');
+                    localStorage.setItem('NNC_students', JSON.stringify(students));
+                    localStorage.setItem('NNC_stock', JSON.stringify(stockList));
+                    localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
+                    localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
+                    localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
+                    localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
+                    localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+
+                    cloudRestoreInProgress = true;
+                    restoreModeActive = true;
+                    if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
+                    cloudSyncQueued = false;
+
+                    currentFilter = null;
+                    currentCourseFilter = null;
+                    currentFeeTypeFilter = null;
+                    currentStudent = students[0] || null;
+
+                    try {
+                        recalculateStudentTotals();
+                        renderDashboard();
+                        renderStockTable();
+                        renderStockPurchaseHistory();
+                        renderBackupVersions();
+                        renderStockDropdown();
+                        renderExpenses();
+                        renderCourseDivision();
+                        renderStudentList();
+                        if (typeof updateNetworkStatus === "function") updateNetworkStatus();
+                    } catch (uiErr) {
+                        console.warn("JSON restore UI refresh warning:", uiErr);
+                    }
+
+                    window.pendingCloudRestoreData = null;
+                    window.pendingCloudRestoreAuto = false;
+                    cloudRestoreInProgress = false;
+                    restoreModeActive = true;
+                    cloudSyncQueued = false;
+                    if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
+
+                    alert(`✅ JSON બેકઅપ સફળતાપૂર્વક રીસ્ટોર થયું. ${students.length} વિદ્યાર્થીઓનો ડેટા એપમાં તરત પાછો આવી ગયો છે.\n\n⚠️ એપ reload કરવામાં આવી નથી.`);
                 } catch (err) {
-                    alert("ફાઈલ વાંચવામાં ભુલ થઈ! કૃપા કરીને સાચી JSON બેકઅપ ફાઈલ પસંદ કરો.");
+                    alert("ફાઈલ વાંચવામાં ભૂલ થઈ! કૃપા કરીને સાચી JSON બેકઅપ ફાઈલ પસંદ કરો.\n\n" + err.message);
+                } finally {
+                    event.target.value = '';
                 }
             };
             reader.readAsText(file);
