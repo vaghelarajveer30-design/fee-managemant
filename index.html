@@ -477,192 +477,113 @@
             </div>
         </div>
 
-        <div id="pageStationeryReport" style="display: none;">
-            <div style="margin-bottom: 10px;">
-                <a onclick="navigateTo('pageDashboard')" style="color:#1565c0; cursor:pointer; font-weight:bold;">← હોમ પર પાછા જાઓ</a>
+        <div id="pageStationeryReport" style="display:none;">
+            <div style="margin-bottom:10px;">
+                <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
-            
+            <div class="card" style="background:linear-gradient(135deg,#e3f2fd,#f3f8ff);border-color:#90caf9;text-align:center;">
+                <h2 style="color:#1565c0;margin-bottom:6px;">📚 સ્ટેશનરી મેનેજમેન્ટ</h2>
+                <p style="color:#666;font-size:13px;margin-bottom:14px;">સ્ટેશનરીનું કામ હવે ચાર સરળ વિભાગમાં ગોઠવેલું છે.</p>
+                <div class="grid-2">
+                    <button class="btn btn-blue" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryStock')">📦<br>સ્ટોક</button>
+                    <button class="btn btn-orange" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySale')">🛒<br>વેચાણ</button>
+                    <button class="btn btn-purple" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySalesReport')">📊<br>વેચાણ રિપોર્ટ</button>
+                    <button class="btn btn-green" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryProfit')">💰<br>નફો / સરવૈયું</button>
+                </div>
+            </div>
+            <div class="card">
+                <h4 style="color:#1565c0;text-align:center;">📌 ઝડપી સરવાળો</h4>
+                <div class="grid-2">
+                    <button type="button" class="stat-box" style="background:#1976d2;color:#fff;border:0;width:100%;cursor:pointer;font-family:inherit;" onclick="navigateTo('pageStationeryStock')" title="હાલના સ્ટોકની દરેક વસ્તુની માહિતી જુઓ">📦 હાલનો સ્ટોક<br><span id="homeStationeryStockQty">0 નંગ</span><small style="display:block;margin-top:5px;font-weight:normal;">વસ્તુવાર સ્ટોક જોવા અહીં દબાવો</small></button>
+                    <button type="button" class="stat-box" style="background:#00897b;color:#fff;border:0;width:100%;cursor:pointer;font-family:inherit;" onclick="openStationeryTodaySales()" title="આજના વેચાણની વસ્તુવાર માહિતી જુઓ">🛒 આજનું વેચાણ<br><span id="homeStationeryTodaySales">₹0</span><small style="display:block;margin-top:5px;font-weight:normal;">આજની વેચાયેલી વસ્તુઓ જુઓ</small></button>
+                    <button type="button" class="stat-box" style="background:#7b1fa2;color:#fff;border:0;width:100%;cursor:pointer;font-family:inherit;" onclick="openStationeryMonthSales()" title="આ મહિનાના વેચાણની વસ્તુવાર માહિતી જુઓ">📊 આ મહિનાનું વેચાણ<br><span id="homeStationeryMonthSales">₹0</span><small style="display:block;margin-top:5px;font-weight:normal;">આ મહિનાની વસ્તુવાર માહિતી જુઓ</small></button>
+                    <button type="button" class="stat-box" style="background:#2e7d32;color:#fff;border:0;width:100%;cursor:pointer;font-family:inherit;" onclick="navigateTo('pageStationeryProfit')" title="કુલ નફાની સંપૂર્ણ વસ્તુવાર માહિતી જુઓ">💰 કુલ નફો<br><span id="homeStationeryTotalProfit">₹0</span><small style="display:block;margin-top:5px;font-weight:normal;">વસ્તુવાર નફો અને સરવૈયું જુઓ</small></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pageStationeryStock" style="display:none;">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી હોમ</a>
+                <strong style="color:#1565c0;">📦 સ્ટોક</strong>
+            </div>
             <div class="card">
                 <h3 style="color:#1565c0;" id="stkFormTitle">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
-                <form onsubmit="event.preventDefault(); saveStockItem();" style="margin-top:8px;">
+                <form onsubmit="event.preventDefault();saveStockItem();" style="margin-top:8px;">
                     <input type="hidden" id="editStockId">
-                    <div class="form-group">
-                        <label>વસ્તુનું નામ</label>
-                        <input type="text" id="stkName" class="form-control" required placeholder="દા.ત. નવોદય બુક">
-                    </div>
+                    <div class="form-group"><label>વસ્તુનું નામ</label><input type="text" id="stkName" class="form-control" required placeholder="દા.ત. નવોદય બુક"></div>
                     <div class="grid-3">
-                        <div class="form-group">
-                            <label>ખરીદ કિંમત</label>
-                            <input type="number" id="stkCostPrice" class="form-control" required placeholder="200">
-                        </div>
-                        <div class="form-group">
-                            <label>વેચાણ કિંમત</label>
-                            <input type="number" id="stkSellPrice" class="form-control" required placeholder="300">
-                        </div>
-                        <div class="form-group">
-                            <label>જથ્થો (Stock)</label>
-                            <input type="number" id="stkQty" class="form-control" required placeholder="50">
-                        </div>
-                        <div class="form-group">
-                            <label>⚠️ Minimum Stock</label>
-                            <input type="number" id="stkMinQty" class="form-control" min="0" value="5" placeholder="5">
-                        </div>
+                        <div class="form-group"><label>ખરીદ કિંમત</label><input type="number" id="stkCostPrice" class="form-control" required placeholder="200"></div>
+                        <div class="form-group"><label>વેચાણ કિંમત</label><input type="number" id="stkSellPrice" class="form-control" required placeholder="300"></div>
+                        <div class="form-group"><label>જથ્થો</label><input type="number" id="stkQty" class="form-control" required placeholder="50"></div>
+                        <div class="form-group"><label>⚠️ Minimum Stock</label><input type="number" id="stkMinQty" class="form-control" min="0" value="5" placeholder="5"></div>
                     </div>
                     <button type="submit" class="btn btn-green" id="btnSaveStock">+ સ્ટોક સેવ કરો</button>
                 </form>
             </div>
-
             <div class="card">
-                <h4>📊 સ્ટેશનરી સ્ટોક અને નફાની ગણતરી</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>વસ્તુ</th>
-                            <th>ખરીદ</th>
-                            <th>વેચાણ</th>
-                            <th>નફો</th>
-                            <th>સ્ટોક</th>
-                            <th>સ્ટોક મૂલ્ય</th>
-                            <th>ક્રિયા</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stockTableBody"></tbody>
-                </table>
-                <div class="card" style="background:#f8fbff;border-color:#90caf9;margin-top:10px;margin-bottom:0;">
-                    <h4 style="color:#1565c0;text-align:center;margin-bottom:8px;">📊 આખા સ્ટોકનો કુલ સરવાળો</h4>
-                    <div class="grid-2">
-                        <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ સ્ટોક<br><span id="totalCurrentStockQty">0 નંગ</span></div>
-                        <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalCurrentStockCost">₹0</span></div>
-                        <div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ કિંમત<br><span id="totalCurrentStockSale">₹0</span></div>
-                        <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ નફો<br><span id="totalCurrentStockProfit">₹0</span></div>
-                    </div>
+                <h4>📦 હાલનો સ્ટોક</h4>
+                <div style="overflow-x:auto;"><table><thead><tr><th>વસ્તુ</th><th>ખરીદ</th><th>વેચાણ</th><th>નફો/નંગ</th><th>સ્ટોક</th><th>કુલ ખરીદ</th><th>કુલ વેચાણ</th><th>કુલ નફો</th><th>ક્રિયા</th></tr></thead><tbody id="stockTableBody"></tbody></table></div>
+                <div class="grid-2" style="margin-top:10px;">
+                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ સ્ટોક<br><span id="totalCurrentStockQty">0 નંગ</span></div>
+                    <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalCurrentStockCost">₹0</span></div>
+                    <div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ કિંમત<br><span id="totalCurrentStockSale">₹0</span></div>
+                    <div class="stat-box" style="background:#2e7d32;cursor:default;">હાલનો સંભવિત નફો<br><span id="totalCurrentStockProfit">₹0</span></div>
                 </div>
             </div>
-
-            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
-                <h4 style="color:#e65100;text-align:center;margin-bottom:8px;">🛒 અત્યાર સુધીના કુલ વેચાણનો સરવાળો</h4>
-                <div class="grid-2">
-                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વેચેલો સ્ટોક<br><span id="totalSoldStockQty">0 નંગ</span></div>
-                    <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalSoldStockCost">₹0</span></div>
-                    <div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ કિંમત<br><span id="totalSoldStockSale">₹0</span></div>
-                    <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ નફો<br><span id="totalSoldStockProfit">₹0</span></div>
-                </div>
-            </div>
-
-            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
-                <h4 style="color:#1565c0;">📋 વસ્તુ પ્રમાણે સંપૂર્ણ ભાવ વિગત</h4>
-                <p style="font-size:12px;color:#666;margin:5px 0 8px;">દરેક વસ્તુના કુલ નંગ પ્રમાણે ખરીદ કિંમત, વેચાણ કિંમત અને નફો જોવા માટે અલગ પેજ ખોલો.</p>
-                <button class="btn btn-blue" onclick="navigateTo('pageStationeryDetails')">📋 વિગતવાર સ્ટોક / નફો જુઓ</button>
-            </div>
-
-            <div class="card">
-                <h4>🛒 Purchase History</h4>
-                <div id="stockPurchaseHistory" style="font-size:12px"></div>
-            </div>
-
-            <div class="card">
-                <h4>📖 વિદ્યાર્થીઓને આપેલી સ્ટેશનરીનો રિપોર્ટ</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>વિદ્યાર્થી</th>
-                            <th>વસ્તુ</th>
-                            <th>નંગ</th>
-                            <th>કિંમત</th>
-                            <th>પ્રકાર</th><th>ક્રિયા</th>
-                        </tr>
-                    </thead>
-                    <tbody id="issuedReportTableBody"></tbody>
-                </table>
-                <div style="margin-top:10px; font-size:14px; font-weight:bold; color:#1565c0; text-align:right;">
-                    કુલ આપેલી સ્ટેશનરી નો સરવાળો: <span id="totalStationeryIssuedAmt" style="color:red;">₹0</span>
-                </div>
-            </div>
-
-            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
-                <h4 style="color:#e65100;">🛍️ બહારના ગ્રાહકને સ્ટેશનરી વેચાણ</h4>
-                <p style="font-size:12px;color:#666;margin:5px 0 9px;">વિદ્યાર્થી ન હોય તો પણ નામ વગર સ્ટેશનરી વેચી શકો છો. વેચાણ થતાં જ સ્ટોકમાંથી જથ્થો ઘટશે.</p>
-                <form onsubmit="event.preventDefault(); sellStationeryToOutsideCustomer();">
-                    <div class="form-group">
-                        <label>ગ્રાહકનું નામ (વૈકલ્પિક)</label>
-                        <input type="text" id="outsideSaleName" class="form-control" placeholder="નામ ન લખવું હોય તો ખાલી રાખો">
-                    </div>
-                    <div class="form-group">
-                        <label>સ્ટોકમાંથી વસ્તુ પસંદ કરો</label>
-                        <select id="outsideSaleItem" class="form-control"></select>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>જથ્થો (નંગ)</label>
-                            <input type="number" id="outsideSaleQty" class="form-control" value="1" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label>ચૂકવણી પ્રકાર</label>
-                            <select id="outsideSalePayType" class="form-control">
-                                <option value="રોકડ">રોકડ</option>
-                                <option value="UPI">UPI</option>
-                                <option value="બેંક">બેંક</option>
-                                <option value="ઉધાર">ઉધાર</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-orange">🛒 બહારનું વેચાણ સેવ કરો</button>
-                </form>
-            </div>
-
-            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
-                <h4 style="color:#1565c0;">📊 સ્ટેશનરી Dashboard / Sales Report</h4>
-                <div class="grid-2" style="margin-top:8px;">
-                    <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="stkReportFrom" class="form-control" onchange="renderStationeryAnalytics()"></div>
-                    <div class="form-group"><label>કઈ તારીખ સુધી?</label><input type="date" id="stkReportTo" class="form-control" onchange="renderStationeryAnalytics()"></div>
-                </div>
-                <div class="grid-2" style="margin-top:4px;">
-                    <div class="stat-box" style="background:#1976d2;cursor:default;">વેચેલા નંગ<br><span id="stkAnalyticQty">0</span></div>
-                    <div class="stat-box" style="background:#2e7d32;cursor:default;">વેચાણ રકમ<br><span id="stkAnalyticSales">₹0</span></div>
-                    <div class="stat-box" style="background:#00897b;cursor:default;">નફો<br><span id="stkAnalyticProfit">₹0</span></div>
-                    <div class="stat-box" style="background:#e65100;cursor:default;">રોકડ/UPI/બેંક<br><span id="stkAnalyticModes">₹0</span></div>
-                </div>
-                <div style="margin-top:10px;overflow-x:auto;">
-                    <h5 style="color:#555;margin-bottom:5px;">📦 વસ્તુ પ્રમાણે વેચાણ</h5>
-                    <div id="stkItemWiseReport"></div>
-                </div>
-                <div style="margin-top:10px;overflow-x:auto;">
-                    <h5 style="color:#555;margin-bottom:5px;">📅 તારીખ પ્રમાણે વેચાણ</h5>
-                    <div id="stkDateWiseReport"></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h4>📒 સ્ટેશનરી Stock Ledger</h4>
-                <div id="stationeryStockLedger" style="font-size:12px;"></div>
-            </div>
-
-            <div class="card">
-                <h4>📊 બહારના ગ્રાહકના સ્ટેશનરી વેચાણનો રિપોર્ટ</h4>
-                <div class="grid-2" style="margin-bottom:8px;">
-                    <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વેચેલો સ્ટોક<br><span id="externalSoldQty">0 નંગ</span></div>
-                    <div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ વેચેલી રકમ<br><span id="externalSoldAmount">₹0</span></div>
-                </div>
-                <div id="externalStationerySalesReport" style="font-size:12px;"></div>
-            </div>
+            <div class="card"><h4>🛍️ ખરીદીની નોંધ</h4><div id="stockPurchaseHistory" style="font-size:12px"></div></div>
+            <div class="card"><h4>📒 Stock Ledger</h4><div id="stationeryStockLedger" style="font-size:12px;"></div></div>
         </div>
 
-        <div id="pageStationeryDetails" style="display:none;">
+        <div id="pageStationerySale" style="display:none;">
             <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી પર પાછા જાઓ</a>
-                <strong style="color:#1565c0;font-size:15px;">📋 વસ્તુ પ્રમાણે વિગત</strong>
+                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી હોમ</a><strong style="color:#e65100;">🛒 વેચાણ</strong>
             </div>
-
-            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
-                <h3 style="color:#1565c0;text-align:center;">📦 હાલના સ્ટોકની દરેક વસ્તુની સંપૂર્ણ ગણતરી</h3>
-                <p style="font-size:12px;color:#666;text-align:center;margin:6px 0 10px;">ઉદાહરણ: નવોદય બુક 20 નંગ હોય તો 20 × ખરીદ કિંમત, 20 × વેચાણ કિંમત અને કુલ નફો.</p>
-                <div id="stationeryCurrentItemWiseDetail"></div>
-            </div>
-
             <div class="card" style="background:#fff8e1;border-color:#ffe082;">
-                <h3 style="color:#e65100;text-align:center;">🛒 વેચાયેલી દરેક વસ્તુની સંપૂર્ણ ગણતરી</h3>
-                <div id="stationerySoldItemWiseDetail"></div>
+                <h3 style="color:#e65100;">🎓 વિદ્યાર્થીને સ્ટેશનરી વેચાણ</h3>
+                <p style="font-size:13px;color:#666;">વિદ્યાર્થીને સ્ટેશનરી આપવાનું કામ વિદ્યાર્થીના વિગત પેજમાંથી કરી શકાય છે. ત્યાંથી વસ્તુ પસંદ કરીને નંગ અને ચુકવણી પ્રકાર સેવ કરો.</p>
+                <button class="btn btn-blue" onclick="navigateTo('pageDashboard')">👨‍🎓 વિદ્યાર્થી પસંદ કરવા હોમ પર જાઓ</button>
             </div>
+            <div class="card" style="background:#fff8e1;border-color:#ffe082;">
+                <h3 style="color:#e65100;">🛍️ બહારના ગ્રાહકને સ્ટેશનરી વેચાણ</h3>
+                <p style="font-size:12px;color:#666;margin:5px 0 9px;">વસ્તુ વેચાતાં જ સ્ટોકમાંથી જથ્થો ઘટશે.</p>
+                <form onsubmit="event.preventDefault();sellStationeryToOutsideCustomer();">
+                    <div class="form-group"><label>ગ્રાહકનું નામ (વૈકલ્પિક)</label><input type="text" id="outsideSaleName" class="form-control" placeholder="નામ ન લખવું હોય તો ખાલી રાખો"></div>
+                    <div class="form-group"><label>વસ્તુ પસંદ કરો</label><select id="outsideSaleItem" class="form-control"></select></div>
+                    <div class="grid-2">
+                        <div class="form-group"><label>જથ્થો</label><input type="number" id="outsideSaleQty" class="form-control" value="1" min="1" required></div>
+                        <div class="form-group"><label>ચૂકવણી પ્રકાર</label><select id="outsideSalePayType" class="form-control"><option value="રોકડ">રોકડ</option><option value="UPI">UPI</option><option value="બેંક">બેંક</option><option value="ઉધાર">ઉધાર</option></select></div>
+                    </div>
+                    <button type="submit" class="btn btn-orange">🛒 વેચાણ સેવ કરો</button>
+                </form>
+            </div>
+            <div class="card"><h4>↩️ વેચાણ Return</h4><p style="font-size:13px;color:#666;">વિદ્યાર્થી અથવા બહારના વેચાણનો Return સંબંધિત વેચાણ રિપોર્ટમાંથી કરી શકાય છે.</p><button class="btn btn-purple" onclick="navigateTo('pageStationerySalesReport')">📊 વેચાણ રિપોર્ટ ખોલો</button></div>
+        </div>
+
+        <div id="pageStationerySalesReport" style="display:none;">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી હોમ</a><strong style="color:#7b1fa2;">📊 વેચાણ રિપોર્ટ</strong>
+            </div>
+            <div class="card" style="background:#f3f8ff;border-color:#90caf9;">
+                <h4 style="color:#1565c0;">📅 તારીખ પ્રમાણે રિપોર્ટ</h4>
+                <div class="grid-2"><div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="stkReportFrom" class="form-control" onchange="renderStationeryAnalytics()"></div><div class="form-group"><label>કઈ તારીખ સુધી?</label><input type="date" id="stkReportTo" class="form-control" onchange="renderStationeryAnalytics()"></div></div>
+                <div class="grid-2"><div class="stat-box" style="background:#1976d2;cursor:default;">વેચેલા નંગ<br><span id="stkAnalyticQty">0</span></div><div class="stat-box" style="background:#2e7d32;cursor:default;">વેચાણ રકમ<br><span id="stkAnalyticSales">₹0</span></div><div class="stat-box" style="background:#00897b;cursor:default;">નફો<br><span id="stkAnalyticProfit">₹0</span></div><div class="stat-box" style="background:#e65100;cursor:default;">મળેલી રકમ<br><span id="stkAnalyticModes">₹0</span></div></div>
+                <div style="margin-top:12px;overflow-x:auto;"><h5>📦 વસ્તુ પ્રમાણે વેચાણ</h5><div id="stkItemWiseReport"></div></div>
+                <div style="margin-top:12px;overflow-x:auto;"><h5>📅 તારીખ પ્રમાણે વેચાણ</h5><div id="stkDateWiseReport"></div></div>
+            </div>
+            <div class="card"><h4>🎓 વિદ્યાર્થીઓને આપેલી સ્ટેશનરી</h4><div style="overflow-x:auto;"><table><thead><tr><th>વિદ્યાર્થી</th><th>વસ્તુ</th><th>નંગ</th><th>કિંમત</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody id="issuedReportTableBody"></tbody></table></div><div style="margin-top:10px;font-weight:bold;color:#1565c0;text-align:right;">કુલ: <span id="totalStationeryIssuedAmt" style="color:red;">₹0</span></div></div>
+            <div class="card"><h4>🛍️ બહારના ગ્રાહકના વેચાણ</h4><div class="grid-2"><div class="stat-box" style="background:#1976d2;cursor:default;">કુલ નંગ<br><span id="externalSoldQty">0 નંગ</span></div><div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ રકમ<br><span id="externalSoldAmount">₹0</span></div></div><div id="externalStationerySalesReport" style="font-size:12px;margin-top:10px;"></div></div>
+        </div>
+
+        <div id="pageStationeryProfit" style="display:none;">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <a onclick="navigateTo('pageStationeryReport')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← સ્ટેશનરી હોમ</a><strong style="color:#2e7d32;">💰 નફો / સરવૈયું</strong>
+            </div>
+            <div class="card"><h3 style="color:#2e7d32;text-align:center;">💰 વેચાણ અને નફાનો કુલ સરવાળો</h3>
+                <div class="grid-2"><div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વેચેલા નંગ<br><span id="totalSoldStockQty">0 નંગ</span></div><div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ખરીદ કિંમત<br><span id="totalSoldStockCost">₹0</span></div><div class="stat-box" style="background:#00897b;cursor:default;">કુલ વેચાણ<br><span id="totalSoldStockSale">₹0</span></div><div class="stat-box" style="background:#2e7d32;cursor:default;">કુલ નફો<br><span id="totalSoldStockProfit">₹0</span></div></div>
+            </div>
+            <div class="card" style="background:#f3f8ff;border-color:#90caf9;"><h3 style="color:#1565c0;text-align:center;">📦 હાલના સ્ટોકનું મૂલ્ય</h3><div id="stationeryCurrentItemWiseDetail"></div></div>
+            <div class="card" style="background:#fff8e1;border-color:#ffe082;"><h3 style="color:#e65100;text-align:center;">🛒 વેચાયેલી દરેક વસ્તુનો નફો</h3><div id="stationerySoldItemWiseDetail"></div></div>
         </div>
 
         <div id="pageAdminExpense" style="display: none;">
@@ -2011,21 +1932,30 @@
                 rFeatureSource.style.display='none';
                 rFeatureSource=null; rFeatureHome=null;
             }
-            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageStationeryDetails', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageFinancialDashboard', 'pageProfitLoss', 'pageStudentDetails'].forEach(p => {
+            ['pageDashboard', 'pageRFeature', 'pageAddStudent', 'pageMasterSettings', 'pageCourseDivision', 'pageStationeryReport', 'pageStationeryStock', 'pageStationerySale', 'pageStationerySalesReport', 'pageStationeryProfit', 'pageAdminExpense', 'pageLoans', 'pagePreviousYearDue', 'pageFeeReports', 'pageFinancialDashboard', 'pageProfitLoss', 'pageStudentDetails'].forEach(p => {
                 document.getElementById(p).style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
             window.scrollTo(0, 0);
 
             if (pageId === 'pageStationeryReport') {
+                renderStationeryHomeSummary();
+            }
+            if (pageId === 'pageStationeryStock') {
                 renderStockTable();
-                renderIssuedStationeryReport();
-                renderOutsideSaleDropdown();
-                renderExternalStationerySalesReport();
-                renderStationeryAnalytics();
+                renderStockPurchaseHistory();
                 renderStationeryStockLedger();
             }
-            if (pageId === 'pageStationeryDetails') {
+            if (pageId === 'pageStationerySale') {
+                renderOutsideSaleDropdown();
+            }
+            if (pageId === 'pageStationerySalesReport') {
+                renderIssuedStationeryReport();
+                renderExternalStationerySalesReport();
+                renderStationeryAnalytics();
+            }
+            if (pageId === 'pageStationeryProfit') {
+                renderStockTable();
                 renderStationeryItemWiseDetails();
             }
             if (pageId === 'pageLoans') renderLoanPage();
@@ -2156,7 +2086,7 @@
             const now=new Date(), today=localDateString(), monthFrom=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`, todayPaid=getPaidReceiptsBetween(today,today), monthPaid=getPaidReceiptsBetween(monthFrom,today), dueStudents=students.filter(s=>Number(s.due)>0), active=students.filter(s=>s.status==='active').length, inactive=students.filter(s=>s.status==='inactive').length;
             const set=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
             set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid)); set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0))); set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
-            renderFinancialDashboard();
+            renderFinancialDashboard(); renderStationeryHomeSummary();
             const backup=document.getElementById('dashBackupStatus'); if(backup){ if(masterSettings.lastBackupAt){const d=new Date(masterSettings.lastBackupAt);const days=Math.floor((Date.now()-d.getTime())/86400000);backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');backup.style.color=days>=7?'#d32f2f':'#2e7d32';}else{backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.';backup.style.color='#d32f2f';} }
             const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
             const next=document.getElementById('dashboardNextMonthList'); if(next){const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0];const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555">${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';}
@@ -3729,6 +3659,7 @@
             renderStockTable();
             renderStockPurchaseHistory();
             renderStockDropdown();
+            renderStationeryHomeSummary();
             
             document.getElementById('editStockId').value = "";
             document.getElementById('stkName').value = "";
@@ -3778,28 +3709,34 @@
             setSummary('totalSoldStockProfit', '₹' + Math.round(soldSale - soldCost));
 
             if (stockList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7">કોઈ સ્ટોક પ્રાપ્ય નથી.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9">કોઈ સ્ટોક પ્રાપ્ય નથી.</td></tr>';
                 return;
             }
 
             stockList.forEach(s => {
-                const profit = (Number(s.sellPrice)||0) - (Number(s.costPrice)||0);
-                const stockValue = (Number(s.costPrice)||0) * (Number(s.qty)||0);
-                const low = (Number(s.qty)||0) <= Number(s.minQty ?? 5);
+                const cost = Number(s.costPrice)||0;
+                const sell = Number(s.sellPrice)||0;
+                const qty = Number(s.qty)||0;
+                const profit = sell - cost;
+                const stockCost = cost * qty;
+                const stockSale = sell * qty;
+                const stockProfit = stockSale - stockCost;
+                const low = qty <= Number(s.minQty ?? 5);
                 tbody.innerHTML += `
                     <tr>
-                        <td>${escapeHtml(s.name || '')}</td>
-                        <td>₹${Number(s.costPrice)||0}</td>
-                        <td>₹${Number(s.sellPrice)||0}</td>
-                        <td style="color:green; font-weight:bold;">₹${profit}</td>
-                        <td class="${low?'low-stock':''}"><strong>${Number(s.qty)||0}</strong>${low?' ⚠️':''}</td>
-                        <td>₹${Math.round(stockValue)}</td>
+                        <td style="font-weight:bold;color:#1565c0;">${escapeHtml(s.name || '')}</td>
+                        <td>₹${Math.round(cost)}</td>
+                        <td>₹${Math.round(sell)}</td>
+                        <td style="color:green;font-weight:bold;">₹${Math.round(profit)}</td>
+                        <td class="${low?'low-stock':''}"><strong>${qty}</strong>${low?' ⚠️':''}</td>
+                        <td>₹${Math.round(stockCost)}</td>
+                        <td>₹${Math.round(stockSale)}</td>
+                        <td style="color:${stockProfit>=0?'green':'red'};font-weight:bold;">₹${Math.round(stockProfit)}</td>
                         <td>
-                            <button style="padding:2px 6px; font-size:11px; background:#1976d2; color:white; border:none; border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px;" onclick="deleteStock('${s.id}')">🗑️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#1976d2;color:white;border:none;border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#d32f2f;color:white;border:none;border-radius:4px;" onclick="deleteStock('${s.id}')">🗑️</button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             });
         }
 
@@ -3829,6 +3766,7 @@
                 saveLocalData();
                 renderStockTable();
                 renderStockDropdown();
+                renderStationeryHomeSummary();
             }
         }
 
@@ -3903,6 +3841,7 @@
             renderOutsideSaleDropdown();
             renderExternalStationerySalesReport();
             renderFinancialDashboard();
+            renderStationeryHomeSummary();
 
             document.getElementById('outsideSaleName').value = '';
             document.getElementById('outsideSaleQty').value = '1';
@@ -3941,6 +3880,45 @@
                 payType:x.payType||'રોકડ', customerName:x.customerName||'નામ વગર'
             }));
             return rows;
+        }
+
+        function renderStationeryHomeSummary(){
+            const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+            let stockQty=0; stockList.forEach(s=>stockQty+=Number(s.qty)||0);
+            const rows=getAllStationerySalesRecords();
+            const today=localDateString();
+            const month=today.slice(0,7);
+            let todaySales=0,monthSales=0,totalProfit=0;
+            rows.forEach(x=>{
+                const sale=Number(x.price)||0, cost=(Number(x.unitCost)||0)*(Number(x.qty)||0);
+                totalProfit += sale-cost;
+                if((x.date||'')===today) todaySales+=sale;
+                if((x.date||'').slice(0,7)===month) monthSales+=sale;
+            });
+            set('homeStationeryStockQty',stockQty+' નંગ');
+            set('homeStationeryTodaySales','₹'+Math.round(todaySales));
+            set('homeStationeryMonthSales','₹'+Math.round(monthSales));
+            set('homeStationeryTotalProfit','₹'+Math.round(totalProfit));
+        }
+
+        function openStationeryTodaySales(){
+            navigateTo('pageStationerySalesReport');
+            const today=localDateString();
+            const fromEl=document.getElementById('stkReportFrom');
+            const toEl=document.getElementById('stkReportTo');
+            if(fromEl) fromEl.value=today;
+            if(toEl) toEl.value=today;
+            renderStationeryAnalytics();
+        }
+
+        function openStationeryMonthSales(){
+            navigateTo('pageStationerySalesReport');
+            const today=localDateString();
+            const fromEl=document.getElementById('stkReportFrom');
+            const toEl=document.getElementById('stkReportTo');
+            if(fromEl) fromEl.value=today.slice(0,8)+'01';
+            if(toEl) toEl.value=today;
+            renderStationeryAnalytics();
         }
 
         function renderStationeryAnalytics(){
