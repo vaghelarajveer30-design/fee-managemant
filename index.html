@@ -1066,6 +1066,45 @@
 
     </div>
 
+
+    <div id="restoreChoiceModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:430px;text-align:left;max-height:90vh;overflow-y:auto;">
+            <div class="modal-title" style="color:#1565c0;text-align:center;">☁️ ક્લાઉડ રીસ્ટોર પસંદગી</div>
+            <div id="restoreChoiceMessage" class="modal-body" style="text-align:left;">
+                Firebaseમાંથી શું પાછું લાવવું તે પસંદ કરો.
+            </div>
+
+            <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:10px;margin-bottom:10px;">
+                <b style="color:#2e7d32;">✅ પાછું લાવવું</b>
+                <label style="display:block;margin-top:8px;"><input type="checkbox" id="restore_students" checked> 👨‍🎓 વિદ્યાર્થીઓ + તેમની ફી/રસીદ/Ledger</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_stockList" checked> 📚 સ્ટોક / સ્ટેશનરી</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_expenses" checked> 💰 ખર્ચ</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_loanRecords" checked> 💳 લોન / ઉધાર</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_previousYearDues" checked> 📅 ગયા વર્ષની બાકી</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_deletedStudents" checked> 🗑️ ડિલીટેડ વિદ્યાર્થીઓ (Recycle Bin)</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="restore_masterSettings" checked> ⚙️ માસ્ટર સેટિંગ્સ / Firebase સેટિંગ્સ</label>
+            </div>
+
+            <div style="background:#ffebee;border:1px solid #ef9a9a;border-radius:10px;padding:10px;margin-bottom:10px;">
+                <b style="color:#c62828;">⚠️ હંમેશા માટે Firebaseમાંથી ડિલીટ કરવું</b>
+                <div style="font-size:12px;color:#555;margin-top:5px;">આ વિકલ્પ પસંદ કરશો તો ક્લાઉડમાંથી તે વિભાગ કાયમી કાઢી નાખવામાં આવશે. પહેલાં નવો બેકઅપ/સ્નેપશોટ બની શકે છે.</div>
+                <label style="display:block;margin-top:8px;"><input type="checkbox" id="delete_students"> 👨‍🎓 વિદ્યાર્થીઓ</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_stockList"> 📚 સ્ટોક / સ્ટેશનરી</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_expenses"> 💰 ખર્ચ</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_loanRecords"> 💳 લોન / ઉધાર</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_previousYearDues"> 📅 ગયા વર્ષની બાકી</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_deletedStudents"> 🗑️ Recycle Bin</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_masterSettings"> ⚙️ માસ્ટર સેટિંગ્સ</label>
+                <label style="display:block;margin-top:6px;"><input type="checkbox" id="delete_backupVersions"> 🕘 જૂના બેકઅપ વર્ઝન</label>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <button class="btn btn-blue" onclick="applyRestoreChoices()">🔄 પસંદગી પ્રમાણે કરો</button>
+                <button class="btn btn-gray" onclick="closeRestoreChoiceModal()">❌ રદ કરો</button>
+            </div>
+        </div>
+    </div>
+
     <div id="customModal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
             <div class="modal-title">સૂચના</div>
@@ -1213,6 +1252,12 @@
 
             // Shared receipt links need saved Firebase settings before fetching.
             loadLocalData();
+
+            // If Android Clear storage removed localStorage, check Firebase BEFORE
+            // allowing any backup to overwrite the old cloud data.
+            if (!shortReceiptId && !receiptDataParam) {
+                await autoRecoverFromCloudIfNeeded();
+            }
 
             if (shortReceiptId) {
                 try {
@@ -1529,6 +1574,7 @@
 
         let autoBackupRunning = false;
         function saveLocalData() {
+            localStorage.setItem('NNC_storage_initialized', '1');
             localStorage.setItem('NNC_students', JSON.stringify(students));
             localStorage.setItem('NNC_stock', JSON.stringify(stockList));
             localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
@@ -1560,10 +1606,222 @@
             if (!Array.isArray(previousYearDues)) previousYearDues = [];
             if (!Array.isArray(deletedStudents)) deletedStudents = [];
             if (localStorage.getItem('NNC_master')) masterSettings = Object.assign({}, masterSettings, JSON.parse(localStorage.getItem('NNC_master')));
+            if (!masterSettings.dbUrl) masterSettings.dbUrl = RECOVERY_DB_URL;
             if (!Array.isArray(masterSettings.externalStationerySales)) masterSettings.externalStationerySales = [];
             if (!Array.isArray(masterSettings.stockPurchases)) masterSettings.stockPurchases = [];
             students.forEach(st => normalizeStudentRecords(st));
             ensureReceiptNumbers();
+        }
+
+        const RECOVERY_DB_URL = "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+        async function fetchCloudBackupData() {
+            let dbUrl = (masterSettings.dbUrl || RECOVERY_DB_URL || "").trim().replace(/\/$/, "");
+            if (!dbUrl) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
+            const url = dbUrl + "/backup.json";
+
+            try {
+                const response = await fetch(url, {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {"Accept":"application/json"}
+                });
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                return await response.json();
+            } catch (fetchErr) {
+                return await new Promise((resolve,reject)=>{
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("GET", url, true);
+                    xhr.setRequestHeader("Accept","application/json");
+                    xhr.onload=()=>{
+                        if(xhr.status>=200 && xhr.status<300) {
+                            try { resolve(JSON.parse(xhr.responseText)); }
+                            catch(e) { reject(e); }
+                        } else reject(new Error("HTTP " + xhr.status));
+                    };
+                    xhr.onerror=()=>reject(new Error("નેટવર્ક/CORS ભૂલ"));
+                    xhr.ontimeout=()=>reject(new Error("સમય પૂરો"));
+                    xhr.timeout=15000;
+                    xhr.send();
+                });
+            }
+        }
+
+        function cloudBackupHasRealData(data) {
+            if (!data || typeof data !== "object") return false;
+            return (
+                (Array.isArray(data.students) && data.students.length > 0) ||
+                (Array.isArray(data.stockList) && data.stockList.length > 0) ||
+                (Array.isArray(data.expenses) && data.expenses.length > 0) ||
+                (Array.isArray(data.loanRecords) && data.loanRecords.length > 0) ||
+                (Array.isArray(data.previousYearDues) && data.previousYearDues.length > 0) ||
+                (Array.isArray(data.deletedStudents) && data.deletedStudents.length > 0)
+            );
+        }
+
+        function openRestoreChoiceModal(data, autoRecovery=false) {
+            window.pendingCloudRestoreData = data;
+            window.pendingCloudRestoreAuto = !!autoRecovery;
+
+            const msg = document.getElementById("restoreChoiceMessage");
+            if (msg) {
+                msg.innerHTML = autoRecovery
+                    ? "<b>⚠️ એપની સ્થાનિક Storage મળતી નથી.</b><br>Firebaseમાં જૂનો બેકઅપ મળ્યો છે. Androidમાં Clear storage થયા પછી નીચેમાંથી શું પાછું લાવવું તે પસંદ કરો."
+                    : "Firebaseનો છેલ્લો બેકઅપ મળી ગયો છે. નીચેમાંથી જે વિભાગો પાછા લાવવા હોય તે પસંદ કરો. <b>હાલના સ્થાનિક ડેટા પસંદ ન કરેલા વિભાગમાં યથાવત રહેશે.</b>";
+            }
+
+            // Restore defaults: all cloud data selected, but NEVER automatically
+            // resurrect deleted students into active students.
+            [
+                "students","stockList","expenses","loanRecords",
+                "previousYearDues","deletedStudents","masterSettings"
+            ].forEach(k=>{
+                const el=document.getElementById("restore_"+k);
+                if(el) el.checked=true;
+            });
+
+            document.querySelectorAll("#restoreChoiceModal input[id^='delete_']").forEach(el=>el.checked=false);
+            const modal=document.getElementById("restoreChoiceModal");
+            if(modal) modal.style.display="flex";
+        }
+
+        function closeRestoreChoiceModal() {
+            const modal=document.getElementById("restoreChoiceModal");
+            if(modal) modal.style.display="none";
+            window.pendingCloudRestoreData=null;
+            window.pendingCloudRestoreAuto=false;
+        }
+
+        async function applyRestoreChoices() {
+            const data=window.pendingCloudRestoreData;
+            if(!data || typeof data!=="object") {
+                closeRestoreChoiceModal();
+                alert("❌ રીસ્ટોર ડેટા મળ્યો નથી.");
+                return;
+            }
+
+            const restoreKeys=[
+                "students","stockList","expenses","loanRecords",
+                "previousYearDues","deletedStudents","masterSettings"
+            ];
+            const deleteKeys=[
+                "students","stockList","expenses","loanRecords",
+                "previousYearDues","deletedStudents","masterSettings","backupVersions"
+            ];
+
+            const selectedRestore=restoreKeys.filter(k=>document.getElementById("restore_"+k)?.checked);
+            const selectedDelete=deleteKeys.filter(k=>document.getElementById("delete_"+k)?.checked);
+
+            if(selectedRestore.length===0 && selectedDelete.length===0) {
+                alert("⚠️ ઓછામાં ઓછું એક Restore અથવા Delete વિકલ્પ પસંદ કરો.");
+                return;
+            }
+
+            if(selectedDelete.length) {
+                if(!verifyMasterPassword("Firebaseમાંથી કાયમી ડિલીટ")) return;
+
+                const names={
+                    students:"વિદ્યાર્થીઓ",stockList:"સ્ટોક/સ્ટેશનરી",expenses:"ખર્ચ",
+                    loanRecords:"લોન/ઉધાર",previousYearDues:"ગયા વર્ષની બાકી",
+                    deletedStudents:"Recycle Bin",masterSettings:"માસ્ટર સેટિંગ્સ",
+                    backupVersions:"જૂના બેકઅપ વર્ઝન"
+                };
+                const list=selectedDelete.map(k=>names[k]).join(", ");
+                if(!confirm("⚠️ આ ડેટા Firebaseમાંથી હંમેશા માટે ડિલીટ થશે:\n\n"+list+"\n\nશું ખરેખર ચાલુ રાખવું છે?")) return;
+
+                // First create a safety version before destructive cloud changes.
+                try {
+                    await createSafetyBackupVersion(data);
+                } catch(e) {
+                    if(!confirm("⚠️ Safety snapshot બની શક્યો નથી.\n\nતેમ છતાં કાયમી ડિલીટ કરવું છે?")) return;
+                }
+
+                try {
+                    await permanentlyDeleteCloudCategories(selectedDelete);
+                } catch(e) {
+                    alert("❌ Firebaseમાંથી કાયમી ડિલીટમાં ભૂલ:\n"+e.message);
+                    return;
+                }
+            }
+
+            // Apply selected restore fields only.
+            if(selectedRestore.includes("students") && Array.isArray(data.students))
+                students=JSON.parse(JSON.stringify(data.students));
+            if(selectedRestore.includes("stockList") && Array.isArray(data.stockList))
+                stockList=JSON.parse(JSON.stringify(data.stockList));
+            if(selectedRestore.includes("expenses") && Array.isArray(data.expenses))
+                expenses=JSON.parse(JSON.stringify(data.expenses));
+            if(selectedRestore.includes("loanRecords") && Array.isArray(data.loanRecords))
+                loanRecords=JSON.parse(JSON.stringify(data.loanRecords));
+            if(selectedRestore.includes("previousYearDues") && Array.isArray(data.previousYearDues))
+                previousYearDues=JSON.parse(JSON.stringify(data.previousYearDues));
+            if(selectedRestore.includes("deletedStudents") && Array.isArray(data.deletedStudents))
+                deletedStudents=JSON.parse(JSON.stringify(data.deletedStudents));
+            if(selectedRestore.includes("masterSettings") && data.masterSettings && typeof data.masterSettings==="object")
+                masterSettings=Object.assign({},masterSettings,JSON.parse(JSON.stringify(data.masterSettings)));
+
+            // If local storage was cleared, preserve the built-in Firebase recovery URL
+            // even if the selected backup's settings are old/missing.
+            if(!masterSettings.dbUrl) masterSettings.dbUrl=RECOVERY_DB_URL;
+
+            students.forEach(st=>normalizeStudentRecords(st));
+            ensureReceiptNumbers();
+            saveLocalData();
+            currentStudent=students[0]||null;
+            recalculateStudentTotals();
+            renderDashboard(); renderStockTable(); renderStockDropdown();
+            renderExpenses(); renderCourseDivision(); renderBackupVersions();
+
+            if(document.getElementById('mApiKey')) document.getElementById('mApiKey').value=masterSettings.apiKey||'';
+            if(document.getElementById('mDbUrl')) document.getElementById('mDbUrl').value=masterSettings.dbUrl||'';
+            if(document.getElementById('mDefaultFee')) document.getElementById('mDefaultFee').value=masterSettings.defaultFee||350;
+            if(document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
+            if(document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
+            if(document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
+            if(document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked=!!masterSettings.autoBackup;
+            if(document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
+
+            closeRestoreChoiceModal();
+            alert("✅ પસંદ કરેલા ડેટા સફળતાપૂર્વક રીસ્ટોર થયા.");
+        }
+
+        async function createSafetyBackupVersion(data) {
+            const dbUrl=(masterSettings.dbUrl||RECOVERY_DB_URL).trim().replace(/\/$/,"");
+            const stamp="before-delete-"+new Date().toISOString().replace(/[:.]/g,"-");
+            const response=await fetch(`${dbUrl}/backupVersions/${encodeURIComponent(stamp)}.json`,{
+                method:"PUT",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(Object.assign({},data,{timestamp:new Date().toISOString(),safetySnapshot:true}))
+            });
+            if(!response.ok) throw new Error("Safety snapshot HTTP "+response.status);
+        }
+
+        async function permanentlyDeleteCloudCategories(keys) {
+            const dbUrl=(masterSettings.dbUrl||RECOVERY_DB_URL).trim().replace(/\/$/,"");
+            for(const key of keys) {
+                const path=(key==="backupVersions") ? "/backupVersions.json" : "/backup/"+encodeURIComponent(key)+".json";
+                const response=await fetch(dbUrl+path,{method:"DELETE"});
+                if(!response.ok) throw new Error(key+" HTTP "+response.status);
+            }
+        }
+
+        async function autoRecoverFromCloudIfNeeded() {
+            // Android "Clear storage" removes localStorage. Do not overwrite
+            // Firebase in that situation; offer recovery before any backup runs.
+            if(localStorage.getItem("NNC_storage_initialized")) return;
+            if(sessionStorage.getItem("NNC_recovery_prompted")) return;
+            sessionStorage.setItem("NNC_recovery_prompted","1");
+
+            try {
+                const data=await fetchCloudBackupData();
+                if(cloudBackupHasRealData(data)) {
+                    openRestoreChoiceModal(data,true);
+                    return true;
+                }
+            } catch(e) {
+                console.log("Automatic cloud recovery check:",e.message);
+            }
+            return false;
         }
 
         async function backupDataToCloud(silent=false) {
@@ -1571,13 +1829,31 @@
                 alert("ઇન્ટરનેટ જોડાણ નથી. કૃપા કરીને ઓનલાઇન થાઓ.");
                 return;
             }
-            let dbUrl = masterSettings.dbUrl ? masterSettings.dbUrl.trim() : "";
+
+            // Safety guard after Android Clear storage:
+            // if local storage was never initialized but Firebase already has real
+            // data, NEVER overwrite that backup with default/empty local data.
+            if (!localStorage.getItem("NNC_storage_initialized")) {
+                try {
+                    const cloudData=await fetchCloudBackupData();
+                    if(cloudBackupHasRealData(cloudData)) {
+                        openRestoreChoiceModal(cloudData,true);
+                        alert("⚠️ Firebaseમાં પહેલેથી ડેટા છે. પહેલાં Restore પસંદ કરો; હાલનો ડેટા Backup કરીને જૂના ક્લાઉડ ડેટાને overwrite કરવામાં આવશે નહીં.");
+                        return;
+                    }
+                } catch(e) {
+                    alert("⚠️ Cloud backup સુરક્ષા ચેક થઈ શક્યો નથી. જૂનો ડેટા સુરક્ષિત રાખવા Backup અટકાવવામાં આવ્યો છે.\n\n"+e.message);
+                    return;
+                }
+            }
+
+            let dbUrl = masterSettings.dbUrl ? masterSettings.dbUrl.trim() : RECOVERY_DB_URL;
             if (!dbUrl) {
                 alert("કૃપા કરીને માસ્ટર સેટિંગ્સમાં Firebase Database URL દાખલ કરો.");
                 return;
             }
             if (dbUrl.endsWith('/')) dbUrl = dbUrl.slice(0, -1);
-            
+
             const fullUrl = `${dbUrl}/backup.json`;
             const payload = {
                 students: students,
@@ -1617,61 +1893,17 @@
 
         async function restoreDataFromCloud() {
             if (!verifyMasterPassword('ડેટા રીસ્ટોર')) return;
-            const dbUrl = (masterSettings.dbUrl || "").trim().replace(/\/$/, "");
-            if (!dbUrl) { alert("કૃપા કરીને Firebase Database URL દાખલ કરો."); return; }
+
             const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
-            btns.forEach(b => { b.disabled=true; b.innerText='⏳ રીસ્ટોર થઈ રહ્યું છે...'; });
+            btns.forEach(b => { b.disabled=true; b.innerText='⏳ ડેટા શોધી રહ્યા છીએ...'; });
+
             try {
-                const url = dbUrl + '/backup.json';
-                let data = null;
-                try {
-                    const response = await fetch(url, {method:'GET', cache:'no-store', headers:{'Accept':'application/json'}});
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    data = await response.json();
-                } catch(fetchErr) {
-                    data = await new Promise((resolve,reject)=>{
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('GET', url, true); xhr.setRequestHeader('Accept','application/json');
-                        xhr.onload=()=>xhr.status>=200 && xhr.status<300 ? resolve(JSON.parse(xhr.responseText)) : reject(new Error('HTTP '+xhr.status));
-                        xhr.onerror=()=>reject(new Error('નેટવર્ક/CORS ભૂલ')); xhr.ontimeout=()=>reject(new Error('સમય પૂરો')); xhr.timeout=15000; xhr.send();
-                    });
+                const data=await fetchCloudBackupData();
+                if (!data || typeof data !== 'object' || !cloudBackupHasRealData(data)) {
+                    alert('⚠️ Firebaseમાં કોઈ ઉપયોગી બેકઅપ મળ્યો નથી.');
+                    return;
                 }
-                if (!data || typeof data !== 'object') { alert('⚠️ Firebaseમાં કોઈ બેકઅપ મળ્યો નથી.'); return; }
-                students = Array.isArray(data.students) ? data.students : [];
-                stockList = Array.isArray(data.stockList) ? data.stockList : [];
-                expenses = Array.isArray(data.expenses) ? data.expenses : [];
-                loanRecords = Array.isArray(data.loanRecords) ? data.loanRecords : [];
-                previousYearDues = Array.isArray(data.previousYearDues) ? data.previousYearDues : [];
-                deletedStudents = Array.isArray(data.deletedStudents) ? data.deletedStudents : [];
-
-                // જો backupમાં ડિલીટ થયેલા વિદ્યાર્થી હોય તો restore વખતે તે જ મૂળ statusમાં પાછા લાવો.
-                if (deletedStudents.length) {
-                    const existingIds = new Set(students.map(s => String(s.id)));
-                    deletedStudents.forEach(st => {
-                        if (!st || st.id == null) return;
-                        if (!existingIds.has(String(st.id))) {
-                            st.status = st._deletedFromStatus || st.status || 'active';
-                            delete st._deletedFromStatus;
-                            students.push(st);
-                        }
-                    });
-                    deletedStudents = [];
-                }
-
-                if (data.masterSettings && typeof data.masterSettings === 'object') {
-                    masterSettings = Object.assign({}, masterSettings, data.masterSettings);
-                }
-                saveLocalData(); currentStudent = students[0] || null;
-                recalculateStudentTotals(); renderDashboard(); renderStockTable(); renderStockDropdown(); renderExpenses(); renderCourseDivision();
-                if (document.getElementById('mApiKey')) document.getElementById('mApiKey').value=masterSettings.apiKey||'';
-                if (document.getElementById('mDbUrl')) document.getElementById('mDbUrl').value=masterSettings.dbUrl||'';
-                if (document.getElementById('mDefaultFee')) document.getElementById('mDefaultFee').value=masterSettings.defaultFee||350;
-                if (document.getElementById('mDefaultStd')) document.getElementById('mDefaultStd').value=masterSettings.defaultStd||'5';
-                if (document.getElementById('mDefaultCourse')) document.getElementById('mDefaultCourse').value=masterSettings.defaultCourse||'Navoday';
-                if (document.getElementById('mReceiptBaseUrl')) document.getElementById('mReceiptBaseUrl').value=masterSettings.receiptBaseUrl||'';
-                if (document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked=!!masterSettings.autoBackup;
-                if (document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
-                alert('✅ ક્લાઉડમાંથી ડેટા સફળતાપૂર્વક રીસ્ટોર થઈ ગયો છે!');
+                openRestoreChoiceModal(data,false);
             } catch(err) {
                 alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
             } finally {
@@ -1874,39 +2106,62 @@
             const receipts = Array.isArray(st?.receipts) ? st.receipts : [];
             const included = new Set();
 
+            // મહત્વપૂર્ણ નિયમ:
+            // Receiptમાં જે બુક/સ્ટેશનરીની વિગત પહેલેથી સેવ થયેલી છે,
+            // તેને તારીખ અલગ હોય તોય એ જ item તરીકે એક જ વખત ગણવી.
+            // પહેલાંના કોડમાં તારીખ પણ match થતી હોવાથી 04-09ની બુક અને
+            // 07-09ની Receiptમાં આવેલી એ જ બુક બે વાર ગણાતી હતી.
             receipts.forEach(r => {
-                const receiptDate = String(r.date || '');
                 const items = Array.isArray(r.stationeryItems) ? r.stationeryItems : [];
 
-                // નવી/વિગતવાળી Receipt: item name + qty + amountથી ચોક્કસ match.
+                // 1) નવી Receipt: item name + qty + amountથી ચોક્કસ match.
+                // તારીખ અહીં જાણપૂર્વક ચેક નથી કરતા.
                 items.forEach(item => {
                     const name = String(item.itemName || '').trim().toLowerCase();
                     const qty = Number(item.qty) || 1;
                     const amount = Number(item.price) || 0;
-                    let idx = stations.findIndex((s, i) => {
+
+                    const idx = stations.findIndex((s, i) => {
                         if (included.has(i)) return false;
-                        return String(s.date || '') === receiptDate &&
-                               String(s.itemName || '').trim().toLowerCase() === name &&
+                        return String(s.itemName || '').trim().toLowerCase() === name &&
                                (Number(s.qty) || 1) === qty &&
                                Math.abs((Number(s.price) || 0) - amount) < 0.01;
                     });
+
                     if (idx >= 0) included.add(idx);
                 });
+            });
 
-                // જૂની Receiptમાં stationeryItems ન હોય તો statFeeની રકમથી
-                // એ જ તારીખની stationery recordsને એક-એક કરીને match કરો.
+            // 2) જૂની Receipt: stationeryItems ન હોય, પરંતુ statFee હોય.
+            // આવી સ્થિતિમાં Receiptની તારીખ નજીક/સમાન stationery amountને
+            // match કરીએ, પરંતુ પહેલેથી matched itemને ક્યારેય ફરી નહીં ગણીએ.
+            receipts.forEach(r => {
+                const items = Array.isArray(r.stationeryItems) ? r.stationeryItems : [];
+                if (items.length > 0) return;
+
                 let remaining = Number(r.statFee) || 0;
-                if (remaining > 0) {
-                    stations.forEach((s, i) => {
-                        if (included.has(i) || String(s.date || '') !== receiptDate) return;
-                        const amount = Number(s.price) || 0;
-                        if (amount > 0 && amount <= remaining + 0.01) {
-                            included.add(i);
-                            remaining -= amount;
-                        }
+                if (remaining <= 0) return;
+
+                const receiptDate = String(r.date || '');
+                const candidates = stations
+                    .map((s, i) => ({s, i}))
+                    .filter(({i}) => !included.has(i) && (Number(stations[i].price) || 0) > 0)
+                    .sort((a,b) => {
+                        const ad = String(a.s.date || '') === receiptDate ? 0 : 1;
+                        const bd = String(b.s.date || '') === receiptDate ? 0 : 1;
+                        return ad - bd;
                     });
+
+                for (const {s, i} of candidates) {
+                    const amount = Number(s.price) || 0;
+                    if (amount > 0 && amount <= remaining + 0.01) {
+                        included.add(i);
+                        remaining -= amount;
+                        if (remaining <= 0.01) break;
+                    }
                 }
             });
+
             return included;
         }
 
@@ -1964,8 +2219,11 @@
                     });
                 }
 
-                // Receiptમાં સામેલ stationery ઉપરના paidFeeમાં પહેલેથી જ છે,
-                // તેથી તેને stationeryCashPaidમાં બીજી વાર ઉમેરવામાં આવતી નથી.
+                // Receiptમાં સામેલ stationery ઉપરના paidFeeમાં પહેલેથી જ છે.
+                // તેથી એ જ બુક/સ્ટેશનરીની અલગ stationery entry cash હોય તોય
+                // stationeryCashPaidમાં ફરી ઉમેરવાની નહીં.
+                // ઉદાહરણ: Receipt ₹700 (₹350 ફી + ₹350 બુક) હોય અને એ જ
+                // ₹350 બુક stationery listમાં હોય, તો જમા ₹700 જ રહેશે.
                 st.paid = paidFee + stationeryCashPaid;
                 const prevRecord = previousYearDues.find(x => String(x.studentId) === String(st.id));
                 st.previousYearPaid = prevRecord ? previousPaidAmount(prevRecord) : 0;
