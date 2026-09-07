@@ -132,22 +132,22 @@
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
     <div class="container" style="padding-top:8px;padding-bottom:0;">
         <div class="r-menu-wrap">
-            <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
+            <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ" type="button">R</button>
             <div id="rMenuPanel" class="r-menu-panel">
-                    <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
-                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFinancialDashboard')">💰 Financial Dashboard</button>
-                    <button class="btn btn-green" onclick="rMenuAction('dashboardWhatsAppCard')">📲 WhatsApp Automation</button>
-                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageProfitLoss')">📈 Profit / Loss</button>
-                    <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')">🔔 Automatic Reminder List</button>
-                    <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
-                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')">💰 ઉછીના આપેલ રૂપિયા</button>
-                    <button class="btn btn-purple" onclick="navigateFromRMenu('pagePreviousYearDue')">📅 ગયા વર્ષના બાકી</button>
-                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageStationeryReport')">📖 સ્ટેશનરી સ્ટોક</button>
-                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageAdminExpense')">💸 Admin ખર્ચ</button>
-                    <button class="btn btn-purple" onclick="navigateFromRMenu('pageCourseDivision')">📚 કોર્ષ વિભાજન</button>
-                    <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')">⚠️ બાકી ફીની યાદી</button>
-                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
-                    <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')">🔎 સર્ચ ફી રિપોર્ટ</button>
+                    <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')" type="button">📊 સંપૂર્ણ Dashboard</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFinancialDashboard')" type="button">💰 Financial Dashboard</button>
+                    <button class="btn btn-green" onclick="rMenuAction('dashboardWhatsAppCard')" type="button">📲 WhatsApp Automation</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageProfitLoss')" type="button">📈 Profit / Loss</button>
+                    <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')" type="button">🔔 Automatic Reminder List</button>
+                    <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')" type="button">📅 આગામી મહિનાની ફી</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')" type="button">💰 ઉછીના આપેલ રૂપિયા</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pagePreviousYearDue')" type="button">📅 ગયા વર્ષના બાકી</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageStationeryReport')" type="button">📖 સ્ટેશનરી સ્ટોક</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageAdminExpense')" type="button">💸 Admin ખર્ચ</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pageCourseDivision')" type="button">📚 કોર્ષ વિભાજન</button>
+                    <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')" type="button">⚠️ બાકી ફીની યાદી</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')" type="button">📊 ફી સરવૈયું / રિપોર્ટ</button>
+                    <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')" type="button">🔎 સર્ચ ફી રિપોર્ટ</button>
             </div>
         </div>
     </div>
@@ -204,7 +204,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
+            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()" type="button">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
 
@@ -213,7 +213,7 @@
 
         <div id="pageRFeature" style="display:none;">
             <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                <button class="btn btn-gray" style="width:auto;margin-top:0;" onclick="navigateTo('pageDashboard')">← મેઈન પેજ</button>
+                <button class="btn btn-gray" style="width:auto;margin-top:0;" onclick="navigateTo('pageDashboard')" type="button">← મેઈન પેજ</button>
                 <strong id="rFeatureTitle" style="color:#1565c0;font-size:16px;"></strong>
             </div>
             <div id="rFeatureContent"></div>
@@ -223,8 +223,8 @@
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Firebase)</div>
                 <div class="grid-2">
-                    <button class="btn btn-green" onclick="backupDataToCloud()">📥 બેકઅપ ડેટા લેવો</button>
-                    <button class="btn btn-blue" onclick="restoreDataFromCloud()">🔄 ડેટા રીસ્ટોર કરવો</button>
+                    <button type="button" class="btn btn-green" onclick="event.preventDefault(); event.stopPropagation(); backupDataToCloud(); return false;">📥 બેકઅપ ડેટા લેવો</button>
+                    <button type="button" class="btn btn-blue" onclick="event.preventDefault(); event.stopPropagation(); restoreDataFromCloud(); return false;">🔄 ડેટા રીસ્ટોર કરવો</button>
                 </div>
             </div>
 
@@ -244,7 +244,7 @@
             <div id="dashboardReminderCard" class="card" style="background:#fff8e1;border-color:#ffcc80;display:none;">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <h4 style="margin:0;color:#e65100;">🔔 Automatic Reminder List</h4>
-                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()">📲 યાદી WhatsApp</button>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()" type="button">📲 યાદી WhatsApp</button>
                 </div>
                 <div id="dashboardReminderList" style="margin-top:8px;"></div>
             </div>
@@ -252,10 +252,10 @@
             <div id="dashboardWhatsAppCard" class="card" style="background:#e8f5e9;border-color:#a5d6a7;display:none;">
                 <h4 style="color:#2e7d32;">📲 WhatsApp Automation Center</h4>
                 <div class="grid-2" style="margin-top:8px;">
-                    <button class="btn btn-whatsapp" onclick="sendAllDashboardRemindersWhatsApp()">⚠️ બાકી Reminder</button>
-                    <button class="btn btn-whatsapp" onclick="sendUpcomingMonthRemindersWhatsApp()">📅 આગામી મહિનો</button>
-                    <button class="btn btn-whatsapp" onclick="sendBirthdayRemindersWhatsApp()">🎂 Birthday</button>
-                    <button class="btn btn-whatsapp" onclick="sendAnnualFeeRemindersWhatsApp()">📆 વાર્ષિક Fee</button>
+                    <button class="btn btn-whatsapp" onclick="sendAllDashboardRemindersWhatsApp()" type="button">⚠️ બાકી Reminder</button>
+                    <button class="btn btn-whatsapp" onclick="sendUpcomingMonthRemindersWhatsApp()" type="button">📅 આગામી મહિનો</button>
+                    <button class="btn btn-whatsapp" onclick="sendBirthdayRemindersWhatsApp()" type="button">🎂 Birthday</button>
+                    <button class="btn btn-whatsapp" onclick="sendAnnualFeeRemindersWhatsApp()" type="button">📆 વાર્ષિક Fee</button>
                 </div>
                 <div id="whatsappAutomationSummary" style="font-size:12px;color:#555;margin-top:8px;"></div>
             </div>
@@ -269,7 +269,7 @@
                 <h4>🧾 Receipt Search</h4>
                 <div class="grid-2">
                     <input id="receiptSearchInput" class="form-control" placeholder="રસીદ નં. / નામ / મોબાઈલ" oninput="searchReceiptsDashboard()">
-                    <button class="btn btn-blue" onclick="searchReceiptsDashboard()">🔍 શોધો</button>
+                    <button class="btn btn-blue" onclick="searchReceiptsDashboard()" type="button">🔍 શોધો</button>
                 </div>
                 <div id="receiptSearchResults" style="margin-top:8px;"></div>
             </div>
@@ -277,8 +277,8 @@
             <div style="margin:15px 0 10px 0;">
                 <h3 style="font-size:17px;color:#333;margin-bottom:8px;">વિદ્યાર્થીઓની યાદી</h3>
                 <div class="grid-2">
-                    <button class="btn btn-blue" style="margin-top:0;" onclick="openAddStudentModal()">➕ નવો વિદ્યાર્થી</button>
-                    <button class="btn btn-gray" style="margin-top:0;" onclick="toggleDashboardSection('dashboardReceiptSearchCard')">🧾 રીસેપ્ટ સર્ચ</button>
+                    <button class="btn btn-blue" style="margin-top:0;" onclick="openAddStudentModal()" type="button">➕ નવો વિદ્યાર્થી</button>
+                    <button class="btn btn-gray" style="margin-top:0;" onclick="toggleDashboardSection('dashboardReceiptSearchCard')" type="button">🧾 રીસેપ્ટ સર્ચ</button>
                 </div>
             </div>
 
@@ -307,7 +307,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
+            <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')" type="button">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
         <div id="pageAddStudent" style="display: none;">
@@ -319,7 +319,7 @@
                 
                 <button type="button" class="btn btn-purple" style="margin: 10px 0;" onclick="selectContactFromPhone()">📱 કોન્ટેક્ટમાંથી પસંદ કરો</button>
                 
-                <form onsubmit="event.preventDefault(); saveStudent();">
+                <form onsubmit="event.preventDefault(); return false;">
                     <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
                         <label>વિદ્યાર્થીનું નામ</label>
@@ -394,7 +394,7 @@
                             <option value="inactive">બંધ છે (Inactive)</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-blue" id="btnSaveStudent">સેવ કરો</button>
+                    <button type="button" class="btn btn-blue" id="btnSaveStudent" onclick="event.preventDefault(); event.stopPropagation(); saveStudent(); return false;">સેવ કરો</button>
                 </form>
             </div>
         </div>
@@ -463,8 +463,8 @@
             <div class="card">
                 <h4>📂 ઓફલાઈન ફાઈલ બેકઅપ (JSON)</h4>
                 <div class="grid-2">
-                    <button class="btn btn-cyan" onclick="downloadJSONBackup()">📥 ડેટા ડાઉનલોડ કરો</button>
-                    <button class="btn btn-gray" onclick="document.getElementById('uploadJsonInput').click()">📤 ડેટા અપલોડ કરો</button>
+                    <button class="btn btn-cyan" onclick="downloadJSONBackup()" type="button">📥 ડેટા ડાઉનલોડ કરો</button>
+                    <button class="btn btn-gray" onclick="document.getElementById('uploadJsonInput').click()" type="button">📤 ડેટા અપલોડ કરો</button>
                     <input type="file" id="uploadJsonInput" style="display:none;" onchange="uploadJSONBackup(event)">
                 </div>
             </div>
@@ -491,10 +491,10 @@
                 <h2 style="color:#1565c0;margin-bottom:6px;">📚 સ્ટેશનરી મેનેજમેન્ટ</h2>
                 <p style="color:#666;font-size:13px;margin-bottom:14px;">સ્ટેશનરીનું કામ હવે ચાર સરળ વિભાગમાં ગોઠવેલું છે.</p>
                 <div class="grid-2">
-                    <button class="btn btn-blue" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryStock')">📦<br>સ્ટોક</button>
-                    <button class="btn btn-orange" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySale')">🛒<br>વેચાણ</button>
-                    <button class="btn btn-purple" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySalesReport')">📊<br>વેચાણ રિપોર્ટ</button>
-                    <button class="btn btn-green" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryProfit')">💰<br>નફો / સરવૈયું</button>
+                    <button class="btn btn-blue" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryStock')" type="button">📦<br>સ્ટોક</button>
+                    <button class="btn btn-orange" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySale')" type="button">🛒<br>વેચાણ</button>
+                    <button class="btn btn-purple" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySalesReport')" type="button">📊<br>વેચાણ રિપોર્ટ</button>
+                    <button class="btn btn-green" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryProfit')" type="button">💰<br>નફો / સરવૈયું</button>
                 </div>
             </div>
             <div class="card">
@@ -515,7 +515,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#1565c0;" id="stkFormTitle">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
-                <form onsubmit="event.preventDefault();saveStockItem();" style="margin-top:8px;">
+                <form onsubmit="return false;" style="margin-top:8px;">
                     <input type="hidden" id="editStockId">
                     <div class="form-group"><label>વસ્તુનું નામ</label><input type="text" id="stkName" class="form-control" required placeholder="દા.ત. નવોદય બુક"></div>
                     <div class="grid-3">
@@ -524,7 +524,7 @@
                         <div class="form-group"><label>જથ્થો</label><input type="number" id="stkQty" class="form-control" required placeholder="50"></div>
                         <div class="form-group"><label>⚠️ Minimum Stock</label><input type="number" id="stkMinQty" class="form-control" min="0" value="5" placeholder="5"></div>
                     </div>
-                    <button type="submit" class="btn btn-green" id="btnSaveStock">+ સ્ટોક સેવ કરો</button>
+                    <button type="button" class="btn btn-green" id="btnSaveStock" onclick="event.preventDefault(); event.stopPropagation(); saveStockItem(); return false;">+ સ્ટોક સેવ કરો</button>
                 </form>
             </div>
             <div class="card">
@@ -548,7 +548,7 @@
             <div class="card" style="background:#fff8e1;border-color:#ffe082;">
                 <h3 style="color:#e65100;">🎓 વિદ્યાર્થીને સ્ટેશનરી વેચાણ</h3>
                 <p style="font-size:13px;color:#666;">વિદ્યાર્થીને સ્ટેશનરી આપવાનું કામ વિદ્યાર્થીના વિગત પેજમાંથી કરી શકાય છે. ત્યાંથી વસ્તુ પસંદ કરીને નંગ અને ચુકવણી પ્રકાર સેવ કરો.</p>
-                <button class="btn btn-blue" onclick="navigateTo('pageDashboard')">👨‍🎓 વિદ્યાર્થી પસંદ કરવા હોમ પર જાઓ</button>
+                <button class="btn btn-blue" onclick="navigateTo('pageDashboard')" type="button">👨‍🎓 વિદ્યાર્થી પસંદ કરવા હોમ પર જાઓ</button>
             </div>
             <div class="card" style="background:#fff8e1;border-color:#ffe082;">
                 <h3 style="color:#e65100;">🛍️ બહારના ગ્રાહકને સ્ટેશનરી વેચાણ</h3>
@@ -563,7 +563,7 @@
                     <button type="submit" class="btn btn-orange">🛒 વેચાણ સેવ કરો</button>
                 </form>
             </div>
-            <div class="card"><h4>↩️ વેચાણ Return</h4><p style="font-size:13px;color:#666;">વિદ્યાર્થી અથવા બહારના વેચાણનો Return સંબંધિત વેચાણ રિપોર્ટમાંથી કરી શકાય છે.</p><button class="btn btn-purple" onclick="navigateTo('pageStationerySalesReport')">📊 વેચાણ રિપોર્ટ ખોલો</button></div>
+            <div class="card"><h4>↩️ વેચાણ Return</h4><p style="font-size:13px;color:#666;">વિદ્યાર્થી અથવા બહારના વેચાણનો Return સંબંધિત વેચાણ રિપોર્ટમાંથી કરી શકાય છે.</p><button class="btn btn-purple" onclick="navigateTo('pageStationerySalesReport')" type="button">📊 વેચાણ રિપોર્ટ ખોલો</button></div>
         </div>
 
         <div id="pageStationerySalesReport" style="display:none;">
@@ -598,7 +598,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#d32f2f;">💸 Admin ખર્ચ રજીસ્ટર</h3>
-                <form onsubmit="event.preventDefault(); addExpense();" style="margin-top:8px;">
+                <form onsubmit="return false;" style="margin-top:8px;">
                     <div class="form-group">
                         <label>ખર્ચની વિગત</label>
                         <input type="text" id="expDetail" class="form-control" required placeholder="દા.ત. લાઈટ બિલ">
@@ -607,7 +607,7 @@
                         <label>ખર્ચ રકમ (₹)</label>
                         <input type="number" id="expAmount" class="form-control" required placeholder="500">
                     </div>
-                    <button type="submit" class="btn btn-red">+ ખર્ચ ઉમેરો</button>
+                    <button type="button" class="btn btn-red" id="btnSaveExpense" onclick="event.preventDefault(); event.stopPropagation(); addExpense(); return false;">+ ખર્ચ ઉમેરો</button>
                 </form>
             </div>
             <div class="card">
@@ -632,7 +632,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#0097a7;">💰 ઉછીના આપેલ રૂપિયા</h3>
-                <form onsubmit="event.preventDefault(); saveLoanRecord();">
+                <form onsubmit="return false;">
                     <div class="grid-2">
                         <div class="form-group"><label>કોને આપ્યા?</label><input id="loanPerson" class="form-control" required placeholder="નામ"></div>
                         <div class="form-group"><label>ક્યારે આપ્યા?</label><input type="date" id="loanDate" class="form-control" required></div>
@@ -643,7 +643,7 @@
                         <div class="form-group"><label>ઉછીના આપેલ કુલ રકમ (₹)</label><input type="number" id="loanAmount" class="form-control" min="0" required></div>
                         <div class="form-group"><label>આજે જમા (હોય તો)</label><input type="number" id="loanInitialPaid" class="form-control" min="0" value="0"></div>
                     </div>
-                    <button class="btn btn-cyan" type="submit">💾 ઉછીનાની નોંધ સેવ કરો</button>
+                    <button class="btn btn-cyan" type="button" id="btnSaveLoan" onclick="event.preventDefault(); event.stopPropagation(); saveLoanRecord(); return false;">💾 ઉછીનાની નોંધ સેવ કરો</button>
                 </form>
             </div>
             <div class="finance-card">
@@ -689,7 +689,7 @@
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
             <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="color:#1565c0;margin:0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3><button class="btn btn-blue" style="width:auto;padding:6px 10px;font-size:12px;" onclick="window.print()">🖨️ પ્રિન્ટ / PDF</button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="color:#1565c0;margin:0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3><button class="btn btn-blue" style="width:auto;padding:6px 10px;font-size:12px;" onclick="window.print()" type="button">🖨️ પ્રિન્ટ / PDF</button></div>
                 <p style="font-size:12px;color:#666;margin:6px 0 10px;">📈 આવક રિપોર્ટ એપ્રિલથી માર્ચ સુધી મહિના પ્રમાણે છે. જમા રકમ પહોંચની તારીખ પ્રમાણે ગણાય છે અને બાકી અલગ બતાવાય છે.</p>
                 <div class="grid-2">
                     <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="reportFromDate" class="form-control" onchange="renderFeeReports()"></div>
@@ -708,7 +708,7 @@
             <div class="card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <h4 style="margin:0;">⚠️ બાકી ફીની યાદી</h4>
-                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendDueReportSummaryWhatsApp()">📲 યાદી WhatsApp</button>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendDueReportSummaryWhatsApp()" type="button">📲 યાદી WhatsApp</button>
                 </div>
                 <div id="dueReportList" style="margin-top:8px;"></div>
             </div>
@@ -725,14 +725,14 @@
             <div class="card">
                 <h3 style="color:#7b1fa2;">📅 ગયા વર્ષના બાકી</h3>
                 <p style="font-size:12px;color:#666;margin:6px 0 10px;">વિદ્યાર્થીનું ગયા વર્ષનું બાકી દાખલ કરો. પછી થોડું-થોડું કે એકસાથે જમા થાય તેમ બાકી આપમેળે ઘટશે.</p>
-                <form onsubmit="event.preventDefault(); savePreviousYearDue();">
+                <form onsubmit="return false;">
                     <div class="form-group"><label>વિદ્યાર્થી</label><select id="prevStudentSelect" class="form-control" required></select></div>
                     <div class="grid-2">
                         <div class="form-group"><label>ગયા વર્ષનું કુલ બાકી (₹)</label><input type="number" id="prevAmount" class="form-control" min="0" required></div>
                         <div class="form-group"><label>બાકી નોંધ તારીખ</label><input type="date" id="prevDate" class="form-control" required></div>
                     </div>
                     <div class="form-group"><label>વિગત</label><textarea id="prevDetail" class="form-control" rows="2" placeholder="ગયા વર્ષ / અન્ય નોંધ"></textarea></div>
-                    <button class="btn btn-purple" type="submit">💾 ગયા વર્ષનું બાકી સેવ કરો</button>
+                    <button class="btn btn-purple" type="button" id="btnSavePreviousDue" onclick="event.preventDefault(); event.stopPropagation(); savePreviousYearDue(); return false;">💾 ગયા વર્ષનું બાકી સેવ કરો</button>
                 </form>
             </div>
             <div class="finance-card">
@@ -780,13 +780,13 @@
                 </div>
 
                 <div class="grid-2" style="margin-top: 10px;">
-                    <button class="btn btn-blue" onclick="editStudent(currentStudent.id)">✏️ વિગત સુધારો (Edit)</button>
-                    <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
+                    <button class="btn btn-blue" onclick="editStudent(currentStudent.id)" type="button">✏️ વિગત સુધારો (Edit)</button>
+                    <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)" type="button">🗑️ ડિલીટ કરો (Delete)</button>
                 </div>
 
                 <div class="grid-2" style="margin-top: 8px;">
-                    <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)">🔄 રી-જોઈન્ટ કરો</button>
-                    <button class="btn btn-orange" onclick="openFeeChangeBox()">💰 ફી વધારો/બદલો</button>
+                    <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)" type="button">🔄 રી-જોઈન્ટ કરો</button>
+                    <button class="btn btn-orange" onclick="openFeeChangeBox()" type="button">💰 ફી વધારો/બદલો</button>
                 </div>
 
                 <div id="rejoinBox" class="card" style="display:none; background:#e8f5e9; border-color:#a5d6a7; margin-top:10px; margin-bottom:0;">
@@ -828,7 +828,7 @@
                             <input type="number" id="feeChangeAmount" class="form-control" min="0" placeholder="400">
                         </div>
                     </div>
-                    <button class="btn btn-orange" onclick="saveFeeChange()">💾 નવી ફી સેવ કરો</button>
+                    <button class="btn btn-orange" onclick="saveFeeChange()" type="button">💾 નવી ફી સેવ કરો</button>
                     <div id="feeChangeHistory" style="font-size:12px; margin-top:8px;"></div>
                 </div>
 
@@ -841,12 +841,12 @@
                 <div class="card" style="background:#f8fbff;border-color:#bbdefb;margin-top:10px;margin-bottom:0;">
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                         <h4 style="color:#1565c0;margin:0;">📋 વિદ્યાર્થીનું સંપૂર્ણ ફી સરવૈયું</h4>
-                        <button class="btn btn-whatsapp" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0;" onclick="sendStudentFullFeeWhatsApp()">📲 સરવૈયું મોકલો</button>
+                        <button class="btn btn-whatsapp" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0;" onclick="sendStudentFullFeeWhatsApp()" type="button">📲 સરવૈયું મોકલો</button>
                     </div>
                     <div id="studentFeeOverview" style="margin-top:8px;"></div>
                 </div>
                 <div class="card" style="background:#fff;border-color:#c5cae9;margin-top:10px;margin-bottom:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h4 style="color:#283593;margin:0">📒 સંપૂર્ણ Student Ledger</h4><button class="btn btn-blue" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0" onclick="printStudentLedger()">🖨️ Print</button></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h4 style="color:#283593;margin:0">📒 સંપૂર્ણ Student Ledger</h4><button class="btn btn-blue" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0" onclick="printStudentLedger()" type="button">🖨️ Print</button></div>
                     <div id="studentLedger" style="margin-top:8px"></div>
                 </div>
 
@@ -865,8 +865,8 @@
                     <div style="font-size:12px; color:#333; margin-top:6px;">
                         ગણતરી કરેલ બાકી રકમ: <strong id="calculatedAlertAmt" style="color:red;">₹0</strong>
                     </div>
-                    <button class="btn btn-whatsapp" style="margin-top:8px;" onclick="sendDueFeeAlertWhatsApp()">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
-                    <button class="btn btn-green" style="margin-top:6px;" onclick="sendThankYouWhatsApp()">💐 ફી ભર્યા બદલ આભાર પત્ર મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:8px;" onclick="sendDueFeeAlertWhatsApp()" type="button">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
+                    <button class="btn btn-green" style="margin-top:6px;" onclick="sendThankYouWhatsApp()" type="button">💐 ફી ભર્યા બદલ આભાર પત્ર મોકલો</button>
                 </div>
             </div>
 
@@ -892,7 +892,7 @@
                         </select>
                     </div>
                 </div>
-                <button class="btn btn-orange" onclick="giveStationeryToStudent()">+ વિદ્યાર્થીને આપો</button>
+                <button class="btn btn-orange" onclick="giveStationeryToStudent()" type="button">+ વિદ્યાર્થીને આપો</button>
 
                 <h5 style="margin-top:12px; color:#555;">આપેલ સ્ટેશનરી હિસ્ટ્રી:</h5>
                 <table>
@@ -994,7 +994,7 @@
                     <input type="text" id="recPayer" class="form-control" placeholder="દા.ત. રવિભાઈ">
                 </div>
 
-                <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
+                <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt" type="button">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
             <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક -->
@@ -1019,7 +1019,7 @@
             <div class="card" id="previewContainer" style="display:none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h3 style="color:#1565c0;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
-                    <button class="btn btn-red" style="width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0;" onclick="closePreviewContainer()">❌ બંધ કરો</button>
+                    <button class="btn btn-red" style="width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0;" onclick="closePreviewContainer()" type="button">❌ બંધ કરો</button>
                 </div>
 
                 <div class="receipt-card" id="receiptPrintArea">
@@ -1075,8 +1075,8 @@
                     <div class="short-link-title">🔗 આ વિદ્યાર્થીની સીધી ઓનલાઈન ફી પહોંચની લિંક:</div>
                     <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
                     <div class="grid-2">
-                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
-                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર લિંક મોકલો</button>
+                        <button class="btn btn-purple" onclick="copyReceiptLink()" type="button">📋 લિંક કોપી કરો</button>
+                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()" type="button">💬 WhatsApp પર લિંક મોકલો</button>
                     </div>
                 </div>
 
@@ -1084,7 +1084,7 @@
                     <div class="grid-2">
                         <button id="btnDownloadImageLink" class="btn btn-green" type="button" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
                                             </div>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()" type="button">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
                                                         </div>
             </div>
 
@@ -1125,8 +1125,8 @@
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <button class="btn btn-blue" onclick="applyRestoreChoices()">🔄 પસંદગી પ્રમાણે કરો</button>
-                <button class="btn btn-gray" onclick="closeRestoreChoiceModal()">❌ રદ કરો</button>
+                <button class="btn btn-blue" onclick="applyRestoreChoices()" type="button">🔄 પસંદગી પ્રમાણે કરો</button>
+                <button class="btn btn-gray" onclick="closeRestoreChoiceModal()" type="button">❌ રદ કરો</button>
             </div>
         </div>
     </div>
@@ -1182,8 +1182,8 @@
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-                <button class="btn btn-blue" onclick="printStationeryReceipt()">🖨️ પ્રિન્ટ / PDF</button>
-                <button class="btn btn-gray" onclick="closeStationeryReceipt()">❌ બંધ કરો</button>
+                <button class="btn btn-blue" onclick="printStationeryReceipt()" type="button">🖨️ પ્રિન્ટ / PDF</button>
+                <button class="btn btn-gray" onclick="closeStationeryReceipt()" type="button">❌ બંધ કરો</button>
             </div>
         </div>
     </div>
@@ -1195,11 +1195,53 @@
                 ઈમેજ ઓટો ડાઉનલોડ થઈ રહી છે.<br><br>
                 હવે વ્હોટ્સએપ ખુલે ત્યારે ગેલેરીમાંથી પસંદ કરીને મોકલો.
             </div>
-            <button class="modal-btn" onclick="closeCustomModal()">OK</button>
+            <button class="modal-btn" onclick="closeCustomModal()" type="button">OK</button>
         </div>
     </div>
 
-    <script>
+    
+<script>
+/* Explicit save-button bridge: these four buttons must call their functions
+   directly and must never submit an outer/host form. */
+document.addEventListener('click', function(e) {
+    const b = e.target && e.target.closest ? e.target.closest('#btnSaveStock, #btnSaveExpense, #btnSaveLoan, #btnSavePreviousDue') : null;
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+        if (b.id === 'btnSaveStock') saveStockItem();
+        else if (b.id === 'btnSaveExpense') addExpense();
+        else if (b.id === 'btnSaveLoan') saveLoanRecord();
+        else if (b.id === 'btnSavePreviousDue') savePreviousYearDue();
+    } catch (err) {
+        console.error('Save button error:', err);
+        alert('❌ સેવ કરતી વખતે ભૂલ આવી:\n' + (err.message || err));
+    }
+    return false;
+}, true);
+</script>
+<script>
+/* Restore/backup safety for Android WebView/host wrappers:
+   never let app buttons submit an outer form and navigate away from the HTML app. */
+document.addEventListener('click', function(e) {
+    const b = e.target && e.target.closest ? e.target.closest('button') : null;
+    if (b) {
+        try {
+            if (b.getAttribute('type') !== 'submit') b.setAttribute('type','button');
+        } catch(_) {}
+    }
+}, true);
+
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (form && form.closest && form.closest('#mainAppContainer')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+}, true);
+</script>
+<script>
         // Self-contained HTML -> PNG helper. No external library required.
         // If html2canvas is ever available, it is preferred; otherwise a native
         // SVG foreignObject renderer is used so the receipt image still works
@@ -1774,6 +1816,21 @@
         let cloudRestoreInProgress = false;
         // Prevent automatic cloud sync from overwriting Firebase while restore is being fetched/confirmed.
         let restoreModeActive = false;
+        const RESTORE_LOCK_KEY = 'NNC_restore_lock_until';
+        function setPersistentRestoreLock(ms=120000) {
+            try { localStorage.setItem(RESTORE_LOCK_KEY, String(Date.now()+ms)); } catch(e) {}
+        }
+        function clearPersistentRestoreLock() {
+            try { localStorage.removeItem(RESTORE_LOCK_KEY); } catch(e) {}
+        }
+        function isPersistentRestoreLocked() {
+            try {
+                const t = parseInt(localStorage.getItem(RESTORE_LOCK_KEY)||'0',10);
+                if (t > Date.now()) return true;
+                if (t) localStorage.removeItem(RESTORE_LOCK_KEY);
+            } catch(e) {}
+            return false;
+        }
 
         function setCloudSyncStatus(text, ok=true) {
             const el = document.getElementById('cloudSyncBadge');
@@ -1839,7 +1896,7 @@
         }
 
         async function syncLocalDataToCloud() {
-            if (cloudRestoreInProgress || restoreModeActive) {
+            if (cloudRestoreInProgress || restoreModeActive || isPersistentRestoreLocked()) {
                 setCloudSyncStatus('☁️ RESTORING…', true);
                 return false;
             }
@@ -1992,92 +2049,113 @@
             if(!urls.length) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
 
             let lastErr=null;
+            const candidates=[];
 
-            // જૂના/નવા તમામ backup formatsને એક જ usable formatમાં ફેરવો.
             const normalizePayload = (raw) => {
                 if(raw === null || raw === undefined) return null;
-
-                // ક્યારેક Firebaseમાં JSON string તરીકે data સેવ થયેલું હોય છે.
                 if(typeof raw === "string"){
                     try { raw=JSON.parse(raw); } catch(e) { return null; }
                 }
                 if(!raw || typeof raw !== "object") return null;
 
-                const candidates=[
-                    raw,
-                    raw.data,
-                    raw.backup,
-                    raw.payload,
-                    raw.value,
-                    raw.result,
-                    raw.result?.data
-                ];
-
+                const unwrap = (x) => {
+                    if(!x || typeof x!=="object") return [];
+                    return [x, x.data, x.backup, x.payload, x.value, x.result, x.result?.data]
+                        .filter(v=>v && typeof v==="object");
+                };
                 const asArray = (v) => {
                     if(Array.isArray(v)) return v;
                     if(v && typeof v==="object") return Object.values(v);
                     return [];
                 };
 
-                for(const c of candidates){
-                    if(!c || typeof c!=="object") continue;
-
-                    // students/stock/etc object-key format હોય તો arrayમાં ફેરવો.
+                for(const c of unwrap(raw)){
                     const normalized=Object.assign({},c);
-                    if(!Array.isArray(normalized.students) && normalized.students && typeof normalized.students==="object")
-                        normalized.students=asArray(normalized.students);
-                    if(!Array.isArray(normalized.stockList) && normalized.stockList && typeof normalized.stockList==="object")
-                        normalized.stockList=asArray(normalized.stockList);
-                    if(!Array.isArray(normalized.expenses) && normalized.expenses && typeof normalized.expenses==="object")
-                        normalized.expenses=asArray(normalized.expenses);
-                    if(!Array.isArray(normalized.loanRecords) && normalized.loanRecords && typeof normalized.loanRecords==="object")
-                        normalized.loanRecords=asArray(normalized.loanRecords);
-                    if(!Array.isArray(normalized.previousYearDues) && normalized.previousYearDues && typeof normalized.previousYearDues==="object")
-                        normalized.previousYearDues=asArray(normalized.previousYearDues);
-                    if(!Array.isArray(normalized.deletedStudents) && normalized.deletedStudents && typeof normalized.deletedStudents==="object")
-                        normalized.deletedStudents=asArray(normalized.deletedStudents);
-
+                    ["students","stockList","expenses","loanRecords","previousYearDues","deletedStudents"].forEach(k=>{
+                        if(!Array.isArray(normalized[k]) && normalized[k] && typeof normalized[k]==="object")
+                            normalized[k]=asArray(normalized[k]);
+                    });
                     if(cloudBackupHasRealData(normalized)) return normalized;
                 }
                 return null;
             };
 
-            // Root, /backup અને /data — જુના versions માટે fallback.
-            const paths=["","/backup","/data","/backupData"];
+            const count = (v) => Array.isArray(v) ? v.length :
+                (v && typeof v==="object" ? Object.keys(v).length : 0);
 
+            const addCandidate = (data, source, key="") => {
+                if(!data) return;
+                const studentCount=count(data.students);
+                const totalRecords=studentCount+count(data.stockList)+count(data.expenses)+
+                    count(data.loanRecords)+count(data.previousYearDues)+count(data.deletedStudents);
+                const ts=Date.parse(data.timestamp||'') || 0;
+                candidates.push({data,source,key,studentCount,totalRecords,ts});
+            };
+
+            // Read every possible backup location instead of returning the first
+            // response. This prevents a partial/root record from winning randomly.
+            const paths=["/backup","/data","/backupData",""];
             for(const dbUrl of urls){
                 for(const path of paths){
+                    for(let attempt=1; attempt<=3; attempt++){
+                        try{
+                            const raw=await fetchJsonWithFallback(dbUrl + path + ".json");
+                            const data=normalizePayload(raw);
+                            if(data) addCandidate(data, dbUrl+path);
+                            break;
+                        }catch(e){
+                            lastErr=e;
+                            if(attempt<3) await new Promise(r=>setTimeout(r,500*attempt));
+                        }
+                    }
+                }
+
+                // Backup versions are the historical safety net. Read all of them
+                // and let the selector choose the best usable snapshot.
+                for(let attempt=1; attempt<=3; attempt++){
                     try{
-                        const raw=await fetchJsonWithFallback(dbUrl + path + ".json");
-                        const data=normalizePayload(raw);
-                        if(data) return data;
-                        lastErr=new Error((path || "/") + " માં ઉપયોગી backup data નથી.");
-                    }catch(e){ lastErr=e; }
+                        const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
+                        if(versions && typeof versions==="object"){
+                            for(const [key,value] of Object.entries(versions)){
+                                const data=normalizePayload(value);
+                                if(data) addCandidate(data, dbUrl+"/backupVersions", key);
+                            }
+                        }
+                        break;
+                    }catch(e){
+                        lastErr=e;
+                        if(attempt<3) await new Promise(r=>setTimeout(r,500*attempt));
+                    }
                 }
             }
 
-            // /backupVersionsમાંથી સૌથી નવી valid copy શોધો.
-            for(const dbUrl of urls){
-                try{
-                    const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
-                    if(versions && typeof versions==="object"){
-                        const candidates=Object.entries(versions)
-                            .map(([key,value])=>({key,data:normalizePayload(value)}))
-                            .filter(x=>x.data);
-
-                        candidates.sort((a,b)=>{
-                            const ta=String(a.data.timestamp || a.key || '');
-                            const tb=String(b.data.timestamp || b.key || '');
-                            return tb.localeCompare(ta);
-                        });
-
-                        if(candidates.length) return candidates[0].data;
-                    }
-                }catch(e){ lastErr=e; }
+            if(!candidates.length){
+                if(lastErr) throw lastErr;
+                return null;
             }
 
-            if(lastErr) throw lastErr;
-            return null;
+            // Deterministic rule:
+            // 1) Prefer the snapshot containing the most students.
+            // 2) If equal, prefer the snapshot containing the most other records.
+            // 3) If still equal, prefer the newest timestamp/key.
+            candidates.sort((a,b)=>{
+                if(b.studentCount!==a.studentCount) return b.studentCount-a.studentCount;
+                if(b.totalRecords!==a.totalRecords) return b.totalRecords-a.totalRecords;
+                const at=a.ts || (Date.parse(a.key)||0);
+                const bt=b.ts || (Date.parse(b.key)||0);
+                return bt-at;
+            });
+
+            const best=candidates[0];
+            console.log("Restore candidate selected:", {
+                source: best.source,
+                key: best.key,
+                students: best.studentCount,
+                records: best.totalRecords,
+                candidates: candidates.length
+            });
+
+            return best.data;
         }
 
         async function testFirebaseRestoreConnection() {
@@ -2363,6 +2441,7 @@
             window.pendingCloudRestoreAuto = false;
             cloudRestoreInProgress = false;
             restoreModeActive = true;
+            setPersistentRestoreLock(120000);
             cloudSyncQueued = false;
             if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
 
@@ -2474,6 +2553,7 @@
             // local/default data can overwrite the very backup we are trying to restore.
             restoreModeActive = true;
             cloudRestoreInProgress = true;
+            setPersistentRestoreLock(120000);
             if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
             cloudSyncQueued = false;
 
@@ -2485,6 +2565,7 @@
                 if (!data || typeof data !== 'object' || !cloudBackupHasRealData(data)) {
                     restoreModeActive = false;
                     cloudRestoreInProgress = false;
+                    clearPersistentRestoreLock();
                     alert('⚠️ Firebaseમાં કોઈ ઉપયોગી બેકઅપ મળ્યો નથી.');
                     return;
                 }
@@ -2492,6 +2573,7 @@
             } catch(err) {
                 restoreModeActive = false;
                 cloudRestoreInProgress = false;
+                clearPersistentRestoreLock();
                 alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
             } finally {
                 btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
@@ -3023,7 +3105,7 @@
             set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid)); set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0))); set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
             renderFinancialDashboard(); renderStationeryHomeSummary();
             const backup=document.getElementById('dashBackupStatus'); if(backup){ if(masterSettings.lastBackupAt){const d=new Date(masterSettings.lastBackupAt);const days=Math.floor((Date.now()-d.getTime())/86400000);backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');backup.style.color=days>=7?'#d32f2f':'#2e7d32';}else{backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.';backup.style.color='#d32f2f';} }
-            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
+            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')" type="button">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
             const next=document.getElementById('dashboardNextMonthList'); if(next){const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0];const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555">${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';}
             const wa=document.getElementById('whatsappAutomationSummary'); if(wa){const birthdays=students.filter(s=>s.birthDate&&s.birthDate.slice(5)===today.slice(5)).length;wa.innerText=`આજે Birthday: ${birthdays} | બાકી વિદ્યાર્થીઓ: ${dueStudents.length} | કુલ બાકી: ₹${Math.round(students.reduce((a,s)=>a+(Number(s.due)||0),0))}`;}
         }
@@ -3343,6 +3425,15 @@
         }
 
         async function saveStudent() {
+            const saveBtn = document.getElementById('btnSaveStudent');
+            if (saveBtn && saveBtn.dataset.saving === '1') return;
+            if (saveBtn) {
+                saveBtn.dataset.saving = '1';
+                saveBtn.disabled = true;
+                saveBtn.dataset.oldText = saveBtn.innerText;
+                saveBtn.innerText = '⏳ સેવ થઈ રહ્યું છે...';
+            }
+            try {
             const id = document.getElementById('editStudentId').value;
             const name = document.getElementById('inpName').value.trim();
             const phone = document.getElementById('inpPhone').value.trim();
@@ -3357,6 +3448,7 @@
 
             if (joinDate && endDate && endDate < joinDate) {
                 alert('❌ End તારીખ દાખલ તારીખ કરતાં પહેલાંની હોઈ શકે નહીં.');
+                if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                 return;
             }
             const course = document.getElementById('inpCourse').value;
@@ -3367,6 +3459,7 @@
 
             if (!name) {
                 alert('કૃપા કરીને વિદ્યાર્થીનું નામ દાખલ કરો.');
+                if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                 return;
             }
 
@@ -3380,6 +3473,7 @@
                     photo = await compressStudentPhoto(photoFile);
                 } catch (e) {
                     alert('❌ વિદ્યાર્થીનો ફોટો સેવ થઈ શક્યો નથી: ' + (e.message || e));
+                    if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                     return;
                 }
             }
@@ -3469,11 +3563,24 @@
                 students.push(newSt);
             }
 
-            saveLocalData();
+            const savedOK = saveLocalData();
+            if (!savedOK) {
+                throw new Error('વિદ્યાર્થીની માહિતી Local Storageમાં સેવ થઈ શકી નથી. Browser storage blocked/full હોઈ શકે.');
+            }
             alert("વિદ્યાર્થીની વિગત સેવ થઈ ગઈ છે!");
             navigateTo('pageDashboard');
             renderDashboard();
             renderCourseDivision();
+            } catch (e) {
+                console.error('saveStudent error:', e);
+                alert('❌ વિદ્યાર્થી સેવ કરતી વખતે ભૂલ આવી:\n' + (e.message || e));
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.dataset.saving = '0';
+                    saveBtn.innerText = saveBtn.dataset.oldText || 'સેવ કરો';
+                }
+            }
         }
 
         function previewStudentPhoto(event) {
@@ -4639,9 +4746,9 @@
                         <td>₹${r.dueVal}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button title="પહોંચ જુઓ" style="padding:2px 6px; font-size:11px; background:#0097a7; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="viewReceiptInfo('${r.id}')">ℹ️</button>
-                            <button title="સુધારો" style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')">✏️</button>
-                            <button title="ડિલીટ કરો" style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')">🗑️</button>
+                            <button title="પહોંચ જુઓ" style="padding:2px 6px; font-size:11px; background:#0097a7; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="viewReceiptInfo('${r.id}')" type="button">ℹ️</button>
+                            <button title="સુધારો" style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')" type="button">✏️</button>
+                            <button title="ડિલીટ કરો" style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')" type="button">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -4958,8 +5065,8 @@
                         <td>₹${Math.round(stockSale)}</td>
                         <td style="color:${stockProfit>=0?'green':'red'};font-weight:bold;">₹${Math.round(stockProfit)}</td>
                         <td>
-                            <button style="padding:2px 6px;font-size:11px;background:#1976d2;color:white;border:none;border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
-                            <button style="padding:2px 6px;font-size:11px;background:#d32f2f;color:white;border:none;border-radius:4px;" onclick="deleteStock('${s.id}')">🗑️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#1976d2;color:white;border:none;border-radius:4px;" onclick="editStock('${s.id}')" type="button">✏️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#d32f2f;color:white;border:none;border-radius:4px;" onclick="deleteStock('${s.id}')" type="button">🗑️</button>
                         </td>
                     </tr>`;
             });
@@ -5089,7 +5196,7 @@
                 el.innerHTML = '<div style="text-align:center;color:#888;padding:8px;">હજી બહારના ગ્રાહકનું વેચાણ નથી.</div>';
                 return;
             }
-            el.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>તારીખ</th><th>ગ્રાહક</th><th>વસ્તુ</th><th>નંગ</th><th>રકમ</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody>${list.slice().reverse().map((x,ri) => { const realIndex=list.length-1-ri; const sid=x.id||('external-'+realIndex); return `<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.customerName || 'નામ વગર')}</td><td>${escapeHtml(x.itemName || '-')}</td><td>${Number(x.qty)||0}</td><td>₹${Math.round(Number(x.price)||0)}</td><td>${escapeHtml(x.payType || '-')}</td><td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('external','','${sid}')">↩️</button></td></tr>`; }).join('')}</tbody></table></div>`;
+            el.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>તારીખ</th><th>ગ્રાહક</th><th>વસ્તુ</th><th>નંગ</th><th>રકમ</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody>${list.slice().reverse().map((x,ri) => { const realIndex=list.length-1-ri; const sid=x.id||('external-'+realIndex); return `<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.customerName || 'નામ વગર')}</td><td>${escapeHtml(x.itemName || '-')}</td><td>${Number(x.qty)||0}</td><td>₹${Math.round(Number(x.price)||0)}</td><td>${escapeHtml(x.payType || '-')}</td><td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('external','','${sid}')" type="button">↩️</button></td></tr>`; }).join('')}</tbody></table></div>`;
         }
 
         function getAllStationerySalesRecords(){
@@ -5411,9 +5518,9 @@
                         <td>₹${s.price}</td>
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
                         <td>
-                            <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="openStationeryReceipt('${s.id}')">🧾 પહોંચ</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')">↩️ Return</button>
+                            <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')" type="button">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="openStationeryReceipt('${s.id}')" type="button">🧾 પહોંચ</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')" type="button">↩️ Return</button>
                         </td>
                     </tr>
                 `;
@@ -5459,7 +5566,7 @@
                                 <td>${s.qty}</td>
                                 <td>₹${s.price}</td>
                                 <td>${s.payType}</td>
-                                <td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('student','${st.id}','${s.id}')">↩️</button></td>
+                                <td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('student','${st.id}','${s.id}')" type="button">↩️</button></td>
                             </tr>
                         `;
                     });
@@ -5619,11 +5726,11 @@
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
-                    <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
+                    <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')" type="button">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
                     <tbody>${hist||'<tr><td colspan="5" style="color:#888;">હજુ જમા નથી.</td></tr>'}</tbody></table></div>
-                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deleteLoanRecord('${r.id}')">🗑️ નોંધ ડિલીટ</button>
+                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deleteLoanRecord('${r.id}')" type="button">🗑️ નોંધ ડિલીટ</button>
                 </div>`;
             }).join('');
         }
@@ -5839,11 +5946,11 @@
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
-                    <button class="btn btn-green" style="margin-top:8px;" onclick="addPreviousYearPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
+                    <button class="btn btn-green" style="margin-top:8px;" onclick="addPreviousYearPayment('${r.id}')" type="button">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
                     <tbody>${hist||'<tr><td colspan="5" style="color:#888;">હજુ જમા નથી.</td></tr>'}</tbody></table></div>
-                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deletePreviousYearDue('${r.id}')">🗑️ નોંધ ડિલીટ</button>
+                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deletePreviousYearDue('${r.id}')" type="button">🗑️ નોંધ ડિલીટ</button>
                 </div>`;
             }).join('');
         }
