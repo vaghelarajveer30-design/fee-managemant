@@ -126,28 +126,27 @@
         <h1>FEE MANAGEMENT</h1>
         <div style="display:flex;align-items:center;gap:8px;">
             <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
-            <div id="cloudSyncBadge" class="net-status net-online" style="margin-left:6px;background:#1565c0;">☁️ SYNC</div>
         </div>
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
     <div class="container" style="padding-top:8px;padding-bottom:0;">
         <div class="r-menu-wrap">
-            <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ" type="button">R</button>
+            <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
             <div id="rMenuPanel" class="r-menu-panel">
-                    <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')" type="button">📊 સંપૂર્ણ Dashboard</button>
-                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFinancialDashboard')" type="button">💰 Financial Dashboard</button>
-                    <button class="btn btn-green" onclick="rMenuAction('dashboardWhatsAppCard')" type="button">📲 WhatsApp Automation</button>
-                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageProfitLoss')" type="button">📈 Profit / Loss</button>
-                    <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')" type="button">🔔 Automatic Reminder List</button>
-                    <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')" type="button">📅 આગામી મહિનાની ફી</button>
-                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')" type="button">💰 ઉછીના આપેલ રૂપિયા</button>
-                    <button class="btn btn-purple" onclick="navigateFromRMenu('pagePreviousYearDue')" type="button">📅 ગયા વર્ષના બાકી</button>
-                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageStationeryReport')" type="button">📖 સ્ટેશનરી સ્ટોક</button>
-                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageAdminExpense')" type="button">💸 Admin ખર્ચ</button>
-                    <button class="btn btn-purple" onclick="navigateFromRMenu('pageCourseDivision')" type="button">📚 કોર્ષ વિભાજન</button>
-                    <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')" type="button">⚠️ બાકી ફીની યાદી</button>
-                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')" type="button">📊 ફી સરવૈયું / રિપોર્ટ</button>
-                    <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')" type="button">🔎 સર્ચ ફી રિપોર્ટ</button>
+                    <button class="btn btn-purple" onclick="rMenuAction('dashboardAdvancedCard')">📊 સંપૂર્ણ Dashboard</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFinancialDashboard')">💰 Financial Dashboard</button>
+                    <button class="btn btn-green" onclick="rMenuAction('dashboardWhatsAppCard')">📲 WhatsApp Automation</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageProfitLoss')">📈 Profit / Loss</button>
+                    <button class="btn btn-orange" onclick="rMenuAction('dashboardReminderCard')">🔔 Automatic Reminder List</button>
+                    <button class="btn btn-cyan" onclick="rMenuAction('dashboardNextMonthCard')">📅 આગામી મહિનાની ફી</button>
+                    <button class="btn btn-cyan" onclick="navigateFromRMenu('pageLoans')">💰 ઉછીના આપેલ રૂપિયા</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pagePreviousYearDue')">📅 ગયા વર્ષના બાકી</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageStationeryReport')">📖 સ્ટેશનરી સ્ટોક</button>
+                    <button class="btn btn-orange" onclick="navigateFromRMenu('pageAdminExpense')">💸 Admin ખર્ચ</button>
+                    <button class="btn btn-purple" onclick="navigateFromRMenu('pageCourseDivision')">📚 કોર્ષ વિભાજન</button>
+                    <button class="btn btn-red" onclick="rMenuAction('dashboardDueReport')">⚠️ બાકી ફીની યાદી</button>
+                    <button class="btn btn-blue" onclick="navigateFromRMenu('pageFeeReports')">📊 ફી સરવૈયું / રિપોર્ટ</button>
+                    <button class="btn btn-gray" onclick="rMenuAction('dashboardReceiptSearchCard')">🔎 સર્ચ ફી રિપોર્ટ</button>
             </div>
         </div>
     </div>
@@ -204,27 +203,16 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()" type="button">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
+            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
 
     <!-- મેઈન એપ્લિકેશન કન્ટેનર -->
-    <div id="appImageViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;padding:18px;box-sizing:border-box;overflow:auto;">
-    <div style="max-width:900px;margin:0 auto;text-align:center;">
-        <button type="button" onclick="closeAppImageViewer()" style="background:#fff;color:#333;border:0;border-radius:8px;padding:10px 18px;font-size:16px;font-weight:bold;margin-bottom:12px;">✕ બંધ કરો</button>
-        <img id="appImageViewerImg" alt="Fee Receipt" style="max-width:100%;height:auto;background:#fff;border-radius:8px;display:block;margin:0 auto;">
-        <div style="margin-top:12px;">
-            <a id="appImageViewerDownload" download="fee-receipt.png" style="display:inline-block;background:#2e7d32;color:#fff;text-decoration:none;border-radius:8px;padding:11px 18px;font-weight:bold;">📥 Image Save / Download</a>
-        </div>
-        <div style="color:#fff;font-size:12px;margin-top:8px;">Appમાં 500 Error ટાળવા માટે Image અહીં જ ખોલવામાં આવી છે.</div>
-    </div>
-</div>
-
-<div class="container" id="mainAppContainer">
+    <div class="container" id="mainAppContainer">
 
         <div id="pageRFeature" style="display:none;">
             <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                <button class="btn btn-gray" style="width:auto;margin-top:0;" onclick="navigateTo('pageDashboard')" type="button">← મેઈન પેજ</button>
+                <button class="btn btn-gray" style="width:auto;margin-top:0;" onclick="navigateTo('pageDashboard')">← મેઈન પેજ</button>
                 <strong id="rFeatureTitle" style="color:#1565c0;font-size:16px;"></strong>
             </div>
             <div id="rFeatureContent"></div>
@@ -234,11 +222,8 @@
             <div class="card" style="background: #e8f5e9; border-color: #a5d6a7; text-align: center;">
                 <div style="color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 6px;">☁️ ક્લાઉડ બેકઅપ સિસ્ટમ (Firebase)</div>
                 <div class="grid-2">
-                    <button type="button" class="btn btn-green" onclick="event.preventDefault(); event.stopPropagation(); backupDataToCloud(); return false;">📥 બેકઅપ ડેટા લેવો</button>
-                    <div id="webinatoRestoreButton" role="button" tabindex="0"
-        style="background:#1976d2;color:#fff;border-radius:8px;padding:10px 14px;font-weight:bold;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;user-select:none;-webkit-user-select:none;"
-        onclick="restoreDataFromCloud(); return false;"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restoreDataFromCloud();return false;}">🔄 ડેટા રીસ્ટોર કરવો</div>
+                    <button class="btn btn-green" onclick="backupDataToCloud()">📥 બેકઅપ ડેટા લેવો</button>
+                    <button class="btn btn-blue" onclick="restoreDataFromCloud()">🔄 ડેટા રીસ્ટોર કરવો</button>
                 </div>
             </div>
 
@@ -258,7 +243,7 @@
             <div id="dashboardReminderCard" class="card" style="background:#fff8e1;border-color:#ffcc80;display:none;">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <h4 style="margin:0;color:#e65100;">🔔 Automatic Reminder List</h4>
-                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()" type="button">📲 યાદી WhatsApp</button>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendAllDashboardRemindersWhatsApp()">📲 યાદી WhatsApp</button>
                 </div>
                 <div id="dashboardReminderList" style="margin-top:8px;"></div>
             </div>
@@ -266,10 +251,10 @@
             <div id="dashboardWhatsAppCard" class="card" style="background:#e8f5e9;border-color:#a5d6a7;display:none;">
                 <h4 style="color:#2e7d32;">📲 WhatsApp Automation Center</h4>
                 <div class="grid-2" style="margin-top:8px;">
-                    <button class="btn btn-whatsapp" onclick="sendAllDashboardRemindersWhatsApp()" type="button">⚠️ બાકી Reminder</button>
-                    <button class="btn btn-whatsapp" onclick="sendUpcomingMonthRemindersWhatsApp()" type="button">📅 આગામી મહિનો</button>
-                    <button class="btn btn-whatsapp" onclick="sendBirthdayRemindersWhatsApp()" type="button">🎂 Birthday</button>
-                    <button class="btn btn-whatsapp" onclick="sendAnnualFeeRemindersWhatsApp()" type="button">📆 વાર્ષિક Fee</button>
+                    <button class="btn btn-whatsapp" onclick="sendAllDashboardRemindersWhatsApp()">⚠️ બાકી Reminder</button>
+                    <button class="btn btn-whatsapp" onclick="sendUpcomingMonthRemindersWhatsApp()">📅 આગામી મહિનો</button>
+                    <button class="btn btn-whatsapp" onclick="sendBirthdayRemindersWhatsApp()">🎂 Birthday</button>
+                    <button class="btn btn-whatsapp" onclick="sendAnnualFeeRemindersWhatsApp()">📆 વાર્ષિક Fee</button>
                 </div>
                 <div id="whatsappAutomationSummary" style="font-size:12px;color:#555;margin-top:8px;"></div>
             </div>
@@ -283,7 +268,7 @@
                 <h4>🧾 Receipt Search</h4>
                 <div class="grid-2">
                     <input id="receiptSearchInput" class="form-control" placeholder="રસીદ નં. / નામ / મોબાઈલ" oninput="searchReceiptsDashboard()">
-                    <button class="btn btn-blue" onclick="searchReceiptsDashboard()" type="button">🔍 શોધો</button>
+                    <button class="btn btn-blue" onclick="searchReceiptsDashboard()">🔍 શોધો</button>
                 </div>
                 <div id="receiptSearchResults" style="margin-top:8px;"></div>
             </div>
@@ -291,8 +276,8 @@
             <div style="margin:15px 0 10px 0;">
                 <h3 style="font-size:17px;color:#333;margin-bottom:8px;">વિદ્યાર્થીઓની યાદી</h3>
                 <div class="grid-2">
-                    <button class="btn btn-blue" style="margin-top:0;" onclick="openAddStudentModal()" type="button">➕ નવો વિદ્યાર્થી</button>
-                    <button class="btn btn-gray" style="margin-top:0;" onclick="toggleDashboardSection('dashboardReceiptSearchCard')" type="button">🧾 રીસેપ્ટ સર્ચ</button>
+                    <button class="btn btn-blue" style="margin-top:0;" onclick="openAddStudentModal()">➕ નવો વિદ્યાર્થી</button>
+                    <button class="btn btn-gray" style="margin-top:0;" onclick="toggleDashboardSection('dashboardReceiptSearchCard')">🧾 રીસેપ્ટ સર્ચ</button>
                 </div>
             </div>
 
@@ -321,7 +306,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')" type="button">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
+            <button class="btn btn-purple" style="margin-top: 10px;" onclick="navigateTo('pageMasterSettings')">⚙️ માસ્ટર સેટિંગ્સ & API Key</button>
         </div>
 
         <div id="pageAddStudent" style="display: none;">
@@ -333,7 +318,7 @@
                 
                 <button type="button" class="btn btn-purple" style="margin: 10px 0;" onclick="selectContactFromPhone()">📱 કોન્ટેક્ટમાંથી પસંદ કરો</button>
                 
-                <form onsubmit="event.preventDefault(); return false;">
+                <form onsubmit="event.preventDefault(); saveStudent();">
                     <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
                         <label>વિદ્યાર્થીનું નામ</label>
@@ -408,7 +393,7 @@
                             <option value="inactive">બંધ છે (Inactive)</option>
                         </select>
                     </div>
-                    <button type="button" class="btn btn-blue" id="btnSaveStudent" onclick="event.preventDefault(); event.stopPropagation(); saveStudent(); return false;">સેવ કરો</button>
+                    <button type="submit" class="btn btn-blue" id="btnSaveStudent">સેવ કરો</button>
                 </form>
             </div>
         </div>
@@ -450,18 +435,13 @@
                         <input type="text" id="mDefaultCourse" class="form-control" value="Navoday">
                     </div>
                     <div class="form-group">
-                        <label>🔗 ઓનલાઈન ફી પહોંચની વેબ URL</label>
+                        <label>ઓનલાઈન ફી પહોંચનું Base URL (લિંક એપ/વેબ માટે)</label>
                         <input type="url" id="mReceiptBaseUrl" class="form-control" placeholder="https://તમારી-site.com/index.html">
-                        <small style="color:#666;">
-                            અહીં તમારી <b>ઓનલાઈન ખુલતી index.html ની સંપૂર્ણ HTTPS લિંક</b> નાખો.
-                            ઉદાહરણ: <b>https://example.com/index.html</b><br>
-                            પછી પહોંચ સેવ કર્યા બાદ WhatsAppમાં વિદ્યાર્થીની <b>સીધી તેની પોતાની પહોંચની લિંક</b> જશે.
-                            APK/ZIPની local file લિંક અહીં ન નાખવી.
-                        </small>
+                        <small style="color:#666;">ZIP/APK માંથી WhatsApp લિંક મોકલવી હોય તો પહોંચ ખોલતી HTML વેબ પર હોવી જરૂરી છે.</small>
                     </div>
 
                     <div class="form-group" style="background:#f3f8ff;padding:8px;border-radius:7px;border:1px solid #bbdefb;">
-                        <label><input type="checkbox" id="mAutoBackup"> ☁️ Online Auto Sync (દર ફેરફારે Cloudમાં સેવ)</label><div style="font-size:11px;color:#666;margin:4px 0 8px 24px;">📌 Internet વગર પણ ડેટા Localમાં સાચવાશે. Internet પાછું આવે એટલે આપમેળે Firebaseમાં સેવ થશે.</div>
+                        <label><input type="checkbox" id="mAutoBackup"> ☁️ Auto Cloud Backup (દર 24 કલાકે, Internet હોય ત્યારે)</label>
                     </div>
                     <button type="submit" class="btn btn-purple">💾 સેટિંગ્સ સેવ કરો</button>
                     <button type="button" class="btn btn-red" onclick="changeAppPassword()">🔐 એપ લોક પાસવર્ડ બદલો</button>
@@ -477,8 +457,8 @@
             <div class="card">
                 <h4>📂 ઓફલાઈન ફાઈલ બેકઅપ (JSON)</h4>
                 <div class="grid-2">
-                    <button class="btn btn-cyan" onclick="downloadJSONBackup()" type="button">📥 ડેટા ડાઉનલોડ કરો</button>
-                    <button class="btn btn-gray" onclick="document.getElementById('uploadJsonInput').click()" type="button">📤 ડેટા અપલોડ કરો</button>
+                    <button class="btn btn-cyan" onclick="downloadJSONBackup()">📥 ડેટા ડાઉનલોડ કરો</button>
+                    <button class="btn btn-gray" onclick="document.getElementById('uploadJsonInput').click()">📤 ડેટા અપલોડ કરો</button>
                     <input type="file" id="uploadJsonInput" style="display:none;" onchange="uploadJSONBackup(event)">
                 </div>
             </div>
@@ -505,10 +485,10 @@
                 <h2 style="color:#1565c0;margin-bottom:6px;">📚 સ્ટેશનરી મેનેજમેન્ટ</h2>
                 <p style="color:#666;font-size:13px;margin-bottom:14px;">સ્ટેશનરીનું કામ હવે ચાર સરળ વિભાગમાં ગોઠવેલું છે.</p>
                 <div class="grid-2">
-                    <button class="btn btn-blue" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryStock')" type="button">📦<br>સ્ટોક</button>
-                    <button class="btn btn-orange" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySale')" type="button">🛒<br>વેચાણ</button>
-                    <button class="btn btn-purple" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySalesReport')" type="button">📊<br>વેચાણ રિપોર્ટ</button>
-                    <button class="btn btn-green" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryProfit')" type="button">💰<br>નફો / સરવૈયું</button>
+                    <button class="btn btn-blue" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryStock')">📦<br>સ્ટોક</button>
+                    <button class="btn btn-orange" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySale')">🛒<br>વેચાણ</button>
+                    <button class="btn btn-purple" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationerySalesReport')">📊<br>વેચાણ રિપોર્ટ</button>
+                    <button class="btn btn-green" style="min-height:70px;font-size:16px;" onclick="navigateTo('pageStationeryProfit')">💰<br>નફો / સરવૈયું</button>
                 </div>
             </div>
             <div class="card">
@@ -529,7 +509,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#1565c0;" id="stkFormTitle">📦 સ્ટોકમાં નવો માલ ઉમેરો</h3>
-                <form onsubmit="return false;" style="margin-top:8px;">
+                <form onsubmit="event.preventDefault();saveStockItem();" style="margin-top:8px;">
                     <input type="hidden" id="editStockId">
                     <div class="form-group"><label>વસ્તુનું નામ</label><input type="text" id="stkName" class="form-control" required placeholder="દા.ત. નવોદય બુક"></div>
                     <div class="grid-3">
@@ -538,7 +518,7 @@
                         <div class="form-group"><label>જથ્થો</label><input type="number" id="stkQty" class="form-control" required placeholder="50"></div>
                         <div class="form-group"><label>⚠️ Minimum Stock</label><input type="number" id="stkMinQty" class="form-control" min="0" value="5" placeholder="5"></div>
                     </div>
-                    <button type="button" class="btn btn-green" id="btnSaveStock" onclick="event.preventDefault(); event.stopPropagation(); saveStockItem(); return false;">+ સ્ટોક સેવ કરો</button>
+                    <button type="submit" class="btn btn-green" id="btnSaveStock">+ સ્ટોક સેવ કરો</button>
                 </form>
             </div>
             <div class="card">
@@ -562,7 +542,7 @@
             <div class="card" style="background:#fff8e1;border-color:#ffe082;">
                 <h3 style="color:#e65100;">🎓 વિદ્યાર્થીને સ્ટેશનરી વેચાણ</h3>
                 <p style="font-size:13px;color:#666;">વિદ્યાર્થીને સ્ટેશનરી આપવાનું કામ વિદ્યાર્થીના વિગત પેજમાંથી કરી શકાય છે. ત્યાંથી વસ્તુ પસંદ કરીને નંગ અને ચુકવણી પ્રકાર સેવ કરો.</p>
-                <button class="btn btn-blue" onclick="navigateTo('pageDashboard')" type="button">👨‍🎓 વિદ્યાર્થી પસંદ કરવા હોમ પર જાઓ</button>
+                <button class="btn btn-blue" onclick="navigateTo('pageDashboard')">👨‍🎓 વિદ્યાર્થી પસંદ કરવા હોમ પર જાઓ</button>
             </div>
             <div class="card" style="background:#fff8e1;border-color:#ffe082;">
                 <h3 style="color:#e65100;">🛍️ બહારના ગ્રાહકને સ્ટેશનરી વેચાણ</h3>
@@ -577,7 +557,7 @@
                     <button type="submit" class="btn btn-orange">🛒 વેચાણ સેવ કરો</button>
                 </form>
             </div>
-            <div class="card"><h4>↩️ વેચાણ Return</h4><p style="font-size:13px;color:#666;">વિદ્યાર્થી અથવા બહારના વેચાણનો Return સંબંધિત વેચાણ રિપોર્ટમાંથી કરી શકાય છે.</p><button class="btn btn-purple" onclick="navigateTo('pageStationerySalesReport')" type="button">📊 વેચાણ રિપોર્ટ ખોલો</button></div>
+            <div class="card"><h4>↩️ વેચાણ Return</h4><p style="font-size:13px;color:#666;">વિદ્યાર્થી અથવા બહારના વેચાણનો Return સંબંધિત વેચાણ રિપોર્ટમાંથી કરી શકાય છે.</p><button class="btn btn-purple" onclick="navigateTo('pageStationerySalesReport')">📊 વેચાણ રિપોર્ટ ખોલો</button></div>
         </div>
 
         <div id="pageStationerySalesReport" style="display:none;">
@@ -612,7 +592,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#d32f2f;">💸 Admin ખર્ચ રજીસ્ટર</h3>
-                <form onsubmit="return false;" style="margin-top:8px;">
+                <form onsubmit="event.preventDefault(); addExpense();" style="margin-top:8px;">
                     <div class="form-group">
                         <label>ખર્ચની વિગત</label>
                         <input type="text" id="expDetail" class="form-control" required placeholder="દા.ત. લાઈટ બિલ">
@@ -621,7 +601,7 @@
                         <label>ખર્ચ રકમ (₹)</label>
                         <input type="number" id="expAmount" class="form-control" required placeholder="500">
                     </div>
-                    <button type="button" class="btn btn-red" id="btnSaveExpense" onclick="event.preventDefault(); event.stopPropagation(); addExpense(); return false;">+ ખર્ચ ઉમેરો</button>
+                    <button type="submit" class="btn btn-red">+ ખર્ચ ઉમેરો</button>
                 </form>
             </div>
             <div class="card">
@@ -646,7 +626,7 @@
             </div>
             <div class="card">
                 <h3 style="color:#0097a7;">💰 ઉછીના આપેલ રૂપિયા</h3>
-                <form onsubmit="return false;">
+                <form onsubmit="event.preventDefault(); saveLoanRecord();">
                     <div class="grid-2">
                         <div class="form-group"><label>કોને આપ્યા?</label><input id="loanPerson" class="form-control" required placeholder="નામ"></div>
                         <div class="form-group"><label>ક્યારે આપ્યા?</label><input type="date" id="loanDate" class="form-control" required></div>
@@ -657,7 +637,7 @@
                         <div class="form-group"><label>ઉછીના આપેલ કુલ રકમ (₹)</label><input type="number" id="loanAmount" class="form-control" min="0" required></div>
                         <div class="form-group"><label>આજે જમા (હોય તો)</label><input type="number" id="loanInitialPaid" class="form-control" min="0" value="0"></div>
                     </div>
-                    <button class="btn btn-cyan" type="button" id="btnSaveLoan" onclick="event.preventDefault(); event.stopPropagation(); saveLoanRecord(); return false;">💾 ઉછીનાની નોંધ સેવ કરો</button>
+                    <button class="btn btn-cyan" type="submit">💾 ઉછીનાની નોંધ સેવ કરો</button>
                 </form>
             </div>
             <div class="finance-card">
@@ -703,7 +683,7 @@
                 <a onclick="navigateTo('pageDashboard')" style="color:#1565c0;cursor:pointer;font-weight:bold;">← હોમ પર પાછા જાઓ</a>
             </div>
             <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="color:#1565c0;margin:0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3><button class="btn btn-blue" style="width:auto;padding:6px 10px;font-size:12px;" onclick="window.print()" type="button">🖨️ પ્રિન્ટ / PDF</button></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="color:#1565c0;margin:0;">📊 ફી સરવૈયું અને રિપોર્ટ</h3><button class="btn btn-blue" style="width:auto;padding:6px 10px;font-size:12px;" onclick="window.print()">🖨️ પ્રિન્ટ / PDF</button></div>
                 <p style="font-size:12px;color:#666;margin:6px 0 10px;">📈 આવક રિપોર્ટ એપ્રિલથી માર્ચ સુધી મહિના પ્રમાણે છે. જમા રકમ પહોંચની તારીખ પ્રમાણે ગણાય છે અને બાકી અલગ બતાવાય છે.</p>
                 <div class="grid-2">
                     <div class="form-group"><label>કઈ તારીખથી?</label><input type="date" id="reportFromDate" class="form-control" onchange="renderFeeReports()"></div>
@@ -722,7 +702,7 @@
             <div class="card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <h4 style="margin:0;">⚠️ બાકી ફીની યાદી</h4>
-                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendDueReportSummaryWhatsApp()" type="button">📲 યાદી WhatsApp</button>
+                    <button class="btn btn-whatsapp" style="width:auto;padding:6px 10px;font-size:12px;" onclick="sendDueReportSummaryWhatsApp()">📲 યાદી WhatsApp</button>
                 </div>
                 <div id="dueReportList" style="margin-top:8px;"></div>
             </div>
@@ -739,14 +719,14 @@
             <div class="card">
                 <h3 style="color:#7b1fa2;">📅 ગયા વર્ષના બાકી</h3>
                 <p style="font-size:12px;color:#666;margin:6px 0 10px;">વિદ્યાર્થીનું ગયા વર્ષનું બાકી દાખલ કરો. પછી થોડું-થોડું કે એકસાથે જમા થાય તેમ બાકી આપમેળે ઘટશે.</p>
-                <form onsubmit="return false;">
+                <form onsubmit="event.preventDefault(); savePreviousYearDue();">
                     <div class="form-group"><label>વિદ્યાર્થી</label><select id="prevStudentSelect" class="form-control" required></select></div>
                     <div class="grid-2">
                         <div class="form-group"><label>ગયા વર્ષનું કુલ બાકી (₹)</label><input type="number" id="prevAmount" class="form-control" min="0" required></div>
                         <div class="form-group"><label>બાકી નોંધ તારીખ</label><input type="date" id="prevDate" class="form-control" required></div>
                     </div>
                     <div class="form-group"><label>વિગત</label><textarea id="prevDetail" class="form-control" rows="2" placeholder="ગયા વર્ષ / અન્ય નોંધ"></textarea></div>
-                    <button class="btn btn-purple" type="button" id="btnSavePreviousDue" onclick="event.preventDefault(); event.stopPropagation(); savePreviousYearDue(); return false;">💾 ગયા વર્ષનું બાકી સેવ કરો</button>
+                    <button class="btn btn-purple" type="submit">💾 ગયા વર્ષનું બાકી સેવ કરો</button>
                 </form>
             </div>
             <div class="finance-card">
@@ -794,13 +774,13 @@
                 </div>
 
                 <div class="grid-2" style="margin-top: 10px;">
-                    <button class="btn btn-blue" onclick="editStudent(currentStudent.id)" type="button">✏️ વિગત સુધારો (Edit)</button>
-                    <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)" type="button">🗑️ ડિલીટ કરો (Delete)</button>
+                    <button class="btn btn-blue" onclick="editStudent(currentStudent.id)">✏️ વિગત સુધારો (Edit)</button>
+                    <button class="btn btn-red" onclick="deleteStudent(currentStudent.id)">🗑️ ડિલીટ કરો (Delete)</button>
                 </div>
 
                 <div class="grid-2" style="margin-top: 8px;">
-                    <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)" type="button">🔄 રી-જોઈન્ટ કરો</button>
-                    <button class="btn btn-orange" onclick="openFeeChangeBox()" type="button">💰 ફી વધારો/બદલો</button>
+                    <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)">🔄 રી-જોઈન્ટ કરો</button>
+                    <button class="btn btn-orange" onclick="openFeeChangeBox()">💰 ફી વધારો/બદલો</button>
                 </div>
 
                 <div id="rejoinBox" class="card" style="display:none; background:#e8f5e9; border-color:#a5d6a7; margin-top:10px; margin-bottom:0;">
@@ -842,7 +822,7 @@
                             <input type="number" id="feeChangeAmount" class="form-control" min="0" placeholder="400">
                         </div>
                     </div>
-                    <button class="btn btn-orange" onclick="saveFeeChange()" type="button">💾 નવી ફી સેવ કરો</button>
+                    <button class="btn btn-orange" onclick="saveFeeChange()">💾 નવી ફી સેવ કરો</button>
                     <div id="feeChangeHistory" style="font-size:12px; margin-top:8px;"></div>
                 </div>
 
@@ -855,12 +835,12 @@
                 <div class="card" style="background:#f8fbff;border-color:#bbdefb;margin-top:10px;margin-bottom:0;">
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                         <h4 style="color:#1565c0;margin:0;">📋 વિદ્યાર્થીનું સંપૂર્ણ ફી સરવૈયું</h4>
-                        <button class="btn btn-whatsapp" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0;" onclick="sendStudentFullFeeWhatsApp()" type="button">📲 સરવૈયું મોકલો</button>
+                        <button class="btn btn-whatsapp" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0;" onclick="sendStudentFullFeeWhatsApp()">📲 સરવૈયું મોકલો</button>
                     </div>
                     <div id="studentFeeOverview" style="margin-top:8px;"></div>
                 </div>
                 <div class="card" style="background:#fff;border-color:#c5cae9;margin-top:10px;margin-bottom:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h4 style="color:#283593;margin:0">📒 સંપૂર્ણ Student Ledger</h4><button class="btn btn-blue" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0" onclick="printStudentLedger()" type="button">🖨️ Print</button></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h4 style="color:#283593;margin:0">📒 સંપૂર્ણ Student Ledger</h4><button class="btn btn-blue" style="width:auto;padding:6px 9px;font-size:11px;margin-top:0" onclick="printStudentLedger()">🖨️ Print</button></div>
                     <div id="studentLedger" style="margin-top:8px"></div>
                 </div>
 
@@ -879,8 +859,8 @@
                     <div style="font-size:12px; color:#333; margin-top:6px;">
                         ગણતરી કરેલ બાકી રકમ: <strong id="calculatedAlertAmt" style="color:red;">₹0</strong>
                     </div>
-                    <button class="btn btn-whatsapp" style="margin-top:8px;" onclick="sendDueFeeAlertWhatsApp()" type="button">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
-                    <button class="btn btn-green" style="margin-top:6px;" onclick="sendThankYouWhatsApp()" type="button">💐 ફી ભર્યા બદલ આભાર પત્ર મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:8px;" onclick="sendDueFeeAlertWhatsApp()">📲 ઓટો વોટ્સએપ એલર્ટ / રીમાઇન્ડર મોકલો</button>
+                    <button class="btn btn-green" style="margin-top:6px;" onclick="sendThankYouWhatsApp()">💐 ફી ભર્યા બદલ આભાર પત્ર મોકલો</button>
                 </div>
             </div>
 
@@ -906,7 +886,7 @@
                         </select>
                     </div>
                 </div>
-                <button class="btn btn-orange" onclick="giveStationeryToStudent()" type="button">+ વિદ્યાર્થીને આપો</button>
+                <button class="btn btn-orange" onclick="giveStationeryToStudent()">+ વિદ્યાર્થીને આપો</button>
 
                 <h5 style="margin-top:12px; color:#555;">આપેલ સ્ટેશનરી હિસ્ટ્રી:</h5>
                 <table>
@@ -1008,7 +988,7 @@
                     <input type="text" id="recPayer" class="form-control" placeholder="દા.ત. રવિભાઈ">
                 </div>
 
-                <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt" type="button">🧾 પહોંચ જનરેટ / સેવ કરો</button>
+                <button class="btn btn-orange" onclick="buildReceiptPreview()" id="btnSaveReceipt">🧾 પહોંચ જનરેટ / સેવ કરો</button>
             </div>
 
             <!-- જૂની રસીદો/પહોંચ જોવા માટેનું કોષ્ટક -->
@@ -1033,7 +1013,7 @@
             <div class="card" id="previewContainer" style="display:none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h3 style="color:#1565c0;">📄 રસીદ / પહોંચ પ્રીવ્યૂ</h3>
-                    <button class="btn btn-red" style="width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0;" onclick="closePreviewContainer()" type="button">❌ બંધ કરો</button>
+                    <button class="btn btn-red" style="width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0;" onclick="closePreviewContainer()">❌ બંધ કરો</button>
                 </div>
 
                 <div class="receipt-card" id="receiptPrintArea">
@@ -1086,11 +1066,11 @@
                 </div>
 
                 <div class="short-link-card">
-                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની સીધી ઓનલાઈન ફી પહોંચની લિંક:</div>
+                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
                     <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
                     <div class="grid-2">
-                        <button class="btn btn-purple" onclick="copyReceiptLink()" type="button">📋 લિંક કોપી કરો</button>
-                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()" type="button">💬 WhatsApp પર લિંક મોકલો</button>
+                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
+                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર લિંક મોકલો</button>
                     </div>
                 </div>
 
@@ -1098,7 +1078,7 @@
                     <div class="grid-2">
                         <button id="btnDownloadImageLink" class="btn btn-green" type="button" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
                                             </div>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()" type="button">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
                                                         </div>
             </div>
 
@@ -1139,8 +1119,8 @@
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <button class="btn btn-blue" onclick="applyRestoreChoices()" type="button">🔄 પસંદગી પ્રમાણે કરો</button>
-                <button class="btn btn-gray" onclick="closeRestoreChoiceModal()" type="button">❌ રદ કરો</button>
+                <button class="btn btn-blue" onclick="applyRestoreChoices()">🔄 પસંદગી પ્રમાણે કરો</button>
+                <button class="btn btn-gray" onclick="closeRestoreChoiceModal()">❌ રદ કરો</button>
             </div>
         </div>
     </div>
@@ -1196,8 +1176,8 @@
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-                <button class="btn btn-blue" onclick="printStationeryReceipt()" type="button">🖨️ પ્રિન્ટ / PDF</button>
-                <button class="btn btn-gray" onclick="closeStationeryReceipt()" type="button">❌ બંધ કરો</button>
+                <button class="btn btn-blue" onclick="printStationeryReceipt()">🖨️ પ્રિન્ટ / PDF</button>
+                <button class="btn btn-gray" onclick="closeStationeryReceipt()">❌ બંધ કરો</button>
             </div>
         </div>
     </div>
@@ -1209,178 +1189,11 @@
                 ઈમેજ ઓટો ડાઉનલોડ થઈ રહી છે.<br><br>
                 હવે વ્હોટ્સએપ ખુલે ત્યારે ગેલેરીમાંથી પસંદ કરીને મોકલો.
             </div>
-            <button class="modal-btn" onclick="closeCustomModal()" type="button">OK</button>
+            <button class="modal-btn" onclick="closeCustomModal()">OK</button>
         </div>
     </div>
 
-    
-<script>
-/* Explicit save-button bridge: these four buttons must call their functions
-   directly and must never submit an outer/host form. */
-document.addEventListener('click', function(e) {
-    const b = e.target && e.target.closest ? e.target.closest('#btnSaveStock, #btnSaveExpense, #btnSaveLoan, #btnSavePreviousDue') : null;
-    if (!b) return;
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-        if (b.id === 'btnSaveStock') saveStockItem();
-        else if (b.id === 'btnSaveExpense') addExpense();
-        else if (b.id === 'btnSaveLoan') saveLoanRecord();
-        else if (b.id === 'btnSavePreviousDue') savePreviousYearDue();
-    } catch (err) {
-        console.error('Save button error:', err);
-        alert('❌ સેવ કરતી વખતે ભૂલ આવી:\n' + (err.message || err));
-    }
-    return false;
-}, true);
-</script>
-<script>
-/* Restore/backup safety for Android WebView/host wrappers:
-   never let app buttons submit an outer form and navigate away from the HTML app. */
-document.addEventListener('click', function(e) {
-    const b = e.target && e.target.closest ? e.target.closest('button') : null;
-    if (b) {
-        try {
-            if (b.getAttribute('type') !== 'submit') b.setAttribute('type','button');
-        } catch(_) {}
-    }
-}, true);
-
-document.addEventListener('submit', function(e) {
-    const form = e.target;
-    if (form && form.closest && form.closest('#mainAppContainer')) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-    }
-}, true);
-</script>
-<script>
-        // Self-contained HTML -> PNG helper. No external library required.
-        // If html2canvas is ever available, it is preferred; otherwise a native
-        // SVG foreignObject renderer is used so the receipt image still works
-        // on GitHub Pages / Chrome without an extra script.
-        function openBlobImageInApp(blob, fileName='fee-receipt.png') {
-            try {
-                const viewer=document.getElementById('appImageViewer');
-                const img=document.getElementById('appImageViewerImg');
-                const dl=document.getElementById('appImageViewerDownload');
-                if(!viewer||!img||!dl) throw new Error('Image viewer ઉપલબ્ધ નથી');
-                const reader=new FileReader();
-                reader.onload=function(){
-                    const dataUrl=reader.result;
-                    img.src=dataUrl;
-                    dl.href=dataUrl;
-                    dl.download=fileName;
-                    viewer.style.display='block';
-                    document.body.style.overflow='hidden';
-                };
-                reader.readAsDataURL(blob);
-            }catch(e){ alert('❌ Image ખોલી શકાઈ નથી: '+(e.message||e)); }
-        }
-        function closeAppImageViewer(){
-            const viewer=document.getElementById('appImageViewer');
-            const img=document.getElementById('appImageViewerImg');
-            if(viewer) viewer.style.display='none';
-            if(img) img.removeAttribute('src');
-            document.body.style.overflow='';
-        }
-
-        async function receiptElementToBlob(element) {
-            if (!element) throw new Error('ફી પહોંચનું element મળ્યું નથી.');
-
-            if (window.html2canvas) {
-                const canvas = await window.html2canvas(element, {
-                    backgroundColor: '#ffffff',
-                    scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
-                    useCORS: true,
-                    logging: false
-                });
-                return await new Promise((resolve, reject) => {
-                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG તૈયાર થઈ નથી.')), 'image/png');
-                });
-            }
-
-            const rect = element.getBoundingClientRect();
-            const width = Math.max(1, Math.ceil(rect.width || element.offsetWidth || 600));
-            const height = Math.max(1, Math.ceil(rect.height || element.offsetHeight || 800));
-            const clone = element.cloneNode(true);
-            clone.style.width = width + 'px';
-            clone.style.height = 'auto';
-            clone.style.margin = '0';
-            clone.style.boxSizing = 'border-box';
-
-            // Copy inline <style> blocks so the cloned receipt keeps the same design.
-            let css = '';
-            document.querySelectorAll('style').forEach(st => { css += st.textContent + '\n'; });
-            // Best-effort copy of accessible stylesheet rules.
-            try {
-                Array.from(document.styleSheets).forEach(sheet => {
-                    try { Array.from(sheet.cssRules || []).forEach(rule => { css += rule.cssText + '\n'; }); }
-                    catch(e) {}
-                });
-            } catch(e) {}
-
-            // Convert ordinary images to data URLs when possible; cross-origin images
-            // are left as-is and the browser may omit them if CORS is unavailable.
-            const imgs = Array.from(clone.querySelectorAll('img'));
-            for (const img of imgs) {
-                try {
-                    if (img.src && /^https?:/i.test(img.src)) {
-                        const r = await fetch(img.src, {mode:'cors'});
-                        if (r.ok) {
-                            const b = await r.blob();
-                            const data = await new Promise(res => {
-                                const fr = new FileReader();
-                                fr.onload = () => res(fr.result);
-                                fr.onerror = () => res(null);
-                                fr.readAsDataURL(b);
-                            });
-                            if (data) img.src = data;
-                        }
-                    }
-                } catch(e) {}
-            }
-
-            const serialized = new XMLSerializer().serializeToString(clone);
-            const svg = `<?xml version="1.0" encoding="UTF-8"?>\n` +
-                `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-                `<foreignObject x="0" y="0" width="100%" height="100%"><xhtml:style>${escapeXml(css)}</xhtml:style>` +
-                `<xhtml:div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;background:#fff;">${serialized}</xhtml:div></foreignObject></svg>`;
-
-            const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
-            const url = URL.createObjectURL(blob);
-            try {
-                const img = await new Promise((resolve, reject) => {
-                    const im = new Image();
-                    im.onload = () => resolve(im);
-                    im.onerror = () => reject(new Error('Receipt image render થઈ શક્યું નથી.'));
-                    im.src = url;
-                });
-                const canvas = document.createElement('canvas');
-                const scale = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
-                canvas.width = width * scale;
-                canvas.height = height * scale;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                return await new Promise((resolve, reject) => {
-                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG તૈયાર થઈ નથી.')), 'image/png');
-                });
-            } finally {
-                URL.revokeObjectURL(url);
-            }
-        }
-
-        function escapeXml(value) {
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&apos;');
-        }
+    <script>
         let masterSettings = {
             apiKey: "AIzaSyCjboFcoWJmVrjC9JOIzi4ZgjMnau9czmU",
             dbUrl: "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1391,7 +1204,7 @@ document.addEventListener('submit', function(e) {
             password: "",
             appPassword: "",
             nextReceiptNo: 1,
-            autoBackup: true,
+            autoBackup: false,
             lastAutoBackupAt: "",
             stockPurchases: [],
             externalStationerySales: [],
@@ -1508,8 +1321,6 @@ document.addEventListener('submit', function(e) {
             alert('✅ એપ લોક પાસવર્ડ સફળતાપૂર્વક બદલાઈ ગયો છે.');
         }
 
-        const IS_LOCAL_APP_DOCUMENT = /^content:|^file:/i.test(window.location.protocol);
-
         window.onload = async function() {
             setupInactivityAutoLock();
             const urlParams = new URLSearchParams(window.location.search);
@@ -1582,11 +1393,6 @@ document.addEventListener('submit', function(e) {
             if (document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked = !!masterSettings.autoBackup;
             if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
             renderCourseDivision();
-
-            // Offline-first + automatic online cloud sync.
-            // Local data is loaded first; when internet is available the latest
-            // local state is automatically saved to Firebase.
-            setTimeout(() => autoSyncWhenOnline(), 1200);
         };
 
         function renderStandaloneReceipt(data) {
@@ -1678,9 +1484,21 @@ document.addEventListener('submit', function(e) {
                 link.click();
                 setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 3000);
 
-                // App/WebViewમાં blob URL પર navigation કરવાથી 500 આવી શકે છે.
-                // હવે image એ જ પેજના viewerમાં ખોલીએ છીએ.
-                setTimeout(() => openBlobImageInApp(blob, fileName), 400);
+                // WhatsAppના in-app browserમાં download attribute ઘણી વાર block થાય છે.
+                // તેથી actual PNG ને નવી tabમાં ખોલવાનો fallback આપીએ છીએ.
+                setTimeout(() => {
+                    try {
+                        const dataUrl = URL.createObjectURL(blob);
+                        const w = window.open(dataUrl, '_blank');
+                        if (!w) {
+                            // popup block હોય તો એ જ પેજમાં image ખોલો; અહીંથી Save/Download કરી શકાય.
+                            window.location.href = dataUrl;
+                        }
+                        setTimeout(() => URL.revokeObjectURL(dataUrl), 60000);
+                    } catch(e) {
+                        alert('❌ તમારા બ્રાઉઝરમાં સીધું ડાઉનલોડ બંધ છે. પહોંચની Image ખોલ્યા પછી લાંબું દબાવી Save Image કરો.');
+                    }
+                }, 400);
             } catch(e) {
                 console.error(e);
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
@@ -1707,7 +1525,7 @@ document.addEventListener('submit', function(e) {
             try {
                 const link=await publishReceiptAndGetLink(receiptObj);
                 document.getElementById('receiptGeneratedUrl').value=link;
-                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની સીધી લિંક પર ક્લિક કરો:\n\n🧾 *ફી પહોંચ જુઓ:*\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
                 openWhatsAppUrl(currentStudent.phone,text);
             } catch(err) { alert('❌ પહોંચ લિંક બનાવવામાં ભૂલ: '+err.message); }
         }
@@ -1840,184 +1658,26 @@ document.addEventListener('submit', function(e) {
         window.addEventListener('offline', updateNetworkStatus);
 
         let autoBackupRunning = false;
-        let cloudSyncTimer = null;
-        let cloudSyncInFlight = false;
-        let cloudSyncQueued = false;
-        let cloudRestoreInProgress = false;
-        // Prevent automatic cloud sync from overwriting Firebase while restore is being fetched/confirmed.
-        let restoreModeActive = false;
-        const RESTORE_LOCK_KEY = 'NNC_restore_lock_until';
-        function setPersistentRestoreLock(ms=120000) {
-            try { localStorage.setItem(RESTORE_LOCK_KEY, String(Date.now()+ms)); } catch(e) {}
-        }
-        function clearPersistentRestoreLock() {
-            try { localStorage.removeItem(RESTORE_LOCK_KEY); } catch(e) {}
-        }
-        function isPersistentRestoreLocked() {
-            try {
-                const t = parseInt(localStorage.getItem(RESTORE_LOCK_KEY)||'0',10);
-                if (t > Date.now()) return true;
-                if (t) localStorage.removeItem(RESTORE_LOCK_KEY);
-            } catch(e) {}
-            return false;
-        }
-
-        function setCloudSyncStatus(text, ok=true) {
-            const el = document.getElementById('cloudSyncBadge');
-            if (!el) return;
-            el.innerText = text;
-            el.style.background = ok ? '#1565c0' : '#ef6c00';
-        }
-
-        function buildCloudPayload() {
-            return {
-                students: students,
-                stockList: stockList,
-                expenses: expenses,
-                loanRecords: loanRecords,
-                previousYearDues: previousYearDues,
-                deletedStudents: deletedStudents,
-                masterSettings: masterSettings,
-                timestamp: new Date().toISOString(),
-                syncVersion: 9
-            };
-        }
-
         function saveLocalData() {
-            // Local storage is the primary/offline database.
-            // Save locally first, but verify that the browser actually accepted it.
-            try {
-                localStorage.setItem('NNC_storage_initialized', '1');
-                localStorage.setItem('NNC_students', JSON.stringify(students));
-                localStorage.setItem('NNC_stock', JSON.stringify(stockList));
-                localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
-                localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
-                localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
-                localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
-                localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-
-                const check = JSON.parse(localStorage.getItem('NNC_students') || '[]');
-                if (!Array.isArray(check) || check.length !== students.length) {
-                    throw new Error('Local storage verification failed');
-                }
-            } catch (e) {
-                console.error('Local storage save failed:', e);
-                setCloudSyncStatus('☁️ LOCAL SAVE ERROR', false);
-                return false;
-            }
-
-            // If offline, the change stays queued locally and will sync
-            // automatically as soon as the connection comes back.
-            if (navigator.onLine && masterSettings.dbUrl) {
-                queueCloudSync();
-            } else {
-                setCloudSyncStatus('☁️ PENDING', false);
-            }
-            return true;
+            localStorage.setItem('NNC_storage_initialized', '1');
+            localStorage.setItem('NNC_students', JSON.stringify(students));
+            localStorage.setItem('NNC_stock', JSON.stringify(stockList));
+            localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
+            localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
+            localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
+            localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
+            localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+            scheduleAutoBackup();
         }
-
-        function queueCloudSync(delay=800) {
-            cloudSyncQueued = true;
-            if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
-            cloudSyncTimer = setTimeout(() => {
-                cloudSyncTimer = null;
-                syncLocalDataToCloud();
-            }, delay);
+        function scheduleAutoBackup(){
+            if(autoBackupRunning || !masterSettings.autoBackup || !navigator.onLine || !masterSettings.dbUrl) return;
+            const last=masterSettings.lastAutoBackupAt?new Date(masterSettings.lastAutoBackupAt).getTime():0;
+            if(Date.now()-last < 24*60*60*1000) return;
+            setTimeout(async()=>{
+                if(autoBackupRunning)return; autoBackupRunning=true;
+                try{ await backupDataToCloud(true); }catch(e){} finally{autoBackupRunning=false;}
+            },1500);
         }
-
-        async function syncLocalDataToCloud() {
-            if (cloudRestoreInProgress || restoreModeActive || isPersistentRestoreLocked()) {
-                setCloudSyncStatus('☁️ RESTORING…', true);
-                return false;
-            }
-            if (!navigator.onLine || !masterSettings.dbUrl) {
-                setCloudSyncStatus('☁️ PENDING', false);
-                return false;
-            }
-
-            if (cloudSyncInFlight) {
-                cloudSyncQueued = true;
-                return false;
-            }
-
-            cloudSyncInFlight = true;
-            cloudSyncQueued = false;
-            setCloudSyncStatus('☁️ SAVING…', true);
-
-            try {
-                // IMPORTANT:
-                // Never run the old "storage initialized" recovery block here.
-                // This function is only for syncing already-saved local data.
-                const dbUrl = (masterSettings.dbUrl || RECOVERY_DB_URL).trim().replace(/\/$/, '');
-                if (!dbUrl) throw new Error('Firebase Database URL ઉપલબ્ધ નથી.');
-
-                const response = await fetch(dbUrl + '/backup.json', {
-                    method: 'PUT',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify(buildCloudPayload()),
-                    cache: 'no-store'
-                });
-
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-
-                const now = new Date().toISOString();
-                masterSettings.lastCloudSyncAt = now;
-                masterSettings.lastBackupAt = now;
-                masterSettings.lastAutoBackupAt = now;
-                localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-
-                setCloudSyncStatus('☁️ SAVED', true);
-                return true;
-            } catch (e) {
-                console.warn('Automatic cloud sync failed:', e);
-                setCloudSyncStatus('☁️ PENDING', false);
-                cloudSyncQueued = true;
-                return false;
-            } finally {
-                cloudSyncInFlight = false;
-                if (cloudSyncQueued && navigator.onLine) {
-                    setTimeout(() => syncLocalDataToCloud(), 1200);
-                }
-            }
-        }
-
-        // Backward-compatible name used by older parts of the app.
-        // It now means "sync immediately", rather than "wait 24 hours".
-        function scheduleAutoBackup() {
-            if (navigator.onLine && masterSettings.dbUrl) {
-                queueCloudSync(800);
-            } else {
-                setCloudSyncStatus('☁️ PENDING', false);
-            }
-        }
-
-        async function autoSyncWhenOnline() {
-            updateNetworkStatus();
-            if (cloudRestoreInProgress || restoreModeActive || window.pendingCloudRestoreData) {
-                setCloudSyncStatus('☁️ RESTORE WAIT', true);
-                return;
-            }
-            if (navigator.onLine) {
-                setCloudSyncStatus('☁️ SYNCING…', true);
-
-                // If local storage was intentionally cleared, do not upload
-                // empty/default data. The existing recovery flow handles that.
-                if (!localStorage.getItem('NNC_storage_initialized')) {
-                    return;
-                }
-
-                // First save the current local state to Firebase.
-                await syncLocalDataToCloud();
-            } else {
-                setCloudSyncStatus('☁️ OFFLINE', false);
-            }
-        }
-
-        window.addEventListener('online', autoSyncWhenOnline);
-        window.addEventListener('offline', () => {
-            updateNetworkStatus();
-            setCloudSyncStatus('☁️ OFFLINE', false);
-        });
 
         function loadLocalData() {
             if (localStorage.getItem('NNC_students')) students = JSON.parse(localStorage.getItem('NNC_students'));
@@ -2039,13 +1699,12 @@ document.addEventListener('submit', function(e) {
         }
 
         const RECOVERY_DB_URL = "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app";
-        // Offline-first architecture:
-        // LocalStorage keeps the app usable without internet.
-        // Firebase /backup is updated automatically whenever internet is available.
-        // IndexedDB/service-worker can also be used for larger offline apps, but this
-        // app keeps its existing LocalStorage data model for compatibility.
 
-        async function fetchJsonWithFallback(url) {
+        async function fetchCloudBackupData() {
+            let dbUrl = (masterSettings.dbUrl || RECOVERY_DB_URL || "").trim().replace(/\/$/, "");
+            if (!dbUrl) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
+            const url = dbUrl + "/backup.json";
+
             try {
                 const response = await fetch(url, {
                     method: "GET",
@@ -2073,186 +1732,19 @@ document.addEventListener('submit', function(e) {
             }
         }
 
-        async function fetchCloudBackupData() {
-            const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
-            const urls=[configured, RECOVERY_DB_URL].filter((u,i,a)=>u && a.indexOf(u)===i);
-            if(!urls.length) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
-
-            let lastErr=null;
-            const candidates=[];
-
-            const normalizePayload = (raw) => {
-                if(raw === null || raw === undefined) return null;
-                if(typeof raw === "string"){
-                    try { raw=JSON.parse(raw); } catch(e) { return null; }
-                }
-                if(!raw || typeof raw !== "object") return null;
-
-                const unwrap = (x) => {
-                    if(!x || typeof x!=="object") return [];
-                    return [x, x.data, x.backup, x.payload, x.value, x.result, x.result?.data]
-                        .filter(v=>v && typeof v==="object");
-                };
-                const asArray = (v) => {
-                    if(Array.isArray(v)) return v;
-                    if(v && typeof v==="object") return Object.values(v);
-                    return [];
-                };
-
-                for(const c of unwrap(raw)){
-                    const normalized=Object.assign({},c);
-                    ["students","stockList","expenses","loanRecords","previousYearDues","deletedStudents"].forEach(k=>{
-                        if(!Array.isArray(normalized[k]) && normalized[k] && typeof normalized[k]==="object")
-                            normalized[k]=asArray(normalized[k]);
-                    });
-                    if(cloudBackupHasRealData(normalized)) return normalized;
-                }
-                return null;
-            };
-
-            const count = (v) => Array.isArray(v) ? v.length :
-                (v && typeof v==="object" ? Object.keys(v).length : 0);
-
-            const addCandidate = (data, source, key="") => {
-                if(!data) return;
-                const studentCount=count(data.students);
-                const totalRecords=studentCount+count(data.stockList)+count(data.expenses)+
-                    count(data.loanRecords)+count(data.previousYearDues)+count(data.deletedStudents);
-                const ts=Date.parse(data.timestamp||'') || 0;
-                candidates.push({data,source,key,studentCount,totalRecords,ts});
-            };
-
-            // Read every possible backup location instead of returning the first
-            // response. This prevents a partial/root record from winning randomly.
-            const paths=["/backup","/data","/backupData",""];
-            for(const dbUrl of urls){
-                for(const path of paths){
-                    for(let attempt=1; attempt<=3; attempt++){
-                        try{
-                            const raw=await fetchJsonWithFallback(dbUrl + path + ".json");
-                            const data=normalizePayload(raw);
-                            if(data) addCandidate(data, dbUrl+path);
-                            break;
-                        }catch(e){
-                            lastErr=e;
-                            if(attempt<3) await new Promise(r=>setTimeout(r,500*attempt));
-                        }
-                    }
-                }
-
-                // Backup versions are the historical safety net. Read all of them
-                // and let the selector choose the best usable snapshot.
-                for(let attempt=1; attempt<=3; attempt++){
-                    try{
-                        const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
-                        if(versions && typeof versions==="object"){
-                            for(const [key,value] of Object.entries(versions)){
-                                const data=normalizePayload(value);
-                                if(data) addCandidate(data, dbUrl+"/backupVersions", key);
-                            }
-                        }
-                        break;
-                    }catch(e){
-                        lastErr=e;
-                        if(attempt<3) await new Promise(r=>setTimeout(r,500*attempt));
-                    }
-                }
-            }
-
-            if(!candidates.length){
-                if(lastErr) throw lastErr;
-                return null;
-            }
-
-            // Deterministic rule:
-            // 1) Prefer the snapshot containing the most students.
-            // 2) If equal, prefer the snapshot containing the most other records.
-            // 3) If still equal, prefer the newest timestamp/key.
-            candidates.sort((a,b)=>{
-                if(b.studentCount!==a.studentCount) return b.studentCount-a.studentCount;
-                if(b.totalRecords!==a.totalRecords) return b.totalRecords-a.totalRecords;
-                const at=a.ts || (Date.parse(a.key)||0);
-                const bt=b.ts || (Date.parse(b.key)||0);
-                return bt-at;
-            });
-
-            const best=candidates[0];
-            console.log("Restore candidate selected:", {
-                source: best.source,
-                key: best.key,
-                students: best.studentCount,
-                records: best.totalRecords,
-                candidates: candidates.length
-            });
-
-            return best.data;
-        }
-
-        async function testFirebaseRestoreConnection() {
-            const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
-            const dbUrl=configured || RECOVERY_DB_URL;
-
-            if(!dbUrl){
-                alert("❌ Firebase Database URL ઉપલબ્ધ નથી.");
-                return;
-            }
-
-            restoreModeActive=true;
-            cloudRestoreInProgress=true;
-
-            try{
-                const checks=[
-                    {name:"Firebase Root",url:dbUrl+"/.json"},
-                    {name:"Main Backup",url:dbUrl+"/backup.json"},
-                    {name:"Backup Versions",url:dbUrl+"/backupVersions.json"}
-                ];
-
-                let report=[];
-                for(const c of checks){
-                    try{
-                        const raw=await fetchJsonWithFallback(c.url);
-                        const normalized=(c.name==="Backup Versions") ? raw : raw;
-                        let info="ખાલી";
-                        if(normalized && typeof normalized==="object"){
-                            const data=(c.name==="Backup Versions") ? null : normalized;
-                            if(data && cloudBackupHasRealData(data)){
-                                info="✅ ઉપયોગી વિદ્યાર્થી/ડેટા મળ્યો";
-                            }else if(c.name==="Backup Versions"){
-                                const count=normalized ? Object.keys(normalized).length : 0;
-                                info=count ? `✅ ${count} versions મળ્યા` : "ખાલી";
-                            }else{
-                                info=`object મળ્યો, પરંતુ students/stock વગેરે મળ્યા નથી`;
-                            }
-                        }
-                        report.push(`${c.name}: ${info}`);
-                    }catch(e){
-                        report.push(`${c.name}: ❌ ${e.message}`);
-                    }
-                }
-
-                alert("🔎 Firebase Restore તપાસ\n\n" + report.join("\n") +
-                      "\n\nજો અહીં HTTP 401/403 આવે છે તો Firebase Rules/Authentication કારણ છે.");
-            }finally{
-                cloudRestoreInProgress=false;
-                restoreModeActive=false;
-            }
-        }
-
         function cloudBackupHasRealData(data) {
             if (!data || typeof data !== "object") return false;
-            const hasItems = (v) => Array.isArray(v) ? v.length > 0 : !!(v && typeof v==="object" && Object.keys(v).length > 0);
             return (
-                hasItems(data.students) ||
-                hasItems(data.stockList) ||
-                hasItems(data.expenses) ||
-                hasItems(data.loanRecords) ||
-                hasItems(data.previousYearDues) ||
-                hasItems(data.deletedStudents)
+                (Array.isArray(data.students) && data.students.length > 0) ||
+                (Array.isArray(data.stockList) && data.stockList.length > 0) ||
+                (Array.isArray(data.expenses) && data.expenses.length > 0) ||
+                (Array.isArray(data.loanRecords) && data.loanRecords.length > 0) ||
+                (Array.isArray(data.previousYearDues) && data.previousYearDues.length > 0) ||
+                (Array.isArray(data.deletedStudents) && data.deletedStudents.length > 0)
             );
         }
 
         function openRestoreChoiceModal(data, autoRecovery=false) {
-            restoreModeActive = true;
             window.pendingCloudRestoreData = data;
             window.pendingCloudRestoreAuto = !!autoRecovery;
 
@@ -2283,7 +1775,6 @@ document.addEventListener('submit', function(e) {
             if(modal) modal.style.display="none";
             window.pendingCloudRestoreData=null;
             window.pendingCloudRestoreAuto=false;
-            if (!cloudRestoreInProgress) restoreModeActive = false;
         }
 
         async function applyRestoreChoices() {
@@ -2311,17 +1802,8 @@ document.addEventListener('submit', function(e) {
                 return;
             }
 
-            cloudRestoreInProgress = true;
-            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-            cloudSyncQueued = false;
-            setCloudSyncStatus('☁️ RESTORING…', true);
-
             if(selectedDelete.length) {
-                if(!verifyMasterPassword("Firebaseમાંથી કાયમી ડિલીટ")) {
-                    cloudRestoreInProgress=false;
-                    setCloudSyncStatus('☁️ SYNC', true);
-                    return;
-                }
+                if(!verifyMasterPassword("Firebaseમાંથી કાયમી ડિલીટ")) return;
 
                 const names={
                     students:"વિદ્યાર્થીઓ",stockList:"સ્ટોક/સ્ટેશનરી",expenses:"ખર્ચ",
@@ -2336,19 +1818,13 @@ document.addEventListener('submit', function(e) {
                 try {
                     await createSafetyBackupVersion(data);
                 } catch(e) {
-                    if(!confirm("⚠️ Safety snapshot બની શક્યો નથી.\n\nતેમ છતાં કાયમી ડિલીટ કરવું છે?")) {
-                        cloudRestoreInProgress=false;
-                        setCloudSyncStatus('☁️ SYNC', true);
-                        return;
-                    }
+                    if(!confirm("⚠️ Safety snapshot બની શક્યો નથી.\n\nતેમ છતાં કાયમી ડિલીટ કરવું છે?")) return;
                 }
 
                 try {
                     await permanentlyDeleteCloudCategories(selectedDelete);
                 } catch(e) {
                     alert("❌ Firebaseમાંથી કાયમી ડિલીટમાં ભૂલ:\n"+e.message);
-                    cloudRestoreInProgress=false;
-                    setCloudSyncStatus('☁️ PENDING', false);
                     return;
                 }
             }
@@ -2375,49 +1851,7 @@ document.addEventListener('submit', function(e) {
 
             students.forEach(st=>normalizeStudentRecords(st));
             ensureReceiptNumbers();
-
-            // Restore પહેલાં cloudમાં તરત PUT ન કરવું; પહેલા restored data localમાં નિશ્ચિત સેવ કરીએ.
-            localStorage.setItem('NNC_storage_initialized','1');
-            localStorage.setItem('NNC_students',JSON.stringify(students));
-            localStorage.setItem('NNC_stock',JSON.stringify(stockList));
-            localStorage.setItem('NNC_expenses',JSON.stringify(expenses));
-            localStorage.setItem('NNC_loans',JSON.stringify(loanRecords));
-            localStorage.setItem('NNC_previousYearDues',JSON.stringify(previousYearDues));
-            localStorage.setItem('NNC_deletedStudents',JSON.stringify(deletedStudents));
-            localStorage.setItem('NNC_master',JSON.stringify(masterSettings));
-
-            // Verify localStorage really contains the restored data.
-            const verifyStored = (key, expected) => {
-                try {
-                    const raw = localStorage.getItem(key);
-                    if (raw === null) return false;
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(expected)) return Array.isArray(parsed) && parsed.length === expected.length;
-                    if (expected && typeof expected === "object") return !!parsed && typeof parsed === "object";
-                    return true;
-                } catch(e) {
-                    return false;
-                }
-            };
-
-            const storageMap = {
-                students: "NNC_students",
-                stockList: "NNC_stock",
-                expenses: "NNC_expenses",
-                loanRecords: "NNC_loans",
-                previousYearDues: "NNC_previousYearDues",
-                deletedStudents: "NNC_deletedStudents",
-                masterSettings: "NNC_master"
-            };
-
-            for (const key of selectedRestore) {
-                if (data[key] !== undefined && !verifyStored(storageMap[key], data[key])) {
-                    cloudRestoreInProgress=false;
-                    restoreModeActive=false;
-                    throw new Error("Restore પછી localStorageમાં '" + key + "' સેવ થયું નથી.");
-                }
-            }
-
+            saveLocalData();
             currentStudent=students[0]||null;
             recalculateStudentTotals();
             renderDashboard(); renderStockTable(); renderStockDropdown();
@@ -2432,50 +1866,8 @@ document.addEventListener('submit', function(e) {
             if(document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked=!!masterSettings.autoBackup;
             if(document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
 
-            // Keep restore mode locked until the page reloads, so no background sync
-            // can upload an old in-memory state between saving and reload.
-            cloudRestoreInProgress = true;
             closeRestoreChoiceModal();
-            cloudRestoreInProgress = false;
-            restoreModeActive = true;
-            cloudSyncQueued = false;
-            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-            setCloudSyncStatus('☁️ RESTORED', true);
-
-            // મહત્વનું: Androidમાં downloaded content:// HTML ફાઇલને reload કરવાથી
-            // localStorage ક્યારેક અલગ/temporary storageમાં ખુલે છે. તેથી Restore પછી
-            // હવે page RELOAD નહીં કરીએ. સીધું restored data memory + UIમાં બતાવીએ છીએ.
-            // localStorage પહેલેથી ઉપર સેવ થઈ ગયું છે.
-            currentFilter = null;
-            currentCourseFilter = null;
-            currentFeeTypeFilter = null;
-            currentStudent = students[0] || null;
-
-            try {
-                recalculateStudentTotals();
-                renderDashboard();
-                renderStockTable();
-                renderStockPurchaseHistory();
-                renderBackupVersions();
-                renderStockDropdown();
-                renderExpenses();
-                renderCourseDivision();
-                renderStudentList();
-                if (typeof updateNetworkStatus === "function") updateNetworkStatus();
-            } catch (uiErr) {
-                console.warn("Restore UI refresh warning:", uiErr);
-            }
-
-            // Modal/restore flags બંધ કરો, પરંતુ cloud sync તરત ન ચલાવવો.
-            window.pendingCloudRestoreData = null;
-            window.pendingCloudRestoreAuto = false;
-            cloudRestoreInProgress = false;
-            restoreModeActive = true;
-            setPersistentRestoreLock(120000);
-            cloudSyncQueued = false;
-            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-
-            alert("✅ Restore સફળ થયું. " + students.length + " વિદ્યાર્થીઓનો ડેટા એપમાં તરત પાછો આવી ગયો છે.\n\n⚠️ આ વખતે એપ reload કરવામાં આવી નથી, જેથી downloaded HTMLમાં restore data ગાયબ ન થાય.");
+            alert("✅ પસંદ કરેલા ડેટા સફળતાપૂર્વક રીસ્ટોર થયા.");
         }
 
         async function createSafetyBackupVersion(data) {
@@ -2548,7 +1940,16 @@ document.addEventListener('submit', function(e) {
             if (dbUrl.endsWith('/')) dbUrl = dbUrl.slice(0, -1);
 
             const fullUrl = `${dbUrl}/backup.json`;
-            const payload = buildCloudPayload();
+            const payload = {
+                students: students,
+                stockList: stockList,
+                expenses: expenses,
+                loanRecords: loanRecords,
+                previousYearDues: previousYearDues,
+                deletedStudents: deletedStudents,
+                masterSettings: masterSettings,
+                timestamp: new Date().toISOString()
+            };
 
             try {
                 const response = await fetch(fullUrl, {
@@ -2565,7 +1966,6 @@ document.addEventListener('submit', function(e) {
                     masterSettings.backupVersions.push(masterSettings.lastBackupAt);
                     masterSettings.backupVersions = masterSettings.backupVersions.slice(-20);
                     localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-                    setCloudSyncStatus('☁️ SAVED', true);
                     renderDashboard();
                     if(!silent) alert("✅ ક્લાઉડ પર સંતોષકારક રીતે બેકઅપ સેવ થઈ ગયું છે!");
                 } else {
@@ -2576,58 +1976,20 @@ document.addEventListener('submit', function(e) {
             }
         }
 
-        (function installWebinatoRestoreBridge(){
-            const bind = () => {
-                const el = document.getElementById('webinatoRestoreButton');
-                if(!el || el.dataset.bridgeBound==='1') return;
-                const run = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if(e.type==='touchend' || e.type==='click') {
-                        if(el.dataset.restoreTap==='1') return;
-                        el.dataset.restoreTap='1';
-                        setTimeout(()=>{el.dataset.restoreTap='0';},700);
-                        restoreDataFromCloud();
-                    }
-                    return false;
-                };
-                el.addEventListener('click', run, true);
-                el.addEventListener('touchend', run, true);
-                el.addEventListener('pointerup', run, true);
-                el.dataset.bridgeBound='1';
-            };
-            if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind);
-            else bind();
-        })();
-
         async function restoreDataFromCloud() {
             if (!verifyMasterPassword('ડેટા રીસ્ટોર')) return;
 
-            // Freeze automatic sync BEFORE reading Firebase. Otherwise the current
-            // local/default data can overwrite the very backup we are trying to restore.
-            restoreModeActive = true;
-            cloudRestoreInProgress = true;
-            setPersistentRestoreLock(120000);
-            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-            cloudSyncQueued = false;
-
-            const btns = document.querySelectorAll('#webinatoRestoreButton');
+            const btns = document.querySelectorAll('button[onclick="restoreDataFromCloud()"]');
             btns.forEach(b => { b.disabled=true; b.innerText='⏳ ડેટા શોધી રહ્યા છીએ...'; });
 
             try {
                 const data=await fetchCloudBackupData();
                 if (!data || typeof data !== 'object' || !cloudBackupHasRealData(data)) {
-                    restoreModeActive = false;
-                    cloudRestoreInProgress = false;
-                    clearPersistentRestoreLock();
                     alert('⚠️ Firebaseમાં કોઈ ઉપયોગી બેકઅપ મળ્યો નથી.');
                     return;
                 }
                 openRestoreChoiceModal(data,false);
             } catch(err) {
-                restoreModeActive = false;
-                cloudRestoreInProgress = false;
-                clearPersistentRestoreLock();
                 alert('❌ ડેટા રીસ્ટોર થઈ શક્યો નથી. Firebase Rules/Internet તપાસો.\n\n' + err.message);
             } finally {
                 btns.forEach(b => { b.disabled=false; b.innerText='🔄 ડેટા રીસ્ટોર કરવો'; });
@@ -3159,7 +2521,7 @@ document.addEventListener('submit', function(e) {
             set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid)); set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0))); set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
             renderFinancialDashboard(); renderStationeryHomeSummary();
             const backup=document.getElementById('dashBackupStatus'); if(backup){ if(masterSettings.lastBackupAt){const d=new Date(masterSettings.lastBackupAt);const days=Math.floor((Date.now()-d.getTime())/86400000);backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');backup.style.color=days>=7?'#d32f2f':'#2e7d32';}else{backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.';backup.style.color='#d32f2f';} }
-            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')" type="button">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
+            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
             const next=document.getElementById('dashboardNextMonthList'); if(next){const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0];const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555">${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';}
             const wa=document.getElementById('whatsappAutomationSummary'); if(wa){const birthdays=students.filter(s=>s.birthDate&&s.birthDate.slice(5)===today.slice(5)).length;wa.innerText=`આજે Birthday: ${birthdays} | બાકી વિદ્યાર્થીઓ: ${dueStudents.length} | કુલ બાકી: ₹${Math.round(students.reduce((a,s)=>a+(Number(s.due)||0),0))}`;}
         }
@@ -3479,15 +2841,6 @@ document.addEventListener('submit', function(e) {
         }
 
         async function saveStudent() {
-            const saveBtn = document.getElementById('btnSaveStudent');
-            if (saveBtn && saveBtn.dataset.saving === '1') return;
-            if (saveBtn) {
-                saveBtn.dataset.saving = '1';
-                saveBtn.disabled = true;
-                saveBtn.dataset.oldText = saveBtn.innerText;
-                saveBtn.innerText = '⏳ સેવ થઈ રહ્યું છે...';
-            }
-            try {
             const id = document.getElementById('editStudentId').value;
             const name = document.getElementById('inpName').value.trim();
             const phone = document.getElementById('inpPhone').value.trim();
@@ -3502,7 +2855,6 @@ document.addEventListener('submit', function(e) {
 
             if (joinDate && endDate && endDate < joinDate) {
                 alert('❌ End તારીખ દાખલ તારીખ કરતાં પહેલાંની હોઈ શકે નહીં.');
-                if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                 return;
             }
             const course = document.getElementById('inpCourse').value;
@@ -3513,7 +2865,6 @@ document.addEventListener('submit', function(e) {
 
             if (!name) {
                 alert('કૃપા કરીને વિદ્યાર્થીનું નામ દાખલ કરો.');
-                if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                 return;
             }
 
@@ -3527,7 +2878,6 @@ document.addEventListener('submit', function(e) {
                     photo = await compressStudentPhoto(photoFile);
                 } catch (e) {
                     alert('❌ વિદ્યાર્થીનો ફોટો સેવ થઈ શક્યો નથી: ' + (e.message || e));
-                    if (saveBtn) { saveBtn.disabled=false; saveBtn.dataset.saving='0'; saveBtn.innerText=saveBtn.dataset.oldText||'સેવ કરો'; }
                     return;
                 }
             }
@@ -3617,24 +2967,11 @@ document.addEventListener('submit', function(e) {
                 students.push(newSt);
             }
 
-            const savedOK = saveLocalData();
-            if (!savedOK) {
-                throw new Error('વિદ્યાર્થીની માહિતી Local Storageમાં સેવ થઈ શકી નથી. Browser storage blocked/full હોઈ શકે.');
-            }
+            saveLocalData();
             alert("વિદ્યાર્થીની વિગત સેવ થઈ ગઈ છે!");
             navigateTo('pageDashboard');
             renderDashboard();
             renderCourseDivision();
-            } catch (e) {
-                console.error('saveStudent error:', e);
-                alert('❌ વિદ્યાર્થી સેવ કરતી વખતે ભૂલ આવી:\n' + (e.message || e));
-            } finally {
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.dataset.saving = '0';
-                    saveBtn.innerText = saveBtn.dataset.oldText || 'સેવ કરો';
-                }
-            }
         }
 
         function previewStudentPhoto(event) {
@@ -4403,44 +3740,17 @@ document.addEventListener('submit', function(e) {
         }
 
         function getReceiptBaseUrl() {
-            let configured = String(masterSettings.receiptBaseUrl || '').trim();
-            if (configured) {
-                try {
-                    const u = new URL(configured);
-                    if (!/^https?:$/i.test(u.protocol)) return '';
-                    u.search = '';
-                    u.hash = '';
-                    return u.toString().replace(/\/$/, '');
-                } catch(e) {
-                    return '';
-                }
-            }
-
-            // જો એપ સીધી HTTPS વેબસાઇટ પરથી ખૂલી હોય તો એ જ pageનો base URL વાપરો.
-            if (/^https?:$/i.test(window.location.protocol)) {
-                try {
-                    const u = new URL(window.location.href);
-                    u.search = '';
-                    u.hash = '';
-                    return u.toString().replace(/\/$/, '');
-                } catch(e) {}
-            }
+            let configured = (masterSettings.receiptBaseUrl || '').trim();
+            if (configured) return configured.replace(/\/$/, '');
+            if (/^https?:$/i.test(window.location.protocol)) return window.location.href.split('?')[0];
             return '';
         }
 
         function makeReceiptId(receiptObj) {
             if (receiptObj.shortId) return String(receiptObj.shortId);
-            const seed = String(receiptObj.id || Date.now()) + '-' + String(currentStudent?.id || '0') + '-' + String(currentStudent?.name || '');
-            let h=2166136261;
-            for(let i=0;i<seed.length;i++){h^=seed.charCodeAt(i);h=Math.imul(h,16777619);}
+            const seed = String(receiptObj.id || Date.now()) + '-' + String(currentStudent?.id || '0');
+            let h=2166136261; for(let i=0;i<seed.length;i++){h^=seed.charCodeAt(i);h=Math.imul(h,16777619);}
             return ('R' + (h>>>0).toString(36) + Date.now().toString(36).slice(-4)).slice(0,16);
-        }
-
-        function buildDirectReceiptLink(receiptObj) {
-            const base = getReceiptBaseUrl();
-            if (!base || !receiptObj) return '';
-            if (!receiptObj.shortId) receiptObj.shortId = makeReceiptId(receiptObj);
-            return base + '?r=' + encodeURIComponent(receiptObj.shortId);
         }
 
         function receiptPublicData(receiptObj) {
@@ -4461,7 +3771,7 @@ document.addEventListener('submit', function(e) {
 
         function generateReceiptShareableLink(receiptObj) {
             const base=getReceiptBaseUrl();
-            if(base && receiptObj.shortId) return buildDirectReceiptLink(receiptObj);
+            if(base && receiptObj.shortId) return base+'?r='+encodeURIComponent(receiptObj.shortId);
             const dataToEncode=receiptPublicData(receiptObj);
             return (base || window.location.href.split('?')[0])+'?receipt='+utf8ToBase64(JSON.stringify(dataToEncode));
         }
@@ -4723,11 +4033,17 @@ document.addEventListener('submit', function(e) {
                 document.body.appendChild(link);
                 link.click();
 
-                // Android app/WebViewમાં નવી tab/blob navigation ટાળો.
+                // Android Chrome/WebViewમાં download attribute block થાય તો image નવી tabમાં ખોલો.
                 setTimeout(() => {
-                    openBlobImageInApp(generatedBlob, fileName);
-                    link.remove();
-                    URL.revokeObjectURL(blobUrl);
+                    try {
+                        const opened = window.open(blobUrl, '_blank');
+                        if (!opened) {
+                            window.location.href = blobUrl;
+                        }
+                    } catch (e) {
+                        window.location.href = blobUrl;
+                    }
+                    setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
                 }, 350);
             } catch (e) {
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
@@ -4794,9 +4110,9 @@ document.addEventListener('submit', function(e) {
                         <td>₹${r.dueVal}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button title="પહોંચ જુઓ" style="padding:2px 6px; font-size:11px; background:#0097a7; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="viewReceiptInfo('${r.id}')" type="button">ℹ️</button>
-                            <button title="સુધારો" style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')" type="button">✏️</button>
-                            <button title="ડિલીટ કરો" style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')" type="button">🗑️</button>
+                            <button title="પહોંચ જુઓ" style="padding:2px 6px; font-size:11px; background:#0097a7; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="viewReceiptInfo('${r.id}')">ℹ️</button>
+                            <button title="સુધારો" style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="editReceipt('${r.id}')">✏️</button>
+                            <button title="ડિલીટ કરો" style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="deleteReceipt('${r.id}')">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -4869,25 +4185,9 @@ document.addEventListener('submit', function(e) {
             masterSettings.defaultFee = parseFloat(document.getElementById('mDefaultFee').value) || 350;
             masterSettings.defaultStd = document.getElementById('mDefaultStd').value.trim();
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
-            const receiptBaseInput = document.getElementById('mReceiptBaseUrl').value.trim();
-            if (receiptBaseInput) {
-                try {
-                    const testUrl = new URL(receiptBaseInput);
-                    if (!/^https?:$/i.test(testUrl.protocol)) throw new Error('HTTP/HTTPS required');
-                    testUrl.search = '';
-                    testUrl.hash = '';
-                    masterSettings.receiptBaseUrl = testUrl.toString().replace(/\/$/, '');
-                } catch(e) {
-                    alert('❌ ઓનલાઈન ફી પહોંચ URL ખોટી છે. https:// થી શરૂ થતી વેબ લિંક નાખો.');
-                    return;
-                }
-            } else {
-                masterSettings.receiptBaseUrl = '';
-            }
+            masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
             masterSettings.password = document.getElementById('mPassword').value;
-            // Online Auto Sync is always enabled. Keep autoBackup only as a
-            // legacy setting so old backups remain compatible.
-            masterSettings.autoBackup = true;
+            masterSettings.autoBackup = !!document.getElementById('mAutoBackup')?.checked;
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
@@ -4929,71 +4229,36 @@ document.addEventListener('submit', function(e) {
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data || typeof data !== 'object') throw new Error('Invalid JSON');
-
-                    // JSON backup restore is a full local restore. Keep Recycle Bin
-                    // separate; do not silently move deleted students back to Active.
-                    if (Array.isArray(data.students)) students = JSON.parse(JSON.stringify(data.students));
-                    if (Array.isArray(data.stockList)) stockList = JSON.parse(JSON.stringify(data.stockList));
-                    if (Array.isArray(data.expenses)) expenses = JSON.parse(JSON.stringify(data.expenses));
-                    if (Array.isArray(data.loanRecords)) loanRecords = JSON.parse(JSON.stringify(data.loanRecords));
-                    if (Array.isArray(data.previousYearDues)) previousYearDues = JSON.parse(JSON.stringify(data.previousYearDues));
-                    if (Array.isArray(data.deletedStudents)) deletedStudents = JSON.parse(JSON.stringify(data.deletedStudents));
-                    if (data.masterSettings && typeof data.masterSettings === 'object') {
-                        masterSettings = Object.assign({}, masterSettings, JSON.parse(JSON.stringify(data.masterSettings)));
+                    if (data.students) students = data.students;
+                    if (data.stockList) stockList = data.stockList;
+                    if (data.expenses) expenses = data.expenses;
+                    if (data.loanRecords) loanRecords = data.loanRecords;
+                    if (data.previousYearDues) previousYearDues = data.previousYearDues;
+                    deletedStudents = Array.isArray(data.deletedStudents) ? data.deletedStudents : [];
+                    if (deletedStudents.length) {
+                        const existingIds = new Set(students.map(s => String(s.id)));
+                        deletedStudents.forEach(st => {
+                            if (!st || st.id == null || existingIds.has(String(st.id))) return;
+                            st.status = st._deletedFromStatus || st.status || 'active';
+                            delete st._deletedFromStatus;
+                            students.push(st);
+                        });
+                        deletedStudents = [];
                     }
-                    if (!masterSettings.dbUrl) masterSettings.dbUrl = RECOVERY_DB_URL;
+                    if (data.masterSettings) masterSettings = Object.assign({}, masterSettings, data.masterSettings);
 
-                    students.forEach(st => normalizeStudentRecords(st));
-                    ensureReceiptNumbers();
-
-                    // Save directly before any cloud sync.
-                    localStorage.setItem('NNC_storage_initialized','1');
-                    localStorage.setItem('NNC_students', JSON.stringify(students));
-                    localStorage.setItem('NNC_stock', JSON.stringify(stockList));
-                    localStorage.setItem('NNC_expenses', JSON.stringify(expenses));
-                    localStorage.setItem('NNC_loans', JSON.stringify(loanRecords));
-                    localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
-                    localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
-                    localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-
-                    cloudRestoreInProgress = true;
-                    restoreModeActive = true;
-                    if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-                    cloudSyncQueued = false;
-
-                    currentFilter = null;
-                    currentCourseFilter = null;
-                    currentFeeTypeFilter = null;
-                    currentStudent = students[0] || null;
-
-                    try {
-                        recalculateStudentTotals();
-                        renderDashboard();
-                        renderStockTable();
-                        renderStockPurchaseHistory();
-                        renderBackupVersions();
-                        renderStockDropdown();
-                        renderExpenses();
-                        renderCourseDivision();
-                        renderStudentList();
-                        if (typeof updateNetworkStatus === "function") updateNetworkStatus();
-                    } catch (uiErr) {
-                        console.warn("JSON restore UI refresh warning:", uiErr);
-                    }
-
-                    window.pendingCloudRestoreData = null;
-                    window.pendingCloudRestoreAuto = false;
-                    cloudRestoreInProgress = false;
-                    restoreModeActive = true;
-                    cloudSyncQueued = false;
-                    if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
-
-                    alert(`✅ JSON બેકઅપ સફળતાપૂર્વક રીસ્ટોર થયું. ${students.length} વિદ્યાર્થીઓનો ડેટા એપમાં તરત પાછો આવી ગયો છે.\n\n⚠️ એપ reload કરવામાં આવી નથી.`);
+                    saveLocalData();
+                    recalculateStudentTotals();
+                    renderDashboard();
+                    renderStockTable();
+                    renderStockDropdown();
+                    renderOutsideSaleDropdown();
+                    renderExternalStationerySalesReport();
+                    renderExpenses();
+                    if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || '';
+                    alert("ડેટા સફળતાપૂર્વક અપલોડ અને રીસ્ટોર થઈ ગયો છે!");
                 } catch (err) {
-                    alert("ફાઈલ વાંચવામાં ભૂલ થઈ! કૃપા કરીને સાચી JSON બેકઅપ ફાઈલ પસંદ કરો.\n\n" + err.message);
-                } finally {
-                    event.target.value = '';
+                    alert("ફાઈલ વાંચવામાં ભુલ થઈ! કૃપા કરીને સાચી JSON બેકઅપ ફાઈલ પસંદ કરો.");
                 }
             };
             reader.readAsText(file);
@@ -5113,8 +4378,8 @@ document.addEventListener('submit', function(e) {
                         <td>₹${Math.round(stockSale)}</td>
                         <td style="color:${stockProfit>=0?'green':'red'};font-weight:bold;">₹${Math.round(stockProfit)}</td>
                         <td>
-                            <button style="padding:2px 6px;font-size:11px;background:#1976d2;color:white;border:none;border-radius:4px;" onclick="editStock('${s.id}')" type="button">✏️</button>
-                            <button style="padding:2px 6px;font-size:11px;background:#d32f2f;color:white;border:none;border-radius:4px;" onclick="deleteStock('${s.id}')" type="button">🗑️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#1976d2;color:white;border:none;border-radius:4px;" onclick="editStock('${s.id}')">✏️</button>
+                            <button style="padding:2px 6px;font-size:11px;background:#d32f2f;color:white;border:none;border-radius:4px;" onclick="deleteStock('${s.id}')">🗑️</button>
                         </td>
                     </tr>`;
             });
@@ -5244,7 +4509,7 @@ document.addEventListener('submit', function(e) {
                 el.innerHTML = '<div style="text-align:center;color:#888;padding:8px;">હજી બહારના ગ્રાહકનું વેચાણ નથી.</div>';
                 return;
             }
-            el.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>તારીખ</th><th>ગ્રાહક</th><th>વસ્તુ</th><th>નંગ</th><th>રકમ</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody>${list.slice().reverse().map((x,ri) => { const realIndex=list.length-1-ri; const sid=x.id||('external-'+realIndex); return `<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.customerName || 'નામ વગર')}</td><td>${escapeHtml(x.itemName || '-')}</td><td>${Number(x.qty)||0}</td><td>₹${Math.round(Number(x.price)||0)}</td><td>${escapeHtml(x.payType || '-')}</td><td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('external','','${sid}')" type="button">↩️</button></td></tr>`; }).join('')}</tbody></table></div>`;
+            el.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>તારીખ</th><th>ગ્રાહક</th><th>વસ્તુ</th><th>નંગ</th><th>રકમ</th><th>પ્રકાર</th><th>ક્રિયા</th></tr></thead><tbody>${list.slice().reverse().map((x,ri) => { const realIndex=list.length-1-ri; const sid=x.id||('external-'+realIndex); return `<tr><td>${formatDate(x.date)}</td><td>${escapeHtml(x.customerName || 'નામ વગર')}</td><td>${escapeHtml(x.itemName || '-')}</td><td>${Number(x.qty)||0}</td><td>₹${Math.round(Number(x.price)||0)}</td><td>${escapeHtml(x.payType || '-')}</td><td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('external','','${sid}')">↩️</button></td></tr>`; }).join('')}</tbody></table></div>`;
         }
 
         function getAllStationerySalesRecords(){
@@ -5566,9 +4831,9 @@ document.addEventListener('submit', function(e) {
                         <td>₹${s.price}</td>
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
                         <td>
-                            <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')" type="button">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="openStationeryReceipt('${s.id}')" type="button">🧾 પહોંચ</button>
-                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')" type="button">↩️ Return</button>
+                            <button style="padding:2px 6px; font-size:11px; background:${s.payType === 'ઉધાર' ? '#2e7d32' : '#f57c00'}; color:white; border:none; border-radius:4px;" onclick="toggleStationeryPayment('${s.id}')">${s.payType === 'ઉધાર' ? '💵 રોકડ કરો' : '↩️ ઉધાર કરો'}</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#1565c0; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="openStationeryReceipt('${s.id}')">🧾 પહોંચ</button>
+                            <button style="padding:2px 6px; font-size:11px; background:#d32f2f; color:white; border:none; border-radius:4px; margin-left:3px;" onclick="returnStationerySale('student','${currentStudent.id}','${s.id}')">↩️ Return</button>
                         </td>
                     </tr>
                 `;
@@ -5614,7 +4879,7 @@ document.addEventListener('submit', function(e) {
                                 <td>${s.qty}</td>
                                 <td>₹${s.price}</td>
                                 <td>${s.payType}</td>
-                                <td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('student','${st.id}','${s.id}')" type="button">↩️</button></td>
+                                <td><button class="small-btn" style="background:#d32f2f" onclick="returnStationerySale('student','${st.id}','${s.id}')">↩️</button></td>
                             </tr>
                         `;
                     });
@@ -5774,11 +5039,11 @@ document.addEventListener('submit', function(e) {
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
-                    <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')" type="button">💵 જમા રકમ ઉમેરો</button>
+                    <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
                     <tbody>${hist||'<tr><td colspan="5" style="color:#888;">હજુ જમા નથી.</td></tr>'}</tbody></table></div>
-                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deleteLoanRecord('${r.id}')" type="button">🗑️ નોંધ ડિલીટ</button>
+                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deleteLoanRecord('${r.id}')">🗑️ નોંધ ડિલીટ</button>
                 </div>`;
             }).join('');
         }
@@ -5994,11 +5259,11 @@ document.addEventListener('submit', function(e) {
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
-                    <button class="btn btn-green" style="margin-top:8px;" onclick="addPreviousYearPayment('${r.id}')" type="button">💵 જમા રકમ ઉમેરો</button>
+                    <button class="btn btn-green" style="margin-top:8px;" onclick="addPreviousYearPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
                     <tbody>${hist||'<tr><td colspan="5" style="color:#888;">હજુ જમા નથી.</td></tr>'}</tbody></table></div>
-                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deletePreviousYearDue('${r.id}')" type="button">🗑️ નોંધ ડિલીટ</button>
+                    <button class="small-btn" style="background:#d32f2f;margin-top:6px;" onclick="deletePreviousYearDue('${r.id}')">🗑️ નોંધ ડિલીટ</button>
                 </div>`;
             }).join('');
         }
