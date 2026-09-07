@@ -1866,6 +1866,50 @@
             return { months, total: months.reduce((sum,m) => sum + (parseFloat(m.fee)||0), 0) };
         }
 
+        // Receiptમાં પહેલેથી સામેલ થયેલી સ્ટેશનરીને શોધે છે.
+        // આથી એક જ બુક/સ્ટેશનરી Receiptમાં અને અલગ stationery recordમાં
+        // બે વખત જમા/બાકી તરીકે ગણાતી નથી.
+        function getReceiptIncludedStationeryIndices(st) {
+            const stations = Array.isArray(st?.stationery) ? st.stationery : [];
+            const receipts = Array.isArray(st?.receipts) ? st.receipts : [];
+            const included = new Set();
+
+            receipts.forEach(r => {
+                const receiptDate = String(r.date || '');
+                const items = Array.isArray(r.stationeryItems) ? r.stationeryItems : [];
+
+                // નવી/વિગતવાળી Receipt: item name + qty + amountથી ચોક્કસ match.
+                items.forEach(item => {
+                    const name = String(item.itemName || '').trim().toLowerCase();
+                    const qty = Number(item.qty) || 1;
+                    const amount = Number(item.price) || 0;
+                    let idx = stations.findIndex((s, i) => {
+                        if (included.has(i)) return false;
+                        return String(s.date || '') === receiptDate &&
+                               String(s.itemName || '').trim().toLowerCase() === name &&
+                               (Number(s.qty) || 1) === qty &&
+                               Math.abs((Number(s.price) || 0) - amount) < 0.01;
+                    });
+                    if (idx >= 0) included.add(idx);
+                });
+
+                // જૂની Receiptમાં stationeryItems ન હોય તો statFeeની રકમથી
+                // એ જ તારીખની stationery recordsને એક-એક કરીને match કરો.
+                let remaining = Number(r.statFee) || 0;
+                if (remaining > 0) {
+                    stations.forEach((s, i) => {
+                        if (included.has(i) || String(s.date || '') !== receiptDate) return;
+                        const amount = Number(s.price) || 0;
+                        if (amount > 0 && amount <= remaining + 0.01) {
+                            included.add(i);
+                            remaining -= amount;
+                        }
+                    });
+                }
+            });
+            return included;
+        }
+
         function recalculateStudentTotals() {
             const todayStr = localDateString();
 
@@ -1884,26 +1928,33 @@
                     tuition = parseFloat(st.fee) || 0;
                 }
 
-                let creditStatAmt = 0;
-                if (st.stationery) {
-                    st.stationery.forEach(s => {
-                        if (s.payType === 'ઉધાર') creditStatAmt += parseFloat(s.price) || 0;
-                    });
-                }
+                // Receiptમાં પહેલેથી જ ચૂકવાયેલી stationeryને અલગ cash/credit
+                // stationery payment તરીકે ફરી ગણવી નહીં.
+                const receiptIncludedStationery = getReceiptIncludedStationeryIndices(st);
 
-                // મુખ્ય વિદ્યાર્થીના કુલ સરવૈયામાં ટ્યુશન + આપેલી સ્ટેશનરી ગણાશે.
-                // સ્ટેશનરી કોઈપણ કોર્ષ/પિરિયડની કુલ ફીમાં ઉમેરાતી નથી; માત્ર
-                // વિદ્યાર્થીના ઉપરના કુલમાં એક જ વખત ઉમેરાય છે.
+                let creditStatAmt = 0;
                 let stationeryTotal = 0;
                 let stationeryCashPaid = 0;
-                (st.stationery || []).forEach(s => {
+
+                (st.stationery || []).forEach((s, i) => {
                     const amount = parseFloat(s.price) || 0;
                     stationeryTotal += amount;
+
+                    if (receiptIncludedStationery.has(i)) {
+                        // આ બુક/સ્ટેશનરી receiptમાં જમા થઈ ગઈ છે; અહીંથી
+                        // cash paid અથવા credit dueમાં ફરી ઉમેરશો નહીં.
+                        return;
+                    }
+
+                    if (s.payType === 'ઉધાર') creditStatAmt += amount;
                     if (s.payType === 'રોકડ') stationeryCashPaid += amount;
                 });
+
                 st.stationeryDue = creditStatAmt;
                 st.stationeryTotal = stationeryTotal;
                 st.stationeryCashPaid = stationeryCashPaid;
+
+                // કુલ બનેલી ફીમાં stationery માત્ર એક જ વખત ઉમેરાય છે.
                 st.totalFeeWithStationery = tuition + stationeryTotal;
 
                 let paidFee = 0;
@@ -1913,8 +1964,8 @@
                     });
                 }
 
-                // રોકડમાં આપેલી સ્ટેશનરી પહેલેથી જ જમા છે; ઉધાર સ્ટેશનરી
-                // પહોંચ દ્વારા ભરાય ત્યારે receipt.paidValમાં ગણાશે.
+                // Receiptમાં સામેલ stationery ઉપરના paidFeeમાં પહેલેથી જ છે,
+                // તેથી તેને stationeryCashPaidમાં બીજી વાર ઉમેરવામાં આવતી નથી.
                 st.paid = paidFee + stationeryCashPaid;
                 const prevRecord = previousYearDues.find(x => String(x.studentId) === String(st.id));
                 st.previousYearPaid = prevRecord ? previousPaidAmount(prevRecord) : 0;
@@ -4653,30 +4704,10 @@
         function renderStudentLedger(){
             const el=document.getElementById('studentLedger'); if(!el||!currentStudent)return;
             const st=currentStudent, rows=[];
+            const receiptIncludedStationery = getReceiptIncludedStationeryIndices(st);
 
-            // જો બુક/સ્ટેશનરીની રકમ receiptમાં સામેલ હોય તો તેને ledgerમાં
-            // ફરી અલગ stationery row તરીકે ન ગણવી. એટલે એક જ બુક બે વાર નહીં ગણાય.
-            const receipts=(st.receipts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-            const receiptStationeryKeys=new Set();
-            const receiptStationeryAmountsByDate={};
-
-            receipts.forEach(r=>{
-                const statFee=Number(r.statFee)||0;
-                const items=Array.isArray(r.stationeryItems)?r.stationeryItems:[];
-                items.forEach(x=>{
-                    const itemName=String(x.itemName||'').trim().toLowerCase();
-                    const qty=Number(x.qty)||1;
-                    const price=Number(x.price)||0;
-                    receiptStationeryKeys.add(`${String(r.date||'')}|${itemName}|${qty}|${price}`);
-                });
-                if(statFee>0){
-                    const d=String(r.date||'');
-                    receiptStationeryAmountsByDate[d]=(receiptStationeryAmountsByDate[d]||0)+statFee;
-                }
-            });
-
-            // Receiptમાં ટ્યુશન + સ્ટેશનરી સાથે હોય તો એક જ combined entry.
-            receipts.forEach(r=>{
+            // Receiptમાં ટ્યુશન + બુકની ફી સાથે હોય તો Receiptની એક જ entry રહેશે.
+            (st.receipts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(r=>{
                 const months=(r.months||[]).map(m=>m.name+' '+m.year).join(', ')||'-';
                 const hasStationery=(Number(r.statFee)||0)>0 || (Array.isArray(r.stationeryItems)&&r.stationeryItems.length>0);
                 const note=hasStationery
@@ -4685,25 +4716,11 @@
                 rows.push(`<tr><td>${formatDate(r.date)}</td><td>${note}</td><td>${escapeHtml(months)}</td><td>₹${Math.round(r.grandTotal||0)}</td><td style="color:#2e7d32;font-weight:bold">₹${Math.round(r.paidVal||0)}</td><td style="color:#d32f2f">₹${Math.round(r.dueVal||0)}</td><td>${escapeHtml(r.payMode||'-')}</td></tr>`);
             });
 
-            // Receiptમાં પહેલેથી આવેલી stationeryને અલગ rowમાં ફરી ન ઉમેરો.
-            // જૂના recordsમાં stationeryItems ન હોય પણ statFee હોય તો date+amountથી dedupe.
-            const usedCombinedAmount={};
-            (st.stationery||[]).forEach(x=>{
-                const amount=Number(x.price)||0; if(amount<=0)return;
-                const date=String(x.date||'');
-                const itemName=String(x.itemName||'').trim().toLowerCase();
-                const qty=Number(x.qty)||1;
-                const exactKey=`${date}|${itemName}|${qty}|${amount}`;
-
-                if(receiptStationeryKeys.has(exactKey)) return;
-
-                const combinedTotal=receiptStationeryAmountsByDate[date]||0;
-                const used=usedCombinedAmount[date]||0;
-                if(combinedTotal>0 && used+amount<=combinedTotal){
-                    usedCombinedAmount[date]=used+amount;
-                    return;
-                }
-
+            // Receiptમાં સામેલ બુક/સ્ટેશનરી અહીં અલગ row તરીકે ફરી નહીં આવે.
+            (st.stationery||[]).forEach((x,i)=>{
+                if(receiptIncludedStationery.has(i)) return;
+                const amount=Number(x.price)||0;
+                if(amount<=0)return;
                 rows.push(`<tr><td>${formatDate(x.date)}</td><td>📚 સ્ટેશનરી</td><td>${escapeHtml(x.itemName)} × ${x.qty}</td><td>₹${Math.round(amount)}</td><td>${x.payType==='રોકડ'?`₹${Math.round(amount)}`:'₹0'}</td><td>${x.payType==='ઉધાર'?`₹${Math.round(amount)}`:'₹0'}</td><td>${escapeHtml(x.payType||'-')}</td></tr>`);
             });
 
@@ -4712,6 +4729,7 @@
             const total=Number(st.totalFeeWithStationery||st.fee)||0, paid=Number(st.paid)||0, due=Number(st.due)||0;
             el.innerHTML=`<div class="grid-3" style="margin-bottom:8px"><div class="stat-box" style="background:#1976d2">કુલ બનેલી ફી<br>₹${Math.round(total)}</div><div class="stat-box" style="background:#388e3c">કુલ જમા<br>₹${Math.round(paid)}</div><div class="stat-box" style="background:#d32f2f">કુલ બાકી<br>₹${Math.round(due)}</div></div><div style="overflow-x:auto"><table class="ledger-table"><thead><tr><th>તારીખ</th><th>નોંધ</th><th>મહિનો/વિગત</th><th>કુલ</th><th>જમા</th><th>બાકી</th><th>મોડ</th></tr></thead><tbody>${rows.join('')||'<tr><td colspan="7">હજી Ledger માં નોંધ નથી.</td></tr>'}</tbody></table></div>`;
         }
+
         function printStudentLedger(){
             if(!currentStudent)return; renderStudentLedger(); const html=document.getElementById('studentLedger')?.innerHTML||''; const w=window.open('','_blank'); if(!w)return; w.document.write(`<html><head><meta charset="UTF-8"><title>Student Ledger</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:center}h2{text-align:center}</style></head><body><h2>નિર્મળા નવોદય ક્લાસિસ - ${escapeHtml(currentStudent.name)} Ledger</h2>${html}</body></html>`); w.document.close(); w.print(); }
         function renderProfitLoss(){
