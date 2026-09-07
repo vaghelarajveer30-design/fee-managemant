@@ -1969,30 +1969,49 @@
         }
 
         async function fetchCloudBackupData() {
-            // Primary Firebase URL અને built-in recovery URL બંને અજમાવો.
+            // Restore માટે Firebaseના મુખ્ય backup અને backupVersions બંનેમાંથી
+            // સાચો data payload શોધો. Firebaseમાં ક્યારેક wrapper/object format હોય
+            // તો તેને પણ સીધો ઓળખી શકાય તે રીતે normalize કરીએ છીએ.
             const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
             const urls=[configured, RECOVERY_DB_URL].filter((u,i,a)=>u && a.indexOf(u)===i);
             if(!urls.length) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
 
             let lastErr=null;
+            const normalizePayload = (raw) => {
+                if(!raw || typeof raw !== 'object') return null;
+                if(cloudBackupHasRealData(raw)) return raw;
+                // શક્ય wrapper formats
+                const candidates=[raw.data, raw.backup, raw.payload, raw.value];
+                for(const c of candidates){
+                    if(c && typeof c==='object' && cloudBackupHasRealData(c)) return c;
+                }
+                return null;
+            };
+
             for(const dbUrl of urls){
                 try{
-                    const data=await fetchJsonWithFallback(dbUrl + "/backup.json");
-                    if(data && typeof data==="object" && cloudBackupHasRealData(data)) return data;
-                    // Empty /backup હોય તો પણ આગળના recovery URLને અજમાવો.
-                    lastErr=new Error("આ Firebase backup ખાલી છે.");
+                    const raw=await fetchJsonWithFallback(dbUrl + "/backup.json");
+                    const data=normalizePayload(raw);
+                    if(data) return data;
+                    lastErr=new Error("આ Firebase backupમાં ઉપયોગી ડેટા નથી.");
                 }catch(e){ lastErr=e; }
             }
 
-            // મુખ્ય /backupમાં ડેટા ન મળે તો સૌથી નવી backupVersionsમાંથી restore કરો.
+            // /backup ખાલી હોય તો backupVersionsમાંથી સૌથી નવી ઉપયોગી copy લો.
             for(const dbUrl of urls){
                 try{
                     const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
                     if(versions && typeof versions==="object"){
-                        const candidates=Object.values(versions)
-                            .filter(v=>v && typeof v==="object" && cloudBackupHasRealData(v))
-                            .sort((a,b)=>String(b.timestamp||"").localeCompare(String(a.timestamp||"")));
-                        if(candidates.length) return candidates[0];
+                        const candidates=Object.entries(versions)
+                            .map(([key,value])=>({key,value}))
+                            .map(x=>({key:x.key,data:normalizePayload(x.value)}))
+                            .filter(x=>x.data);
+                        candidates.sort((a,b)=>{
+                            const ta=String(a.data.timestamp || a.key || '');
+                            const tb=String(b.data.timestamp || b.key || '');
+                            return tb.localeCompare(ta);
+                        });
+                        if(candidates.length) return candidates[0].data;
                     }
                 }catch(e){ lastErr=e; }
             }
@@ -2162,13 +2181,16 @@
 
             closeRestoreChoiceModal();
             cloudRestoreInProgress = false;
+            cloudSyncQueued = false;
+            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
             setCloudSyncStatus('☁️ RESTORED', true);
 
-            // Restore થયા પછી જ current local dataને cloudમાં sync કરો.
-            if (navigator.onLine && masterSettings.dbUrl) {
-                setTimeout(()=>syncLocalDataToCloud(), 300);
-            }
-            alert("✅ પસંદ કરેલા ડેટા સફળતાપૂર્વક રીસ્ટોર થયા.");
+            // મહત્વનું: Restore પછી આખી એપ ફરીથી localStorageમાંથી શરૂ કરીએ.
+            // આથી જૂના in-memory arrays/filters કારણે restored data ન દેખાવાની
+            // સમસ્યા દૂર થાય છે. Reload પછી NNC_storage_initialized હોવાથી
+            // automatic recovery ફરીથી popup નહીં ખોલે.
+            alert("✅ પસંદ કરેલો ડેટા સફળતાપૂર્વક રીસ્ટોર થયો. એપ હવે restored data સાથે ફરી શરૂ થશે.");
+            window.location.reload();
         }
 
         async function createSafetyBackupVersion(data) {
