@@ -126,6 +126,7 @@
         <h1>FEE MANAGEMENT</h1>
         <div style="display:flex;align-items:center;gap:8px;">
             <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
+            <div id="cloudSyncBadge" class="net-status net-online" style="margin-left:6px;background:#1565c0;">☁️ SYNC</div>
         </div>
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
@@ -435,13 +436,18 @@
                         <input type="text" id="mDefaultCourse" class="form-control" value="Navoday">
                     </div>
                     <div class="form-group">
-                        <label>ઓનલાઈન ફી પહોંચનું Base URL (લિંક એપ/વેબ માટે)</label>
+                        <label>🔗 ઓનલાઈન ફી પહોંચની વેબ URL</label>
                         <input type="url" id="mReceiptBaseUrl" class="form-control" placeholder="https://તમારી-site.com/index.html">
-                        <small style="color:#666;">ZIP/APK માંથી WhatsApp લિંક મોકલવી હોય તો પહોંચ ખોલતી HTML વેબ પર હોવી જરૂરી છે.</small>
+                        <small style="color:#666;">
+                            અહીં તમારી <b>ઓનલાઈન ખુલતી index.html ની સંપૂર્ણ HTTPS લિંક</b> નાખો.
+                            ઉદાહરણ: <b>https://example.com/index.html</b><br>
+                            પછી પહોંચ સેવ કર્યા બાદ WhatsAppમાં વિદ્યાર્થીની <b>સીધી તેની પોતાની પહોંચની લિંક</b> જશે.
+                            APK/ZIPની local file લિંક અહીં ન નાખવી.
+                        </small>
                     </div>
 
                     <div class="form-group" style="background:#f3f8ff;padding:8px;border-radius:7px;border:1px solid #bbdefb;">
-                        <label><input type="checkbox" id="mAutoBackup"> ☁️ Auto Cloud Backup (દર 24 કલાકે, Internet હોય ત્યારે)</label>
+                        <label><input type="checkbox" id="mAutoBackup"> ☁️ Online Auto Sync (દર ફેરફારે Cloudમાં સેવ)</label><div style="font-size:11px;color:#666;margin:4px 0 8px 24px;">📌 Internet વગર પણ ડેટા Localમાં સાચવાશે. Internet પાછું આવે એટલે આપમેળે Firebaseમાં સેવ થશે.</div>
                     </div>
                     <button type="submit" class="btn btn-purple">💾 સેટિંગ્સ સેવ કરો</button>
                     <button type="button" class="btn btn-red" onclick="changeAppPassword()">🔐 એપ લોક પાસવર્ડ બદલો</button>
@@ -1066,7 +1072,7 @@
                 </div>
 
                 <div class="short-link-card">
-                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
+                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની સીધી ઓનલાઈન ફી પહોંચની લિંક:</div>
                     <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
                     <div class="grid-2">
                         <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
@@ -1194,6 +1200,105 @@
     </div>
 
     <script>
+        // Self-contained HTML -> PNG helper. No external library required.
+        // If html2canvas is ever available, it is preferred; otherwise a native
+        // SVG foreignObject renderer is used so the receipt image still works
+        // on GitHub Pages / Chrome without an extra script.
+        async function receiptElementToBlob(element) {
+            if (!element) throw new Error('ફી પહોંચનું element મળ્યું નથી.');
+
+            if (window.html2canvas) {
+                const canvas = await window.html2canvas(element, {
+                    backgroundColor: '#ffffff',
+                    scale: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
+                    useCORS: true,
+                    logging: false
+                });
+                return await new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG તૈયાર થઈ નથી.')), 'image/png');
+                });
+            }
+
+            const rect = element.getBoundingClientRect();
+            const width = Math.max(1, Math.ceil(rect.width || element.offsetWidth || 600));
+            const height = Math.max(1, Math.ceil(rect.height || element.offsetHeight || 800));
+            const clone = element.cloneNode(true);
+            clone.style.width = width + 'px';
+            clone.style.height = 'auto';
+            clone.style.margin = '0';
+            clone.style.boxSizing = 'border-box';
+
+            // Copy inline <style> blocks so the cloned receipt keeps the same design.
+            let css = '';
+            document.querySelectorAll('style').forEach(st => { css += st.textContent + '\n'; });
+            // Best-effort copy of accessible stylesheet rules.
+            try {
+                Array.from(document.styleSheets).forEach(sheet => {
+                    try { Array.from(sheet.cssRules || []).forEach(rule => { css += rule.cssText + '\n'; }); }
+                    catch(e) {}
+                });
+            } catch(e) {}
+
+            // Convert ordinary images to data URLs when possible; cross-origin images
+            // are left as-is and the browser may omit them if CORS is unavailable.
+            const imgs = Array.from(clone.querySelectorAll('img'));
+            for (const img of imgs) {
+                try {
+                    if (img.src && /^https?:/i.test(img.src)) {
+                        const r = await fetch(img.src, {mode:'cors'});
+                        if (r.ok) {
+                            const b = await r.blob();
+                            const data = await new Promise(res => {
+                                const fr = new FileReader();
+                                fr.onload = () => res(fr.result);
+                                fr.onerror = () => res(null);
+                                fr.readAsDataURL(b);
+                            });
+                            if (data) img.src = data;
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            const serialized = new XMLSerializer().serializeToString(clone);
+            const svg = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+                `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+                `<foreignObject x="0" y="0" width="100%" height="100%"><xhtml:style>${escapeXml(css)}</xhtml:style>` +
+                `<xhtml:div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;background:#fff;">${serialized}</xhtml:div></foreignObject></svg>`;
+
+            const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            try {
+                const img = await new Promise((resolve, reject) => {
+                    const im = new Image();
+                    im.onload = () => resolve(im);
+                    im.onerror = () => reject(new Error('Receipt image render થઈ શક્યું નથી.'));
+                    im.src = url;
+                });
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+                canvas.width = width * scale;
+                canvas.height = height * scale;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                return await new Promise((resolve, reject) => {
+                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('PNG તૈયાર થઈ નથી.')), 'image/png');
+                });
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function escapeXml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
         let masterSettings = {
             apiKey: "AIzaSyCjboFcoWJmVrjC9JOIzi4ZgjMnau9czmU",
             dbUrl: "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1204,7 +1309,7 @@
             password: "",
             appPassword: "",
             nextReceiptNo: 1,
-            autoBackup: false,
+            autoBackup: true,
             lastAutoBackupAt: "",
             stockPurchases: [],
             externalStationerySales: [],
@@ -1393,6 +1498,11 @@
             if (document.getElementById('mAutoBackup')) document.getElementById('mAutoBackup').checked = !!masterSettings.autoBackup;
             if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
             renderCourseDivision();
+
+            // Offline-first + automatic online cloud sync.
+            // Local data is loaded first; when internet is available the latest
+            // local state is automatically saved to Firebase.
+            setTimeout(() => autoSyncWhenOnline(), 1200);
         };
 
         function renderStandaloneReceipt(data) {
@@ -1525,7 +1635,7 @@
             try {
                 const link=await publishReceiptAndGetLink(receiptObj);
                 document.getElementById('receiptGeneratedUrl').value=link;
-                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની સીધી લિંક પર ક્લિક કરો:\n\n🧾 *ફી પહોંચ જુઓ:*\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
                 openWhatsAppUrl(currentStudent.phone,text);
             } catch(err) { alert('❌ પહોંચ લિંક બનાવવામાં ભૂલ: '+err.message); }
         }
@@ -1658,7 +1768,35 @@
         window.addEventListener('offline', updateNetworkStatus);
 
         let autoBackupRunning = false;
+        let cloudSyncTimer = null;
+        let cloudSyncInFlight = false;
+        let cloudSyncQueued = false;
+        let cloudRestoreInProgress = false;
+
+        function setCloudSyncStatus(text, ok=true) {
+            const el = document.getElementById('cloudSyncBadge');
+            if (!el) return;
+            el.innerText = text;
+            el.style.background = ok ? '#1565c0' : '#ef6c00';
+        }
+
+        function buildCloudPayload() {
+            return {
+                students: students,
+                stockList: stockList,
+                expenses: expenses,
+                loanRecords: loanRecords,
+                previousYearDues: previousYearDues,
+                deletedStudents: deletedStudents,
+                masterSettings: masterSettings,
+                timestamp: new Date().toISOString(),
+                syncVersion: 9
+            };
+        }
+
         function saveLocalData() {
+            // Local storage is the primary/offline database.
+            // Therefore every change is saved here before any network request.
             localStorage.setItem('NNC_storage_initialized', '1');
             localStorage.setItem('NNC_students', JSON.stringify(students));
             localStorage.setItem('NNC_stock', JSON.stringify(stockList));
@@ -1667,17 +1805,114 @@
             localStorage.setItem('NNC_previousYearDues', JSON.stringify(previousYearDues));
             localStorage.setItem('NNC_deletedStudents', JSON.stringify(deletedStudents));
             localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
-            scheduleAutoBackup();
+
+            // If offline, the change stays queued locally and will sync
+            // automatically as soon as the connection comes back.
+            if (navigator.onLine && masterSettings.dbUrl) {
+                queueCloudSync();
+            } else {
+                setCloudSyncStatus('☁️ PENDING', false);
+            }
         }
-        function scheduleAutoBackup(){
-            if(autoBackupRunning || !masterSettings.autoBackup || !navigator.onLine || !masterSettings.dbUrl) return;
-            const last=masterSettings.lastAutoBackupAt?new Date(masterSettings.lastAutoBackupAt).getTime():0;
-            if(Date.now()-last < 24*60*60*1000) return;
-            setTimeout(async()=>{
-                if(autoBackupRunning)return; autoBackupRunning=true;
-                try{ await backupDataToCloud(true); }catch(e){} finally{autoBackupRunning=false;}
-            },1500);
+
+        function queueCloudSync(delay=800) {
+            cloudSyncQueued = true;
+            if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+            cloudSyncTimer = setTimeout(() => {
+                cloudSyncTimer = null;
+                syncLocalDataToCloud();
+            }, delay);
         }
+
+        async function syncLocalDataToCloud() {
+            if (cloudRestoreInProgress) {
+                setCloudSyncStatus('☁️ RESTORING…', true);
+                return false;
+            }
+            if (!navigator.onLine || !masterSettings.dbUrl) {
+                setCloudSyncStatus('☁️ PENDING', false);
+                return false;
+            }
+
+            if (cloudSyncInFlight) {
+                cloudSyncQueued = true;
+                return false;
+            }
+
+            cloudSyncInFlight = true;
+            cloudSyncQueued = false;
+            setCloudSyncStatus('☁️ SAVING…', true);
+
+            try {
+                // IMPORTANT:
+                // Never run the old "storage initialized" recovery block here.
+                // This function is only for syncing already-saved local data.
+                const dbUrl = (masterSettings.dbUrl || RECOVERY_DB_URL).trim().replace(/\/$/, '');
+                if (!dbUrl) throw new Error('Firebase Database URL ઉપલબ્ધ નથી.');
+
+                const response = await fetch(dbUrl + '/backup.json', {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(buildCloudPayload()),
+                    cache: 'no-store'
+                });
+
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                const now = new Date().toISOString();
+                masterSettings.lastCloudSyncAt = now;
+                masterSettings.lastBackupAt = now;
+                masterSettings.lastAutoBackupAt = now;
+                localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+
+                setCloudSyncStatus('☁️ SAVED', true);
+                return true;
+            } catch (e) {
+                console.warn('Automatic cloud sync failed:', e);
+                setCloudSyncStatus('☁️ PENDING', false);
+                cloudSyncQueued = true;
+                return false;
+            } finally {
+                cloudSyncInFlight = false;
+                if (cloudSyncQueued && navigator.onLine) {
+                    setTimeout(() => syncLocalDataToCloud(), 1200);
+                }
+            }
+        }
+
+        // Backward-compatible name used by older parts of the app.
+        // It now means "sync immediately", rather than "wait 24 hours".
+        function scheduleAutoBackup() {
+            if (navigator.onLine && masterSettings.dbUrl) {
+                queueCloudSync(800);
+            } else {
+                setCloudSyncStatus('☁️ PENDING', false);
+            }
+        }
+
+        async function autoSyncWhenOnline() {
+            updateNetworkStatus();
+            if (navigator.onLine) {
+                setCloudSyncStatus('☁️ SYNCING…', true);
+
+                // If local storage was intentionally cleared, do not upload
+                // empty/default data. The existing recovery flow handles that.
+                if (!localStorage.getItem('NNC_storage_initialized')) {
+                    return;
+                }
+
+                // First save the current local state to Firebase.
+                await syncLocalDataToCloud();
+            } else {
+                setCloudSyncStatus('☁️ OFFLINE', false);
+            }
+        }
+
+        window.addEventListener('online', autoSyncWhenOnline);
+        window.addEventListener('offline', () => {
+            updateNetworkStatus();
+            setCloudSyncStatus('☁️ OFFLINE', false);
+        });
 
         function loadLocalData() {
             if (localStorage.getItem('NNC_students')) students = JSON.parse(localStorage.getItem('NNC_students'));
@@ -1699,12 +1934,13 @@
         }
 
         const RECOVERY_DB_URL = "https://fee-managemant-default-rtdb.asia-southeast1.firebasedatabase.app";
+        // Offline-first architecture:
+        // LocalStorage keeps the app usable without internet.
+        // Firebase /backup is updated automatically whenever internet is available.
+        // IndexedDB/service-worker can also be used for larger offline apps, but this
+        // app keeps its existing LocalStorage data model for compatibility.
 
-        async function fetchCloudBackupData() {
-            let dbUrl = (masterSettings.dbUrl || RECOVERY_DB_URL || "").trim().replace(/\/$/, "");
-            if (!dbUrl) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
-            const url = dbUrl + "/backup.json";
-
+        async function fetchJsonWithFallback(url) {
             try {
                 const response = await fetch(url, {
                     method: "GET",
@@ -1730,6 +1966,39 @@
                     xhr.send();
                 });
             }
+        }
+
+        async function fetchCloudBackupData() {
+            // Primary Firebase URL અને built-in recovery URL બંને અજમાવો.
+            const configured=(masterSettings.dbUrl || "").trim().replace(/\/$/,"");
+            const urls=[configured, RECOVERY_DB_URL].filter((u,i,a)=>u && a.indexOf(u)===i);
+            if(!urls.length) throw new Error("Firebase Database URL ઉપલબ્ધ નથી.");
+
+            let lastErr=null;
+            for(const dbUrl of urls){
+                try{
+                    const data=await fetchJsonWithFallback(dbUrl + "/backup.json");
+                    if(data && typeof data==="object" && cloudBackupHasRealData(data)) return data;
+                    // Empty /backup હોય તો પણ આગળના recovery URLને અજમાવો.
+                    lastErr=new Error("આ Firebase backup ખાલી છે.");
+                }catch(e){ lastErr=e; }
+            }
+
+            // મુખ્ય /backupમાં ડેટા ન મળે તો સૌથી નવી backupVersionsમાંથી restore કરો.
+            for(const dbUrl of urls){
+                try{
+                    const versions=await fetchJsonWithFallback(dbUrl + "/backupVersions.json");
+                    if(versions && typeof versions==="object"){
+                        const candidates=Object.values(versions)
+                            .filter(v=>v && typeof v==="object" && cloudBackupHasRealData(v))
+                            .sort((a,b)=>String(b.timestamp||"").localeCompare(String(a.timestamp||"")));
+                        if(candidates.length) return candidates[0];
+                    }
+                }catch(e){ lastErr=e; }
+            }
+
+            if(lastErr) throw lastErr;
+            return null;
         }
 
         function cloudBackupHasRealData(data) {
@@ -1802,8 +2071,17 @@
                 return;
             }
 
+            cloudRestoreInProgress = true;
+            if (cloudSyncTimer) { clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
+            cloudSyncQueued = false;
+            setCloudSyncStatus('☁️ RESTORING…', true);
+
             if(selectedDelete.length) {
-                if(!verifyMasterPassword("Firebaseમાંથી કાયમી ડિલીટ")) return;
+                if(!verifyMasterPassword("Firebaseમાંથી કાયમી ડિલીટ")) {
+                    cloudRestoreInProgress=false;
+                    setCloudSyncStatus('☁️ SYNC', true);
+                    return;
+                }
 
                 const names={
                     students:"વિદ્યાર્થીઓ",stockList:"સ્ટોક/સ્ટેશનરી",expenses:"ખર્ચ",
@@ -1818,13 +2096,19 @@
                 try {
                     await createSafetyBackupVersion(data);
                 } catch(e) {
-                    if(!confirm("⚠️ Safety snapshot બની શક્યો નથી.\n\nતેમ છતાં કાયમી ડિલીટ કરવું છે?")) return;
+                    if(!confirm("⚠️ Safety snapshot બની શક્યો નથી.\n\nતેમ છતાં કાયમી ડિલીટ કરવું છે?")) {
+                        cloudRestoreInProgress=false;
+                        setCloudSyncStatus('☁️ SYNC', true);
+                        return;
+                    }
                 }
 
                 try {
                     await permanentlyDeleteCloudCategories(selectedDelete);
                 } catch(e) {
                     alert("❌ Firebaseમાંથી કાયમી ડિલીટમાં ભૂલ:\n"+e.message);
+                    cloudRestoreInProgress=false;
+                    setCloudSyncStatus('☁️ PENDING', false);
                     return;
                 }
             }
@@ -1851,7 +2135,17 @@
 
             students.forEach(st=>normalizeStudentRecords(st));
             ensureReceiptNumbers();
-            saveLocalData();
+
+            // Restore પહેલાં cloudમાં તરત PUT ન કરવું; પહેલા restored data localમાં નિશ્ચિત સેવ કરીએ.
+            localStorage.setItem('NNC_storage_initialized','1');
+            localStorage.setItem('NNC_students',JSON.stringify(students));
+            localStorage.setItem('NNC_stock',JSON.stringify(stockList));
+            localStorage.setItem('NNC_expenses',JSON.stringify(expenses));
+            localStorage.setItem('NNC_loans',JSON.stringify(loanRecords));
+            localStorage.setItem('NNC_previousYearDues',JSON.stringify(previousYearDues));
+            localStorage.setItem('NNC_deletedStudents',JSON.stringify(deletedStudents));
+            localStorage.setItem('NNC_master',JSON.stringify(masterSettings));
+
             currentStudent=students[0]||null;
             recalculateStudentTotals();
             renderDashboard(); renderStockTable(); renderStockDropdown();
@@ -1867,6 +2161,13 @@
             if(document.getElementById('mPassword')) document.getElementById('mPassword').value=masterSettings.password||'';
 
             closeRestoreChoiceModal();
+            cloudRestoreInProgress = false;
+            setCloudSyncStatus('☁️ RESTORED', true);
+
+            // Restore થયા પછી જ current local dataને cloudમાં sync કરો.
+            if (navigator.onLine && masterSettings.dbUrl) {
+                setTimeout(()=>syncLocalDataToCloud(), 300);
+            }
             alert("✅ પસંદ કરેલા ડેટા સફળતાપૂર્વક રીસ્ટોર થયા.");
         }
 
@@ -1940,16 +2241,7 @@
             if (dbUrl.endsWith('/')) dbUrl = dbUrl.slice(0, -1);
 
             const fullUrl = `${dbUrl}/backup.json`;
-            const payload = {
-                students: students,
-                stockList: stockList,
-                expenses: expenses,
-                loanRecords: loanRecords,
-                previousYearDues: previousYearDues,
-                deletedStudents: deletedStudents,
-                masterSettings: masterSettings,
-                timestamp: new Date().toISOString()
-            };
+            const payload = buildCloudPayload();
 
             try {
                 const response = await fetch(fullUrl, {
@@ -1966,6 +2258,7 @@
                     masterSettings.backupVersions.push(masterSettings.lastBackupAt);
                     masterSettings.backupVersions = masterSettings.backupVersions.slice(-20);
                     localStorage.setItem('NNC_master', JSON.stringify(masterSettings));
+                    setCloudSyncStatus('☁️ SAVED', true);
                     renderDashboard();
                     if(!silent) alert("✅ ક્લાઉડ પર સંતોષકારક રીતે બેકઅપ સેવ થઈ ગયું છે!");
                 } else {
@@ -3740,17 +4033,44 @@
         }
 
         function getReceiptBaseUrl() {
-            let configured = (masterSettings.receiptBaseUrl || '').trim();
-            if (configured) return configured.replace(/\/$/, '');
-            if (/^https?:$/i.test(window.location.protocol)) return window.location.href.split('?')[0];
+            let configured = String(masterSettings.receiptBaseUrl || '').trim();
+            if (configured) {
+                try {
+                    const u = new URL(configured);
+                    if (!/^https?:$/i.test(u.protocol)) return '';
+                    u.search = '';
+                    u.hash = '';
+                    return u.toString().replace(/\/$/, '');
+                } catch(e) {
+                    return '';
+                }
+            }
+
+            // જો એપ સીધી HTTPS વેબસાઇટ પરથી ખૂલી હોય તો એ જ pageનો base URL વાપરો.
+            if (/^https?:$/i.test(window.location.protocol)) {
+                try {
+                    const u = new URL(window.location.href);
+                    u.search = '';
+                    u.hash = '';
+                    return u.toString().replace(/\/$/, '');
+                } catch(e) {}
+            }
             return '';
         }
 
         function makeReceiptId(receiptObj) {
             if (receiptObj.shortId) return String(receiptObj.shortId);
-            const seed = String(receiptObj.id || Date.now()) + '-' + String(currentStudent?.id || '0');
-            let h=2166136261; for(let i=0;i<seed.length;i++){h^=seed.charCodeAt(i);h=Math.imul(h,16777619);}
+            const seed = String(receiptObj.id || Date.now()) + '-' + String(currentStudent?.id || '0') + '-' + String(currentStudent?.name || '');
+            let h=2166136261;
+            for(let i=0;i<seed.length;i++){h^=seed.charCodeAt(i);h=Math.imul(h,16777619);}
             return ('R' + (h>>>0).toString(36) + Date.now().toString(36).slice(-4)).slice(0,16);
+        }
+
+        function buildDirectReceiptLink(receiptObj) {
+            const base = getReceiptBaseUrl();
+            if (!base || !receiptObj) return '';
+            if (!receiptObj.shortId) receiptObj.shortId = makeReceiptId(receiptObj);
+            return base + '?r=' + encodeURIComponent(receiptObj.shortId);
         }
 
         function receiptPublicData(receiptObj) {
@@ -3771,7 +4091,7 @@
 
         function generateReceiptShareableLink(receiptObj) {
             const base=getReceiptBaseUrl();
-            if(base && receiptObj.shortId) return base+'?r='+encodeURIComponent(receiptObj.shortId);
+            if(base && receiptObj.shortId) return buildDirectReceiptLink(receiptObj);
             const dataToEncode=receiptPublicData(receiptObj);
             return (base || window.location.href.split('?')[0])+'?receipt='+utf8ToBase64(JSON.stringify(dataToEncode));
         }
@@ -4185,9 +4505,25 @@
             masterSettings.defaultFee = parseFloat(document.getElementById('mDefaultFee').value) || 350;
             masterSettings.defaultStd = document.getElementById('mDefaultStd').value.trim();
             masterSettings.defaultCourse = document.getElementById('mDefaultCourse').value.trim();
-            masterSettings.receiptBaseUrl = document.getElementById('mReceiptBaseUrl').value.trim().replace(/\/$/, '');
+            const receiptBaseInput = document.getElementById('mReceiptBaseUrl').value.trim();
+            if (receiptBaseInput) {
+                try {
+                    const testUrl = new URL(receiptBaseInput);
+                    if (!/^https?:$/i.test(testUrl.protocol)) throw new Error('HTTP/HTTPS required');
+                    testUrl.search = '';
+                    testUrl.hash = '';
+                    masterSettings.receiptBaseUrl = testUrl.toString().replace(/\/$/, '');
+                } catch(e) {
+                    alert('❌ ઓનલાઈન ફી પહોંચ URL ખોટી છે. https:// થી શરૂ થતી વેબ લિંક નાખો.');
+                    return;
+                }
+            } else {
+                masterSettings.receiptBaseUrl = '';
+            }
             masterSettings.password = document.getElementById('mPassword').value;
-            masterSettings.autoBackup = !!document.getElementById('mAutoBackup')?.checked;
+            // Online Auto Sync is always enabled. Keep autoBackup only as a
+            // legacy setting so old backups remain compatible.
+            masterSettings.autoBackup = true;
 
             saveLocalData();
             alert("માસ્ટર સેટિંગ્સ સફળતાપૂર્વક સેવ થઈ ગયા છે!");
