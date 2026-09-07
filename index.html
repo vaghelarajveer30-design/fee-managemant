@@ -1113,6 +1113,7 @@
         let currentStudent = students[0];
         let currentFilter = null;
         let currentCourseFilter = null;
+        let currentFeeTypeFilter = null;
         let generatedBlob = null;
         let generatedDataUrl = "";
 
@@ -1969,9 +1970,11 @@
             if (currentFilter === type) {
                 currentFilter = null;
                 currentCourseFilter = null;
+                currentFeeTypeFilter = null;
             } else {
                 currentFilter = type;
                 currentCourseFilter = null;
+                currentFeeTypeFilter = null;
             }
             renderDashboard();
         }
@@ -1980,14 +1983,32 @@
             const course = decodeURIComponent(encodedCourse || '');
             if (currentCourseFilter === course) {
                 currentCourseFilter = null;
+                currentFeeTypeFilter = null;
             } else {
                 currentCourseFilter = course;
+                currentFeeTypeFilter = null;
             }
             renderDashboard();
         }
 
         function clearStudentCourseFilter() {
             currentCourseFilter = null;
+            currentFeeTypeFilter = null;
+            renderDashboard();
+        }
+
+        function selectStudentFeeTypeFilter(encodedFeeType) {
+            const feeType = decodeURIComponent(encodedFeeType || '');
+            if (currentFeeTypeFilter === feeType) {
+                currentFeeTypeFilter = null;
+            } else {
+                currentFeeTypeFilter = feeType;
+            }
+            renderDashboard();
+        }
+
+        function clearStudentFeeTypeFilter() {
+            currentFeeTypeFilter = null;
             renderDashboard();
         }
 
@@ -2253,38 +2274,93 @@
                         </div>
                     </div>`;
 
-                // પસંદ કરેલો કોર્ષ હોય તો માત્ર તે કોર્ષના વિદ્યાર્થીઓની યાદી.
+                // પસંદ કરેલો કોર્ષ હોય તો પહેલા માસિક / વાર્ષિક પ્રમાણે બે બટન.
                 if (currentCourseFilter) {
-                    filteredStudents = statusStudents.filter(s =>
+                    const courseStudents = statusStudents.filter(s =>
                         (String(s.course || 'કોર્ષ વગર').trim() || 'કોર્ષ વગર') === currentCourseFilter
                     );
+
+                    const feeTypeMap = {};
+                    courseStudents.forEach(s => {
+                        const ft = String(s.feeType || 'માસિક').trim() || 'માસિક';
+                        if (!feeTypeMap[ft]) feeTypeMap[ft] = [];
+                        feeTypeMap[ft].push(s);
+                    });
+
+                    const monthlyKey = Object.keys(feeTypeMap).find(x =>
+                        ['માસિક','monthly','month'].includes(x.toLowerCase())
+                    ) || 'માસિક';
+                    const annualKey = Object.keys(feeTypeMap).find(x =>
+                        ['વાર્ષિક','annual','yearly','year'].includes(x.toLowerCase())
+                    ) || 'વાર્ષિક';
+
+                    const monthlyArr = feeTypeMap[monthlyKey] || [];
+                    const annualArr = feeTypeMap[annualKey] || [];
+
+                    const feeButton = (label, arr, selected, encodedKey) => {
+                        const total = arr.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                        const paid = arr.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                        const due = arr.reduce((a,s)=>a+(Number(s.due)||0),0);
+                        return `
+                            <button type="button"
+                                    class="stat-box ${selected ? 'active-filter' : ''}"
+                                    style="background:${selected ? '#1565c0' : '#1976d2'};width:100%;border:none;font-family:inherit;"
+                                    onclick="selectStudentFeeTypeFilter('${encodeURIComponent(encodedKey)}')">
+                                ${label}<br>
+                                <span style="font-size:18px;">${arr.length}</span> વિદ્યાર્થી
+                                <small style="display:block;margin-top:4px;font-weight:normal;">
+                                    ફી ₹${total} | જમા ₹${paid} | બાકી ₹${due}
+                                </small>
+                            </button>`;
+                    };
+
+                    courseHtml += `
+                        <div class="card" style="background:#f3f8ff;border-color:#90caf9;margin-bottom:10px;">
+                            <div style="text-align:center;color:#1565c0;font-weight:bold;margin-bottom:8px;">
+                                📚 ${escapeHtml(currentCourseFilter)} — ${courseStudents.length} વિદ્યાર્થી
+                            </div>
+                            <div class="grid-2">
+                                ${feeButton('📅 માસિક', monthlyArr, currentFeeTypeFilter === monthlyKey, monthlyKey)}
+                                ${feeButton('📆 વાર્ષિક', annualArr, currentFeeTypeFilter === annualKey, annualKey)}
+                            </div>
+                        </div>`;
+
+                    if (currentFeeTypeFilter) {
+                        filteredStudents = courseStudents.filter(s =>
+                            (String(s.feeType || 'માસિક').trim() || 'માસિક') === currentFeeTypeFilter
+                        );
+                    } else {
+                        filteredStudents = courseStudents;
+                    }
+
                     if (searchVal !== "") {
                         filteredStudents = filteredStudents.filter(s => {
-                            const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                            const haystack = [s.name, s.phone, s.std, s.course, s.feeType, s.fatherName, s.motherName, s.id]
                                 .map(v => String(v || '').toLowerCase()).join(' ');
                             return haystack.includes(searchVal);
                         });
                     }
-                    const courseTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
-                    const coursePaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
-                    const courseDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+
+                    const visibleTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                    const visiblePaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                    const visibleDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+
                     courseHtml += `
-                        <div class="card" style="background:#f3f8ff;border-color:#90caf9;margin-bottom:10px;">
-                            <div style="text-align:center;color:#1565c0;font-weight:bold;">
-                                📚 ${escapeHtml(currentCourseFilter)} — ${filteredStudents.length} વિદ્યાર્થી
+                        <div class="card" style="background:#fff8e1;border-color:#ffcc80;margin-bottom:10px;">
+                            <div style="text-align:center;color:#ef6c00;font-weight:bold;">
+                                ${currentFeeTypeFilter ? escapeHtml(currentFeeTypeFilter) : 'બધા ફી પ્રકાર'} — ${filteredStudents.length} વિદ્યાર્થી
                             </div>
                             <div class="grid-3" style="margin-top:8px;">
-                                <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span>₹${courseTotal}</span></div>
-                                <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span>₹${coursePaid}</span></div>
-                                <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span>₹${courseDue}</span></div>
+                                <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span>₹${visibleTotal}</span></div>
+                                <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span>₹${visiblePaid}</span></div>
+                                <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span>₹${visibleDue}</span></div>
                             </div>
                         </div>`;
                 } else {
-                    // કોર્ષ પસંદ ન હોય તો search મુજબ statusના બધા વિદ્યાર્થીઓ બતાવો.
                     filteredStudents = statusStudents;
                     if (searchVal !== "") {
                         filteredStudents = filteredStudents.filter(s => {
-                            const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                            const haystack = [s.name, s.phone, s.std, s.course, s.feeType, s.fatherName, s.motherName, s.id]
                                 .map(v => String(v || '').toLowerCase()).join(' ');
                             return haystack.includes(searchVal);
                         });
@@ -2305,7 +2381,7 @@
 
             if (searchVal !== "" && currentFilter !== 'active' && currentFilter !== 'inactive') {
                 filteredStudents = filteredStudents.filter(s => {
-                    const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                    const haystack = [s.name, s.phone, s.std, s.course, s.feeType, s.fatherName, s.motherName, s.id]
                         .map(v => String(v || '').toLowerCase()).join(' ');
                     return haystack.includes(searchVal);
                 });
