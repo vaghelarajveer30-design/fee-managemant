@@ -102,7 +102,6 @@
         .ledger-table { font-size:11px; }
         .low-stock { background:#ffebee !important; color:#b71c1c; font-weight:bold; }
         .profit-positive { color:#2e7d32; font-weight:bold; } .profit-negative { color:#d32f2f; font-weight:bold; }
-        #statusCourseMenu .btn.active-filter { outline:3px solid #1565c0; box-shadow:0 0 8px rgba(0,0,0,.25); }
         @media(max-width:360px){.fin-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -287,30 +286,12 @@
             </div>
 
             <div class="grid-2" style="margin-bottom: 12px;">
-                <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="openStatusCourseMenu('active')">
+                <div id="btnFilterActive" class="stat-box" style="background-color: #2e7d32;" onclick="filterStudents('active')">
                     🟢 એક્ટિવ વિદ્યાર્થી<br><span id="countActive" style="font-size: 20px;">0</span>
                 </div>
-                <div id="btnFilterInactive" class="stat-box" style="background-color: #d32f2f;" onclick="openStatusCourseMenu('inactive')">
+                <div id="btnFilterInactive" class="stat-box" style="background-color: #d32f2f;" onclick="filterStudents('inactive')">
                     🔴 ઇન-એક્ટિવ વિદ્યાર્થી<br><span id="countInactive" style="font-size: 20px;">0</span>
                 </div>
-            </div>
-
-            <!-- Active / Inactive → Course → Navoday Fee Type વિભાજન -->
-            <div id="statusCourseMenu" class="card" style="display:none;background:#f8fbff;border-color:#90caf9;margin-top:0;">
-                <div id="statusCourseTitle" style="text-align:center;font-weight:bold;color:#1565c0;font-size:15px;margin-bottom:9px;"></div>
-                <div class="grid-3">
-                    <button type="button" id="courseBtnNavoday" class="btn btn-blue" style="margin-top:0;min-height:68px;" onclick="selectStatusCourse('Navoday')">🏫 નવોદય<br><span id="courseCountNavoday" style="font-size:18px;">0</span></button>
-                    <button type="button" id="courseBtnGyan" class="btn btn-purple" style="margin-top:0;min-height:68px;" onclick="selectStatusCourse('Gyan sadhana')">📘 Gyan sadhana<br><span id="courseCountGyan" style="font-size:18px;">0</span></button>
-                    <button type="button" id="courseBtnGeneral" class="btn btn-orange" style="margin-top:0;min-height:68px;" onclick="selectStatusCourse('સામાન્ય')">📚 સામાન્ય<br><span id="courseCountGeneral" style="font-size:18px;">0</span></button>
-                </div>
-                <div id="navodayFeeTypeMenu" style="display:none;margin-top:10px;">
-                    <div style="text-align:center;color:#1565c0;font-weight:bold;margin-bottom:7px;">નવોદયની ફી પ્રકાર પસંદ કરો</div>
-                    <div class="grid-2">
-                        <button type="button" class="btn btn-green" style="margin-top:0;" onclick="selectStatusFeeType('માસિક')">📅 માસિક</button>
-                        <button type="button" class="btn btn-cyan" style="margin-top:0;" onclick="selectStatusFeeType('વાર્ષિક')">📆 વાર્ષિક</button>
-                    </div>
-                </div>
-                <div id="statusCourseSummary" style="margin-top:10px;"></div>
             </div>
 
             <div id="studentListContainer"></div>
@@ -1131,10 +1112,7 @@
         let deletedStudents = [];
         let currentStudent = students[0];
         let currentFilter = null;
-        // Active/Inactive અંદર કોર્ષ પ્રમાણે વિભાજન માટેના નવા ફિલ્ટર
-        let currentStatusCourse = null;
-        let currentCourseGroup = null;
-        let currentFeeTypeGroup = null;
+        let currentCourseFilter = null;
         let generatedBlob = null;
         let generatedDataUrl = "";
 
@@ -1990,149 +1968,171 @@
         function filterStudents(type) {
             if (currentFilter === type) {
                 currentFilter = null;
+                currentCourseFilter = null;
             } else {
                 currentFilter = type;
+                currentCourseFilter = null;
             }
-            currentStatusCourse = null;
-            currentCourseGroup = null;
-            currentFeeTypeGroup = null;
-            const menu = document.getElementById('statusCourseMenu');
-            if (menu) menu.style.display = 'none';
             renderDashboard();
         }
 
-        function openStatusCourseMenu(status) {
-            currentStatusCourse = status;
-            currentCourseGroup = null;
-            currentFeeTypeGroup = null;
-            currentFilter = status;
-
-            const menu = document.getElementById('statusCourseMenu');
-            const title = document.getElementById('statusCourseTitle');
-            const feeMenu = document.getElementById('navodayFeeTypeMenu');
-            const summary = document.getElementById('statusCourseSummary');
-
-            if (menu) menu.style.display = 'block';
-            if (title) title.innerText = status === 'active'
-                ? '🟢 એક્ટિવ વિદ્યાર્થીઓ — કોર્ષ પ્રમાણે'
-                : '🔴 ઇન-એક્ટિવ વિદ્યાર્થીઓ — કોર્ષ પ્રમાણે';
-            if (feeMenu) feeMenu.style.display = 'none';
-            if (summary) summary.innerHTML = '<div style="text-align:center;color:#777;padding:5px;">ઉપરથી કોર્ષ પસંદ કરો.</div>';
-
-            renderStatusCourseButtons();
+        function selectStudentCourseFilter(encodedCourse) {
+            const course = decodeURIComponent(encodedCourse || '');
+            if (currentCourseFilter === course) {
+                currentCourseFilter = null;
+            } else {
+                currentCourseFilter = course;
+            }
             renderDashboard();
-            setTimeout(() => {
-                document.getElementById('statusCourseMenu')?.scrollIntoView({behavior:'smooth', block:'nearest'});
-            }, 30);
         }
 
-        function normalizeCourseGroup(course) {
-            const c = String(course || '').trim().toLowerCase();
-            if (c === 'navoday' || c === 'navodaya' || c === 'નવોદય') return 'Navoday';
-            if (c === 'gyan sadhana' || c === 'gyan sadhna' || c === 'જ્ઞાન સાધના') return 'Gyan sadhana';
-            return 'સામાન્ય';
+        function clearStudentCourseFilter() {
+            currentCourseFilter = null;
+            renderDashboard();
         }
 
-        function getStatusCourseStudents(status, courseGroup, feeType) {
-            return students.filter(s => {
-                if ((s.status || 'active') !== status) return false;
-                if (courseGroup && normalizeCourseGroup(s.course) !== courseGroup) return false;
-                if (feeType && String(s.feeType || '').trim() !== feeType) return false;
-                return true;
+
+        function getPaidReceiptsBetween(fromStr, toStr) {
+            let total=0;
+            students.forEach(st => (st.receipts||[]).forEach(r => {
+                if (r.date && r.date >= fromStr && r.date <= toStr) total += Number(r.paidVal)||0;
+            }));
+            return total;
+        }
+
+        function formatDashboardMoney(n){ return '₹'+Math.round(Number(n)||0); }
+
+        function getFiscalYearRangeForToday(){
+            const t=new Date(), y=t.getFullYear(), m=t.getMonth();
+            const startYear=m>=3?y:y-1;
+            return {from:startYear+'-04-01',to:(startYear+1)+'-03-31'};
+        }
+
+        function toggleRMenu(){
+            const p=document.getElementById('rMenuPanel');
+            if(!p)return;
+            p.style.display=p.style.display==='block'?'none':'block';
+            resetInactivityTimer();
+        }
+        function closeRMenu(){
+            const p=document.getElementById('rMenuPanel');
+            if(p)p.style.display='none';
+        }
+        let rFeatureHome = null;
+        let rFeatureSource = null;
+
+        function rMenuAction(action){
+            closeRMenu(); resetInactivityTimer();
+            const map={
+                dashboardAdvancedCard:['📊 સંપૂર્ણ Dashboard','dashboardAdvancedCard'],
+                dashboardReminderCard:['🔔 Automatic Reminder List','dashboardReminderCard'],
+                dashboardNextMonthCard:['📅 આગામી મહિનાની ફી','dashboardNextMonthCard'],
+                dashboardReceiptSearchCard:['🔎 સર્ચ ફી રિપોર્ટ','dashboardReceiptSearchCard'],
+                dashboardWhatsAppCard:['📲 WhatsApp Automation Center','dashboardWhatsAppCard']
+            };
+            if(action==='dashboardDueReport'){ openDueReport(); return; }
+            const item=map[action]; if(item){ openRFeaturePage(item[0],item[1]); return; }
+        }
+        function navigateFromRMenu(pageId){ closeRMenu(); resetInactivityTimer(); navigateTo(pageId); }
+        function openRFeaturePage(title, sourceId){
+            const source=document.getElementById(sourceId), content=document.getElementById('rFeatureContent'), titleEl=document.getElementById('rFeatureTitle');
+            if(!source||!content)return;
+            if(rFeatureSource && rFeatureHome && rFeatureSource.parentNode===content) rFeatureHome.appendChild(rFeatureSource);
+            rFeatureHome=source.parentNode; rFeatureSource=source; content.innerHTML=''; content.appendChild(source); source.style.display='block'; titleEl.innerText=title;
+            navigateTo('pageRFeature');
+            if(['dashboardAdvancedCard','dashboardReminderCard','dashboardNextMonthCard','dashboardWhatsAppCard'].includes(sourceId)) renderDashboardAdvanced();
+            if(sourceId==='dashboardReceiptSearchCard'){ const inp=document.getElementById('receiptSearchInput'); if(inp) inp.focus(); }
+        }
+        function toggleDashboardSection(id){ const map={dashboardAdvancedCard:'📊 સંપૂર્ણ Dashboard',dashboardReminderCard:'🔔 Automatic Reminder List',dashboardNextMonthCard:'📅 આગામી મહિનાની ફી',dashboardReceiptSearchCard:'🔎 સર્ચ ફી રિપોર્ટ',dashboardWhatsAppCard:'📲 WhatsApp Automation Center'}; if(map[id])openRFeaturePage(map[id],id); }
+
+        function getDateOnly(d){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+        function sumReceiptsByMode(from,to){
+            const out={cash:0,upi:0,bank:0,other:0,total:0};
+            students.forEach(st=>(st.receipts||[]).forEach(r=>{
+                if(!r.date || r.date<from || r.date>to) return;
+                const a=Number(r.paidVal)||0; out.total+=a;
+                const m=String(r.payMode||'').toLowerCase();
+                if(m.includes('cash')||m.includes('રોકડા')) out.cash+=a;
+                else if(m.includes('upi')||m.includes('gpay')||m.includes('phonepe')||m.includes('paytm')) out.upi+=a;
+                else if(m.includes('bank')||m.includes('બેંક')) out.bank+=a;
+                else if(m.includes('online')||m.includes('ઓન લાઈન')||m.includes('ઓનલાઈન')) out.upi+=a;
+                else out.other+=a;
+            })); return out;
+        }
+        function sumStationerySales(from,to){
+            let sales=0,cost=0,cash=0;
+            students.forEach(st=>(st.stationery||[]).forEach(x=>{
+                if(x.date>=from&&x.date<=to){
+                    const qty=Number(x.qty)||0;
+                    const sell=Number(x.price)||0;
+                    const item=stockList.find(z=>z.name===x.itemName);
+                    sales+=sell;
+                    cost+=(Number(x.unitCost ?? item?.costPrice)||0)*qty;
+                    if(x.payType==='રોકડ')cash+=sell;
+                }
+            }));
+            const external=Array.isArray(masterSettings.externalStationerySales)?masterSettings.externalStationerySales:[];
+            external.forEach(x=>{
+                if(x.date>=from&&x.date<=to){
+                    const qty=Number(x.qty)||0;
+                    const sell=Number(x.price)||0;
+                    sales+=sell;
+                    cost+=(Number(x.unitCost)||0)*qty;
+                    if(x.payType==='રોકડ')cash+=sell;
+                }
             });
+            return {sales,cost,profit:sales-cost,cash};
+        }
+        function sumExpenses(from,to){ return expenses.reduce((a,x)=>a+((x.date>=from&&x.date<=to)?(Number(x.amount)||0):0),0); }
+        function sumLoans(from,to){ let given=0,returned=0; loanRecords.forEach(r=>{if(r.date>=from&&r.date<=to)given+=Number(r.totalAmount)||0;(r.payments||[]).forEach(x=>{if(x.date>=from&&x.date<=to)returned+=Number(x.amount)||0;});});return {given,returned}; }
+        function renderFinancialDashboard(){
+            const now=new Date(), today=localDateString(), mf=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+            const feeToday=sumReceiptsByMode(today,today), feeMonth=sumReceiptsByMode(mf,today), stockToday=sumStationerySales(today,today), stockMonth=sumStationerySales(mf,today);
+            const expToday=sumExpenses(today,today), expMonth=sumExpenses(mf,today), loansToday=sumLoans(today,today), loansMonth=sumLoans(mf,today);
+            const totalDue=students.reduce((a,s)=>a+(Number(s.due)||0),0), loanDue=loanRecords.reduce((a,r)=>a+loanDueAmount(r),0);
+            const cashToday=feeToday.cash+stockToday.cash+loansToday.returned-expToday-loansToday.given;
+            const cashMonth=feeMonth.cash+stockMonth.cash+loansMonth.returned-expMonth-loansMonth.given;
+            const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+            set('fdTodayIncome',formatDashboardMoney(feeToday.total+stockToday.sales+loansToday.returned)); set('fdTodayExpense',formatDashboardMoney(expToday+loansToday.given)); set('fdTodayProfit',formatDashboardMoney(feeToday.total+stockToday.profit-expToday));
+            set('fdMonthIncome',formatDashboardMoney(feeMonth.total+stockMonth.sales+loansMonth.returned)); set('fdMonthExpense',formatDashboardMoney(expMonth+loansMonth.given)); set('fdMonthProfit',formatDashboardMoney(feeMonth.total+stockMonth.profit-expMonth));
+            set('fdDue',formatDashboardMoney(totalDue)); set('fdStockProfit',formatDashboardMoney(stockMonth.profit)); set('fdLoanGiven',formatDashboardMoney(loanRecords.reduce((a,r)=>a+(Number(r.totalAmount)||0),0))); set('fdLoanReturned',formatDashboardMoney(loanRecords.reduce((a,r)=>a+loanPaidAmount(r),0))); set('fdCash',formatDashboardMoney(cashMonth));
+            set('fdCashMode',`Cash ₹${Math.round(feeMonth.cash+stockMonth.cash)} | UPI ₹${Math.round(feeMonth.upi)} | Bank ₹${Math.round(feeMonth.bank)} | અન્ય ₹${Math.round(feeMonth.other)}`);
+            const mode=document.getElementById('fdModeReport'); if(mode) mode.innerHTML=`<tr><td>💵 Cash</td><td>₹${Math.round(feeMonth.cash+stockMonth.cash)}</td></tr><tr><td>📱 UPI / Online</td><td>₹${Math.round(feeMonth.upi)}</td></tr><tr><td>🏦 Bank</td><td>₹${Math.round(feeMonth.bank)}</td></tr><tr><td>અન્ય</td><td>₹${Math.round(feeMonth.other)}</td></tr><tr style="font-weight:bold"><td>કુલ</td><td>₹${Math.round(feeMonth.total+stockMonth.sales)}</td></tr>`;
+            const low=document.getElementById('fdLowStock'); if(low) low.innerHTML=stockList.filter(x=>(Number(x.qty)||0)<=Number(x.minQty||5)).map(x=>`<div class="finance-card low-stock">⚠️ ${escapeHtml(x.name)} — માત્ર ${x.qty} નંગ બાકી</div>`).join('')||'<div style="color:#2e7d32;text-align:center">✅ કોઈ Low Stock નથી.</div>';
+        }
+        function renderDashboardAdvanced(){
+            const now=new Date(), today=localDateString(), monthFrom=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`, todayPaid=getPaidReceiptsBetween(today,today), monthPaid=getPaidReceiptsBetween(monthFrom,today), dueStudents=students.filter(s=>Number(s.due)>0), active=students.filter(s=>s.status==='active').length, inactive=students.filter(s=>s.status==='inactive').length;
+            const set=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
+            set('dashTodayPaid',formatDashboardMoney(todayPaid)); set('dashMonthPaid',formatDashboardMoney(monthPaid)); set('dashTotalDue',formatDashboardMoney(students.reduce((a,s)=>a+(Number(s.due)||0),0))); set('dashDueStudents',dueStudents.length); set('dashActiveCount',active); set('dashInactiveCount',inactive);
+            renderFinancialDashboard(); renderStationeryHomeSummary();
+            const backup=document.getElementById('dashBackupStatus'); if(backup){ if(masterSettings.lastBackupAt){const d=new Date(masterSettings.lastBackupAt);const days=Math.floor((Date.now()-d.getTime())/86400000);backup.innerHTML=days>=7?'⚠️ છેલ્લો બેકઅપ '+d.toLocaleString('gu-IN')+' — બેકઅપ લેવાનું બાકી છે.':'☁️ છેલ્લો બેકઅપ: '+d.toLocaleString('gu-IN');backup.style.color=days>=7?'#d32f2f':'#2e7d32';}else{backup.innerHTML='⚠️ હજી સુધી ક્લાઉડ બેકઅપ લેવાયો નથી.';backup.style.color='#d32f2f';} }
+            const reminder=document.getElementById('dashboardReminderList'); if(reminder){const list=dueStudents.slice().sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));reminder.innerHTML=list.length?list.slice(0,30).map(st=>`<div class="student-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div onclick="openStudent('${escapeHtml(st.id)}')" style="flex:1;cursor:pointer"><b>👤 ${escapeHtml(st.name)}</b><div style="font-size:12px;color:#d32f2f;font-weight:bold">બાકી ₹${Math.round(st.due||0)}</div></div><button class="btn btn-whatsapp" style="width:auto;padding:5px 8px;font-size:11px" onclick="event.stopPropagation();sendStudentDashboardReminder('${escapeHtml(st.id)}')">📲 WhatsApp</button></div>`).join(''):'<div style="text-align:center;padding:12px;color:#2e7d32;font-weight:bold">✅ કોઈ બાકી ફી નથી.</div>';}
+            const next=document.getElementById('dashboardNextMonthList'); if(next){const y=now.getMonth()===11?now.getFullYear()+1:now.getFullYear(),m=(now.getMonth()+1)%12,from=new Date(y,m,1).toISOString().split('T')[0],to=new Date(y,m+1,0).toISOString().split('T')[0];const list=students.map(st=>({st,info:getReminderFeeInfo(st,from,to)})).filter(x=>x.info.months.length&&x.info.unpaidMonths.length);next.innerHTML=list.length?list.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><b>👤 ${escapeHtml(x.st.name)}</b><span style="float:right;color:#1565c0;font-weight:bold">₹${Math.round(x.info.due)}</span><div style="font-size:11px;color:#555">${x.info.unpaidMonths.map(m=>m.name+' '+m.year).join(', ')}</div></div>`).join(''):'<div style="text-align:center;padding:12px;color:#666">આગામી મહિનાની નવી ફી માટે કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';}
+            const wa=document.getElementById('whatsappAutomationSummary'); if(wa){const birthdays=students.filter(s=>s.birthDate&&s.birthDate.slice(5)===today.slice(5)).length;wa.innerText=`આજે Birthday: ${birthdays} | બાકી વિદ્યાર્થીઓ: ${dueStudents.length} | કુલ બાકી: ₹${Math.round(students.reduce((a,s)=>a+(Number(s.due)||0),0))}`;}
         }
 
-        function moneyRound(n) {
-            return Math.round(Number(n) || 0);
+        function sendStudentDashboardReminder(id){
+            const st=students.find(s=>String(s.id)===String(id)); if(!st)return;
+            const today=localDateString();
+            const from=new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().split('T')[0];
+            const info=getReminderFeeInfo(st,from,today);
+            let msg=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાસિસ* માં *${st.name}* ની ફી બાકી છે.\n\n❗ બાકી: *₹${Math.round(info.due||st.due||0)}*\n📅 બાકી મહિના: ${info.unpaidMonths.map(m=>m.name+' '+m.year+' ₹'+Math.round(m.remaining)).join(', ')||'હાલના સરવૈયા મુજબ બાકી'}\n\nકૃપા કરીને બાકી ફી જમા કરાવવા વિનંતી. 🌸\n\nઆભાર,\n*નિર્મળા નવોદય ક્લાસિસ*`;
+            openWhatsAppUrl(st.phone,msg);
         }
-
-        function renderStatusCourseButtons() {
-            const status = currentStatusCourse;
-            if (!status) return;
-
-            const nav = getStatusCourseStudents(status, 'Navoday');
-            const gyan = getStatusCourseStudents(status, 'Gyan sadhana');
-            const general = getStatusCourseStudents(status, 'સામાન્ય');
-
-            document.getElementById('courseCountNavoday')?.replaceChildren(document.createTextNode(nav.length));
-            document.getElementById('courseCountGyan')?.replaceChildren(document.createTextNode(gyan.length));
-            document.getElementById('courseCountGeneral')?.replaceChildren(document.createTextNode(general.length));
-
-            const menu = document.getElementById('statusCourseMenu');
-            if (menu) menu.style.display = 'block';
-
-            const navBtn = document.getElementById('courseBtnNavoday');
-            const gyanBtn = document.getElementById('courseBtnGyan');
-            const generalBtn = document.getElementById('courseBtnGeneral');
-            [navBtn, gyanBtn, generalBtn].forEach(b => b?.classList.remove('active-filter'));
-
-            if (currentCourseGroup === 'Navoday') navBtn?.classList.add('active-filter');
-            if (currentCourseGroup === 'Gyan sadhana') gyanBtn?.classList.add('active-filter');
-            if (currentCourseGroup === 'સામાન્ય') generalBtn?.classList.add('active-filter');
+        function sendAllDashboardRemindersWhatsApp(){
+            const list=students.filter(s=>Number(s.due)>0); if(!list.length){alert('✅ કોઈ બાકી ફી નથી.');return;}
+            let msg='🙏🏻 *નિર્મળા નવોદય ક્લાસિસ - બાકી ફીની યાદી*\n\n'; list.forEach((s,i)=>msg+=`${i+1}. ${s.name} — ₹${Math.round(s.due||0)}\n`); openWhatsAppUrl('',msg);
         }
-
-        function selectStatusCourse(courseGroup) {
-            currentCourseGroup = courseGroup;
-            currentFeeTypeGroup = null;
-            currentFilter = currentStatusCourse;
-
-            const feeMenu = document.getElementById('navodayFeeTypeMenu');
-            if (feeMenu) feeMenu.style.display = courseGroup === 'Navoday' ? 'block' : 'none';
-
-            renderStatusCourseButtons();
-            renderStatusCourseSummary();
-            renderDashboard();
-
-            setTimeout(() => {
-                document.getElementById('statusCourseMenu')?.scrollIntoView({behavior:'smooth', block:'nearest'});
-            }, 30);
-        }
-
-        function selectStatusFeeType(feeType) {
-            currentFeeTypeGroup = feeType;
-            currentFilter = currentStatusCourse;
-            renderStatusCourseButtons();
-            renderStatusCourseSummary();
-            renderDashboard();
-        }
-
-        function renderStatusCourseSummary() {
-            const box = document.getElementById('statusCourseSummary');
-            if (!box || !currentStatusCourse || !currentCourseGroup) {
-                if (box && !currentCourseGroup) box.innerHTML = '<div style="text-align:center;color:#777;padding:5px;">ઉપરથી કોર્ષ પસંદ કરો.</div>';
-                return;
-            }
-
-            const arr = getStatusCourseStudents(currentStatusCourse, currentCourseGroup, currentFeeTypeGroup);
-            const allCourse = getStatusCourseStudents(currentStatusCourse, currentCourseGroup);
-            const total = arr.reduce((n,s) => n + (Number(s.totalFeeWithStationery) || Number(s.fee) || 0), 0);
-            const paid = arr.reduce((n,s) => n + (Number(s.paid) || 0), 0);
-            const due = arr.reduce((n,s) => n + (Number(s.due) || 0), 0);
-
-            const statusText = currentStatusCourse === 'active' ? '🟢 એક્ટિવ' : '🔴 ઇન-એક્ટિવ';
-            const feeText = currentFeeTypeGroup ? ` — ${currentFeeTypeGroup}` : '';
-            const heading = `${statusText} | ${currentCourseGroup}${feeText}`;
-
-            box.innerHTML = `
-                <div class="card" style="margin:0;background:${currentStatusCourse==='active'?'#e8f5e9':'#ffebee'};border-color:${currentStatusCourse==='active'?'#a5d6a7':'#ef9a9a'};">
-                    <div style="text-align:center;font-weight:bold;color:${currentStatusCourse==='active'?'#2e7d32':'#b71c1c'};margin-bottom:7px;">${heading}</div>
-                    <div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">
-                        ${currentFeeTypeGroup ? `આ ફી પ્રકારના કુલ ${arr.length} વિદ્યાર્થી` : `આ કોર્ષના કુલ ${allCourse.length} વિદ્યાર્થી`}
-                    </div>
-                    <div class="grid-3">
-                        <div class="stat-box" style="background:#1976d2;">કુલ ફી<br><span>₹${moneyRound(total)}</span></div>
-                        <div class="stat-box" style="background:#388e3c;">જમા ફી<br><span>₹${moneyRound(paid)}</span></div>
-                        <div class="stat-box" style="background:#d32f2f;">બાકી ફી<br><span>₹${moneyRound(due)}</span></div>
-                    </div>
-                </div>`;
+        function searchReceiptsDashboard(){
+            const q=(document.getElementById('receiptSearchInput')?.value||'').toLowerCase().trim(), box=document.getElementById('receiptSearchResults'); if(!box)return;
+            if(!q){box.innerHTML='<div style="color:#888;text-align:center;padding:8px;">રસીદ નંબર, નામ અથવા મોબાઈલ લખો.</div>';return;}
+            const rows=[]; students.forEach(st=>(st.receipts||[]).forEach(r=>{if(String(r.receiptNo||'').toLowerCase().includes(q)||String(st.name||'').toLowerCase().includes(q)||String(st.phone||'').includes(q))rows.push({st,r});}));
+            box.innerHTML=rows.length?rows.slice(0,50).map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}');setTimeout(()=>viewReceiptInfo('${escapeHtml(x.r.id)}'),100)"><b>🧾 #${escapeHtml(x.r.receiptNo||'-')} — ${escapeHtml(x.st.name)}</b><div style="font-size:12px;">${formatDate(x.r.date)} | જમા ₹${Math.round(x.r.paidVal||0)} | બાકી ₹${Math.round(x.r.dueVal||0)}</div></div>`).join(''):'<div style="text-align:center;padding:10px;color:#888;">કોઈ રસીદ મળી નથી.</div>';
         }
 
         function renderDashboard() {
             recalculateStudentTotals();
             renderDashboardAdvanced();
-            renderStatusCourseButtons();
-            if (currentCourseGroup) renderStatusCourseSummary();
-
             const container = document.getElementById('studentListContainer');
             const searchVal = document.getElementById('searchInput')?.value.toLowerCase().trim() || "";
             container.innerHTML = '';
@@ -2191,21 +2191,119 @@
             let filteredStudents = students;
 
             if (currentFilter === 'active' || currentFilter === 'inactive') {
-                filteredStudents = filteredStudents.filter(s => (s.status || 'active') === currentFilter);
+                filteredStudents = filteredStudents.filter(s => s.status === currentFilter);
 
-                if (currentCourseGroup) {
-                    filteredStudents = filteredStudents.filter(s => normalizeCourseGroup(s.course) === currentCourseGroup);
+                // Active / In-Active ની અંદર હવે કોર્ષ પ્રમાણે અલગ બટન આવશે.
+                // કોઈ કોર્ષ પસંદ ન હોય ત્યારે બધા કોર્ષના બટન દેખાશે.
+                const statusStudents = filteredStudents.slice();
+                const courseMap = {};
+                statusStudents.forEach(s => {
+                    const c = String(s.course || 'કોર્ષ વગર').trim() || 'કોર્ષ વગર';
+                    if (!courseMap[c]) courseMap[c] = [];
+                    courseMap[c].push(s);
+                });
+
+                const courses = Object.keys(courseMap).sort((a,b)=>a.localeCompare(b,'gu'));
+                const isInactive = currentFilter === 'inactive';
+                const statusTitle = isInactive ? '🔴 ઇન-એક્ટિવ' : '🟢 એક્ટિવ';
+                const statusBg = isInactive ? '#ffebee' : '#e8f5e9';
+                const statusBorder = isInactive ? '#ef9a9a' : '#a5d6a7';
+                const statusColor = isInactive ? '#b71c1c' : '#2e7d32';
+
+                // Search લાગુ થયા પછી પણ કોર્ષ બટનમાં તે statusના તમામ
+                // વિદ્યાર્થીઓના counts બતાવવા માટે statusStudents વપરાય છે.
+                let courseHtml = `
+                    <div class="card" style="background:${statusBg};border-color:${statusBorder};margin-bottom:10px;">
+                        <div style="text-align:center;font-weight:bold;color:${statusColor};font-size:15px;margin-bottom:9px;">
+                            ${statusTitle} વિદ્યાર્થીઓ — કોર્ષ પ્રમાણે
+                        </div>
+                        <div class="grid-3" style="margin-bottom:9px;">
+                            <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ વિદ્યાર્થી<br><span>${statusStudents.length}</span></div>
+                            <div class="stat-box" style="background:#388e3c;cursor:default;">કોર્ષ<br><span>${courses.length}</span></div>
+                            <div class="stat-box" style="background:#7b1fa2;cursor:default;">પસંદગી<br><span>${currentCourseFilter ? escapeHtml(currentCourseFilter) : 'બધા'}</span></div>
+                        </div>
+                        <button type="button"
+                                class="btn btn-blue"
+                                style="margin-top:0;margin-bottom:8px;"
+                                onclick="clearStudentCourseFilter()">
+                            📚 બધા કોર્ષ — ${statusStudents.length} વિદ્યાર્થી
+                        </button>
+                        <div class="grid-2">
+                            ${courses.map((c,i)=>{
+                                const arr=courseMap[c] || [];
+                                const ct=arr.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                                const cp=arr.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                                const cd=arr.reduce((a,s)=>a+(Number(s.due)||0),0);
+                                const selected=currentCourseFilter===c;
+                                const bg=isInactive
+                                    ? (selected ? '#b71c1c' : '#d32f2f')
+                                    : (selected ? '#1b5e20' : '#2e7d32');
+                                return `
+                                    <button type="button"
+                                            class="stat-box ${selected ? 'active-filter' : ''}"
+                                            style="background:${bg};width:100%;border:none;font-family:inherit;"
+                                            onclick="selectStudentCourseFilter('${encodeURIComponent(c)}')">
+                                        📚 ${escapeHtml(c)}<br>
+                                        <span style="font-size:18px;">${arr.length}</span> વિદ્યાર્થી
+                                        <small style="display:block;margin-top:4px;font-weight:normal;">
+                                            ફી ₹${ct} | જમા ₹${cp} | બાકી ₹${cd}
+                                        </small>
+                                    </button>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+
+                // પસંદ કરેલો કોર્ષ હોય તો માત્ર તે કોર્ષના વિદ્યાર્થીઓની યાદી.
+                if (currentCourseFilter) {
+                    filteredStudents = statusStudents.filter(s =>
+                        (String(s.course || 'કોર્ષ વગર').trim() || 'કોર્ષ વગર') === currentCourseFilter
+                    );
+                    if (searchVal !== "") {
+                        filteredStudents = filteredStudents.filter(s => {
+                            const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                                .map(v => String(v || '').toLowerCase()).join(' ');
+                            return haystack.includes(searchVal);
+                        });
+                    }
+                    const courseTotal = filteredStudents.reduce((a,s)=>a+(Number(s.totalFeeWithStationery)||Number(s.fee)||0),0);
+                    const coursePaid = filteredStudents.reduce((a,s)=>a+(Number(s.paid)||0),0);
+                    const courseDue = filteredStudents.reduce((a,s)=>a+(Number(s.due)||0),0);
+                    courseHtml += `
+                        <div class="card" style="background:#f3f8ff;border-color:#90caf9;margin-bottom:10px;">
+                            <div style="text-align:center;color:#1565c0;font-weight:bold;">
+                                📚 ${escapeHtml(currentCourseFilter)} — ${filteredStudents.length} વિદ્યાર્થી
+                            </div>
+                            <div class="grid-3" style="margin-top:8px;">
+                                <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span>₹${courseTotal}</span></div>
+                                <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span>₹${coursePaid}</span></div>
+                                <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span>₹${courseDue}</span></div>
+                            </div>
+                        </div>`;
+                } else {
+                    // કોર્ષ પસંદ ન હોય તો search મુજબ statusના બધા વિદ્યાર્થીઓ બતાવો.
+                    filteredStudents = statusStudents;
+                    if (searchVal !== "") {
+                        filteredStudents = filteredStudents.filter(s => {
+                            const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
+                                .map(v => String(v || '').toLowerCase()).join(' ');
+                            return haystack.includes(searchVal);
+                        });
+                    }
                 }
-                if (currentCourseGroup === 'Navoday' && currentFeeTypeGroup) {
-                    filteredStudents = filteredStudents.filter(s => String(s.feeType || '').trim() === currentFeeTypeGroup);
+
+                if (filteredStudents.length === 0) {
+                    container.innerHTML = courseHtml + '<div style="text-align:center; padding:20px; color:#888;">આ કોર્ષમાં કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+                    return;
                 }
+
+                container.innerHTML = courseHtml;
             } else if (currentFilter === 'paid') {
                 filteredStudents = filteredStudents.filter(s => s.paid > 0);
             } else if (currentFilter === 'due') {
                 filteredStudents = filteredStudents.filter(s => s.due > 0);
             }
 
-            if (searchVal !== "") {
+            if (searchVal !== "" && currentFilter !== 'active' && currentFilter !== 'inactive') {
                 filteredStudents = filteredStudents.filter(s => {
                     const haystack = [s.name, s.phone, s.std, s.course, s.fatherName, s.motherName, s.id]
                         .map(v => String(v || '').toLowerCase()).join(' ');
@@ -2214,14 +2312,13 @@
             }
 
             if (filteredStudents.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">કોઈ વિદ્યાર્થી મળ્યો નથી.</div>';
                 return;
             }
 
-            if ((currentFilter === 'active' || currentFilter === 'inactive') && !currentCourseGroup) {
-                container.innerHTML = '<div style="text-align:center; padding: 14px; color: #666; font-size: 13px;">કોર્ષનું બટન પસંદ કરો જેથી તે કોર્ષની કુલ ફી, જમા, બાકી અને વિદ્યાર્થીની યાદી અહીં દેખાય.</div>';
-                return;
-            }
+            // Active / In-Active માટેનું કુલ સરવૈયું કોર્ષ બટન ઉપર બતાવાયું છે.
+            // નીચેના વિદ્યાર્થી કાર્ડમાં હાલની તમામ ઉપલબ્ધ સંક્ષિપ્ત માહિતી રહે છે;
+            // કાર્ડ દબાવવાથી પહેલાની જેમ સંપૂર્ણ વિદ્યાર્થી વિગતો ખુલશે.
 
             filteredStudents.forEach(s => {
                 const totalDisp = Number(s.totalFeeWithStationery ?? s.fee) || 0;
@@ -2232,10 +2329,10 @@
                 }
 
                 container.innerHTML += `
-                    <div class="student-item-card" onclick="openStudent('${s.id}')">
+                    <div class="student-item-card" onclick="openStudent('${escapeHtml(s.id)}')">
                         <div class="student-item-head">
-                            <span class="student-name">👤 ${s.name}</span>
-                            <span class="student-badge">${s.course} (${s.std})</span>
+                            <span class="student-name">👤 ${escapeHtml(s.name)}</span>
+                            <span class="student-badge">${escapeHtml(s.course || 'કોર્ષ વગર')} (${escapeHtml(s.std || '-')})</span>
                         </div>
                         <div style="margin-top: 6px; font-size: 13px; color: #555; display:flex; justify-content:space-between;">
                             <span>કુલ ફી: ₹${totalDisp}</span>
@@ -2247,7 +2344,6 @@
                 `;
             });
         }
-
 
         function openAddStudentModal() {
             document.getElementById('formTitle').innerText = "નવો વિદ્યાર્થી ઉમેરો";
@@ -4238,7 +4334,8 @@
             const summary=document.getElementById('courseDivisionSummary');
             if(!select||!list||!summary) return;
             const activeStudents=students.filter(s=>(s.status||'active')==='active');
-            const courses=[...new Set(activeStudents.map(s=>(s.course||'કોર્સ વગર').trim()||'કોર્સ વગર'))].sort((a,b)=>a.localeCompare(b,'gu'));
+            const inactiveStudents=students.filter(s=>(s.status||'active')==='inactive');
+            const courses=[...new Set([...activeStudents,...inactiveStudents].map(s=>(s.course||'કોર્ષ વગર').trim()||'કોર્ષ વગર'))].sort((a,b)=>a.localeCompare(b,'gu'));
             const old=select.value;
             select.innerHTML='<option value="__ALL__">📚 બધા કોર્સ</option>'+courses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)} (${activeStudents.filter(s=>(s.course||'કોર્સ વગર').trim()===c).length})</option>`).join('');
             if(courses.includes(old)) select.value=old; else select.value='__ALL__';
