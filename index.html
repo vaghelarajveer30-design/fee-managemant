@@ -209,7 +209,18 @@
     </div>
 
     <!-- મેઈન એપ્લિકેશન કન્ટેનર -->
-    <div class="container" id="mainAppContainer">
+    <div id="appImageViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;padding:18px;box-sizing:border-box;overflow:auto;">
+    <div style="max-width:900px;margin:0 auto;text-align:center;">
+        <button type="button" onclick="closeAppImageViewer()" style="background:#fff;color:#333;border:0;border-radius:8px;padding:10px 18px;font-size:16px;font-weight:bold;margin-bottom:12px;">✕ બંધ કરો</button>
+        <img id="appImageViewerImg" alt="Fee Receipt" style="max-width:100%;height:auto;background:#fff;border-radius:8px;display:block;margin:0 auto;">
+        <div style="margin-top:12px;">
+            <a id="appImageViewerDownload" download="fee-receipt.png" style="display:inline-block;background:#2e7d32;color:#fff;text-decoration:none;border-radius:8px;padding:11px 18px;font-weight:bold;">📥 Image Save / Download</a>
+        </div>
+        <div style="color:#fff;font-size:12px;margin-top:8px;">Appમાં 500 Error ટાળવા માટે Image અહીં જ ખોલવામાં આવી છે.</div>
+    </div>
+</div>
+
+<div class="container" id="mainAppContainer">
 
         <div id="pageRFeature" style="display:none;">
             <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -1246,6 +1257,32 @@ document.addEventListener('submit', function(e) {
         // If html2canvas is ever available, it is preferred; otherwise a native
         // SVG foreignObject renderer is used so the receipt image still works
         // on GitHub Pages / Chrome without an extra script.
+        function openBlobImageInApp(blob, fileName='fee-receipt.png') {
+            try {
+                const viewer=document.getElementById('appImageViewer');
+                const img=document.getElementById('appImageViewerImg');
+                const dl=document.getElementById('appImageViewerDownload');
+                if(!viewer||!img||!dl) throw new Error('Image viewer ઉપલબ્ધ નથી');
+                const reader=new FileReader();
+                reader.onload=function(){
+                    const dataUrl=reader.result;
+                    img.src=dataUrl;
+                    dl.href=dataUrl;
+                    dl.download=fileName;
+                    viewer.style.display='block';
+                    document.body.style.overflow='hidden';
+                };
+                reader.readAsDataURL(blob);
+            }catch(e){ alert('❌ Image ખોલી શકાઈ નથી: '+(e.message||e)); }
+        }
+        function closeAppImageViewer(){
+            const viewer=document.getElementById('appImageViewer');
+            const img=document.getElementById('appImageViewerImg');
+            if(viewer) viewer.style.display='none';
+            if(img) img.removeAttribute('src');
+            document.body.style.overflow='';
+        }
+
         async function receiptElementToBlob(element) {
             if (!element) throw new Error('ફી પહોંચનું element મળ્યું નથી.');
 
@@ -1468,6 +1505,8 @@ document.addEventListener('submit', function(e) {
             alert('✅ એપ લોક પાસવર્ડ સફળતાપૂર્વક બદલાઈ ગયો છે.');
         }
 
+        const IS_LOCAL_APP_DOCUMENT = /^content:|^file:/i.test(window.location.protocol);
+
         window.onload = async function() {
             setupInactivityAutoLock();
             const urlParams = new URLSearchParams(window.location.search);
@@ -1636,21 +1675,9 @@ document.addEventListener('submit', function(e) {
                 link.click();
                 setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 3000);
 
-                // WhatsAppના in-app browserમાં download attribute ઘણી વાર block થાય છે.
-                // તેથી actual PNG ને નવી tabમાં ખોલવાનો fallback આપીએ છીએ.
-                setTimeout(() => {
-                    try {
-                        const dataUrl = URL.createObjectURL(blob);
-                        const w = window.open(dataUrl, '_blank');
-                        if (!w) {
-                            // popup block હોય તો એ જ પેજમાં image ખોલો; અહીંથી Save/Download કરી શકાય.
-                            window.location.href = dataUrl;
-                        }
-                        setTimeout(() => URL.revokeObjectURL(dataUrl), 60000);
-                    } catch(e) {
-                        alert('❌ તમારા બ્રાઉઝરમાં સીધું ડાઉનલોડ બંધ છે. પહોંચની Image ખોલ્યા પછી લાંબું દબાવી Save Image કરો.');
-                    }
-                }, 400);
+                // App/WebViewમાં blob URL પર navigation કરવાથી 500 આવી શકે છે.
+                // હવે image એ જ પેજના viewerમાં ખોલીએ છીએ.
+                setTimeout(() => openBlobImageInApp(blob, fileName), 400);
             } catch(e) {
                 console.error(e);
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
@@ -4669,17 +4696,11 @@ document.addEventListener('submit', function(e) {
                 document.body.appendChild(link);
                 link.click();
 
-                // Android Chrome/WebViewમાં download attribute block થાય તો image નવી tabમાં ખોલો.
+                // Android app/WebViewમાં નવી tab/blob navigation ટાળો.
                 setTimeout(() => {
-                    try {
-                        const opened = window.open(blobUrl, '_blank');
-                        if (!opened) {
-                            window.location.href = blobUrl;
-                        }
-                    } catch (e) {
-                        window.location.href = blobUrl;
-                    }
-                    setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
+                    openBlobImageInApp(generatedBlob, fileName);
+                    link.remove();
+                    URL.revokeObjectURL(blobUrl);
                 }, 350);
             } catch (e) {
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
