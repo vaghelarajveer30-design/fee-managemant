@@ -203,7 +203,8 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-green" style="margin-top:15px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
+            <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 આ લિંક WhatsApp પરથી ખોલતાં ફી પહોંચની Image આપમેળે ડાઉનલોડ કરવાનો પ્રયાસ થશે.</div>
+            <button class="btn btn-green" style="margin-top:8px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
 
@@ -822,6 +823,10 @@
                             <input type="number" id="feeChangeAmount" class="form-control" min="0" placeholder="400">
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>ફી વધારવા / બદલવાનું કારણ</label>
+                        <input type="text" id="feeChangeReason" class="form-control" placeholder="દા.ત. નવા સિલેબસ / સમય વધાર્યો / ખર્ચ વધ્યો">
+                    </div>
                     <button class="btn btn-orange" onclick="saveFeeChange()">💾 નવી ફી સેવ કરો</button>
                     <div id="feeChangeHistory" style="font-size:12px; margin-top:8px;"></div>
                 </div>
@@ -1345,6 +1350,7 @@
                     const data = await response.json();
                     if (!data) throw new Error('રસીદ મળી નથી');
                     renderStandaloneReceipt(data);
+                    if (urlParams.get('download') === '1') { autoDownloadStandaloneReceipt(); }
                     return;
                 } catch(e) {
                     console.error("ટૂંકી પહોંચ લિંક ખોલવામાં ભૂલ", e);
@@ -1358,6 +1364,7 @@
                     const jsonStr = base64ToUtf8(receiptDataParam);
                     const data = JSON.parse(jsonStr);
                     renderStandaloneReceipt(data);
+                    if (urlParams.get('download') === '1') { autoDownloadStandaloneReceipt(); }
                     return;
                 } catch(e) {
                     console.error("લિંકમાંથી રસીદ ઓપન કરવામાં ભૂલ થઈ", e);
@@ -1394,6 +1401,58 @@
             if (document.getElementById('mPassword')) document.getElementById('mPassword').value = masterSettings.password || "";
             renderCourseDivision();
         };
+
+        // Receipt HTMLને PNGમાં ફેરવવા માટેનું local/offline helper.
+        // External libraryની જરૂર નથી, એટલે ZIP/APK અને offline modeમાં પણ કામ કરી શકે.
+        async function receiptElementToBlob(element) {
+            if (!element) throw new Error('રસીદ મળી નથી.');
+            const rect = element.getBoundingClientRect();
+            const width = Math.max(320, Math.ceil(rect.width || element.scrollWidth || 480));
+            const height = Math.max(200, Math.ceil(element.scrollHeight || rect.height || 300));
+            const clone = element.cloneNode(true);
+            clone.style.width = width + 'px';
+            clone.style.height = height + 'px';
+            clone.style.margin = '0';
+            clone.style.boxSizing = 'border-box';
+            clone.style.background = '#ffffff';
+
+            let cssText = '';
+            document.querySelectorAll('style').forEach(style => { cssText += style.textContent || ''; });
+            const serialized = new XMLSerializer().serializeToString(clone);
+            const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+<foreignObject x="0" y="0" width="100%" height="100%">
+<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;background:#fff;">
+<style>${cssText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</style>
+${serialized}
+</div>
+</foreignObject></svg>`;
+
+            const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+            const svgUrl = URL.createObjectURL(svgBlob);
+            try {
+                const img = new Image();
+                img.decoding = 'async';
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = () => reject(new Error('રસીદની Image તૈયાર થઈ શકી નથી.'));
+                    img.src = svgUrl;
+                });
+                const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(width * scale);
+                canvas.height = Math.round(height * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                return await new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG બનાવવામાં ભૂલ આવી.')), 'image/png');
+                });
+            } finally {
+                URL.revokeObjectURL(svgUrl);
+            }
+        }
 
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
@@ -1443,6 +1502,40 @@
             document.getElementById('sRDueVal').innerText = '₹' + data.dueVal;
             document.getElementById('sRMode').innerText = data.payMode || "-";
             document.getElementById('sRPayer').innerText = data.payer || "-";
+        }
+
+        // WhatsApp linkમાંથી standalone receipt ખોલાય ત્યારે automatic PNG downloadનો પ્રયાસ.
+        async function autoDownloadStandaloneReceipt() {
+            try {
+                const printArea = document.getElementById('standalonePrintArea');
+                if (!printArea) return;
+                // DOM render પૂરો થાય તે માટે નાનો delay.
+                await new Promise(resolve => setTimeout(resolve, 650));
+                const blob = await receiptElementToBlob(printArea);
+                if (!blob) return;
+                const studentName = (document.getElementById('sRName')?.innerText || 'Receipt').trim();
+                const safeName = studentName.replace(/[\\/:*?"<>|]/g, '_') || 'Receipt';
+                const fileName = `Fee_Receipt_${safeName}.png`;
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                link.rel = 'noopener';
+                link.style.position = 'fixed';
+                link.style.left = '-9999px';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    link.remove();
+                    URL.revokeObjectURL(blobUrl);
+                }, 10000);
+                const note = document.getElementById('standaloneDownloadNote');
+                if (note) note.innerHTML = '✅ ફી પહોંચની Image ડાઉનલોડ કરવાનો પ્રયાસ થયો છે. Download ન થાય તો નીચેનું <b>📥 ડાઉનલોડ</b> બટન દબાવો.';
+            } catch (e) {
+                console.warn('Auto receipt download:', e);
+                const note = document.getElementById('standaloneDownloadNote');
+                if (note) note.innerHTML = '📥 આપમેળે ડાઉનલોડ ન થયું હોય તો નીચેનું <b>📥 ડાઉનલોડ</b> બટન દબાવો.';
+            }
         }
 
         async function downloadStandaloneImage() {
@@ -1525,7 +1618,10 @@
             try {
                 const link=await publishReceiptAndGetLink(receiptObj);
                 document.getElementById('receiptGeneratedUrl').value=link;
-                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${link}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
+                // WhatsAppમાં મોકલાતી link સાથે download=1 રહેશે. વિદ્યાર્થી link ખોલે ત્યારે
+                // પહોંચની PNG Image auto-download કરવાનો પ્રયાસ થશે.
+                const whatsappLink = link + (link.includes('?') ? '&' : '?') + 'download=1';
+                const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ડાઉનલોડ/ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${whatsappLink}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
                 openWhatsAppUrl(currentStudent.phone,text);
             } catch(err) { alert('❌ પહોંચ લિંક બનાવવામાં ભૂલ: '+err.message); }
         }
@@ -2010,7 +2106,11 @@
             }
             st.feeHistory = st.feeHistory
                 .filter(x => x && x.fromDate)
-                .map(x => ({ fromDate: x.fromDate, fee: parseFloat(x.fee) || 0 }))
+                .map(x => ({
+                    fromDate: x.fromDate,
+                    fee: parseFloat(x.fee) || 0,
+                    reason: String(x.reason || '')
+                }))
                 .sort((a,b) => a.fromDate.localeCompare(b.fromDate));
 
             if (!st.attendancePeriods || !Array.isArray(st.attendancePeriods) || st.attendancePeriods.length === 0) {
@@ -2084,9 +2184,7 @@
         function getFeeForDate(st, dateStr) {
             normalizeStudentRecords(st);
 
-            // જે તારીખ માટે ફી ગણાય છે તે તારીખ જે દાખલ/રી-જોઈન્ટ પિરિયડમાં આવે,
-            // તે પિરિયડની પોતાની fee ને પ્રથમ પ્રાથમિકતા આપવી.
-            // ખાસ કરીને રી-જોઈન્ટ પછીની ફી જૂની ફી સાથે ક્યારેય મિક્સ ન થવી જોઈએ.
+            // જે તારીખે ફી ગણાય છે તે તારીખના attendance/re-join periodને શોધો.
             let period = null;
             st.attendancePeriods.forEach(p => {
                 const effectiveTo = p.toDate || null;
@@ -2095,28 +2193,27 @@
                 }
             });
 
+            // સૌથી મહત્વનું: વચ્ચેની feeHistory entry periodની શરૂઆત પછીની હોય
+            // તો તે તારીખથી નવી ફી લાગુ કરો. પહેલાં period.fee સીધું return થતું હતું,
+            // તેથી 08-09-2026ની ₹350 fee હોવા છતાં સપ્ટેમ્બર સુધી જૂની ₹250 દેખાતી હતી.
+            let historyFee = null;
+            let historyDate = '';
+            (st.feeHistory || []).forEach(h => {
+                if (h.fromDate && h.fromDate <= dateStr && (!historyDate || h.fromDate > historyDate)) {
+                    historyDate = h.fromDate;
+                    historyFee = parseFloat(h.fee) || 0;
+                }
+            });
+
             if (period) {
+                // Period શરૂ થયા પછીની fee change હોય તો feeHistory તેને override કરશે.
+                if (historyFee > 0 && historyDate >= period.fromDate) return historyFee;
+
                 const periodFee = parseFloat(period.fee);
                 if (periodFee > 0) return periodFee;
-
-                // જૂના ડેટામાં પિરિયડમાં fee સેવ ન હોય તો આ પિરિયડની શરૂઆતની
-                // તારીખ સુધીની છેલ્લી feeHistory entry લો. આથી 01-07-2026ના
-                // રી-જોઈન્ટની ₹300 fee જુલાઈથી લાગુ થશે, જૂની ₹250 નહીં.
-                let historyFee = null;
-                (st.feeHistory || []).forEach(h => {
-                    if (h.fromDate && h.fromDate <= dateStr) historyFee = parseFloat(h.fee) || 0;
-                });
-                if (historyFee > 0) return historyFee;
             }
 
-            // જો પિરિયડ મળ્યો ન હોય તો પણ જૂના ડેટા માટે feeHistory પરથી
-            // તારીખ પ્રમાણે યોગ્ય fee શોધો.
-            let chosen = null;
-            (st.feeHistory || []).forEach(h => {
-                if (h.fromDate && h.fromDate <= dateStr) chosen = h;
-            });
-            if (chosen && parseFloat(chosen.fee) > 0) return parseFloat(chosen.fee);
-
+            if (historyFee > 0) return historyFee;
             return parseFloat(st.fee) || 0;
         }
 
@@ -3209,6 +3306,7 @@
             document.getElementById('feeChangeBox').style.display = 'block';
             document.getElementById('feeChangeDate').value = localDateString();
             document.getElementById('feeChangeAmount').value = currentStudent.fee || '';
+            if (document.getElementById('feeChangeReason')) document.getElementById('feeChangeReason').value = '';
             renderFeeChangeHistory();
         }
 
@@ -3218,6 +3316,7 @@
 
             const date = document.getElementById('feeChangeDate').value;
             const fee = parseFloat(document.getElementById('feeChangeAmount').value);
+            const reason = (document.getElementById('feeChangeReason')?.value || '').trim();
             if (!date || isNaN(fee) || fee < 0) {
                 alert('❌ ફી માટે સાચી તારીખ અને રકમ દાખલ કરો.');
                 return;
@@ -3226,12 +3325,12 @@
             const existing = currentStudent.feeHistory.find(h => h.fromDate === date);
             if (existing) {
                 existing.fee = fee;
+                existing.reason = reason;
             } else {
-                currentStudent.feeHistory.push({fromDate:date, fee:fee});
+                currentStudent.feeHistory.push({fromDate:date, fee:fee, reason:reason});
             }
             currentStudent.feeHistory.sort((a,b)=>a.fromDate.localeCompare(b.fromDate));
 
-            // If the change is effective now or in the past, keep the main fee field current.
             const today = localDateString();
             if (date <= today) {
                 currentStudent.fee = getFeeForDate(currentStudent, today);
@@ -3242,7 +3341,7 @@
             renderFeeChangeHistory();
             openStudent(currentStudent.id);
             document.getElementById('feeChangeBox').style.display = 'block';
-            alert('✅ નવી ફી સફળતાપૂર્વક સેવ થઈ ગઈ છે.');
+            alert('✅ નવી ફી સફળતાપૂર્વક સેવ થઈ ગઈ છે અને લાગુ તારીખથી મહિનાના હિસાબમાં ઉમેરાઈ ગઈ છે.');
         }
 
         function renderFeeChangeHistory() {
@@ -3250,8 +3349,24 @@
             normalizeStudentRecords(currentStudent);
             const el = document.getElementById('feeChangeHistory');
             if (!el) return;
-            el.innerHTML = '<strong>ફી હિસ્ટ્રી:</strong> ' +
-                currentStudent.feeHistory.map(h => `${formatDate(h.fromDate)} → ₹${h.fee}`).join(' &nbsp; | &nbsp; ');
+            const rows = currentStudent.feeHistory.map(h => `
+                <tr>
+                    <td style="padding:5px;border:1px solid #ddd;">${formatDate(h.fromDate)}</td>
+                    <td style="padding:5px;border:1px solid #ddd;text-align:right;">₹${Math.round(Number(h.fee)||0)}</td>
+                    <td style="padding:5px;border:1px solid #ddd;">${escapeHtml(h.reason || '—')}</td>
+                </tr>`).join('');
+            el.innerHTML = `
+                <div style="font-weight:bold;margin-bottom:5px;">📋 ફી હિસ્ટ્રી</div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+                        <thead><tr style="background:#f5f5f5;">
+                            <th style="padding:5px;border:1px solid #ddd;">લાગુ તારીખ</th>
+                            <th style="padding:5px;border:1px solid #ddd;">માસિક ફી</th>
+                            <th style="padding:5px;border:1px solid #ddd;">ફેરફારનું કારણ</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
         }
 
         function getReminderFeeInfo(st, fromStr, toStr) {
