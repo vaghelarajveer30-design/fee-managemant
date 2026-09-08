@@ -920,8 +920,8 @@
                 </div>
                 <div class="form-group" id="recStationerySelectWrap" style="display:none;">
                     <label>📚 સ્ટેશનરી / બુક પસંદ કરો</label>
-                    <select id="recStationerySelect" class="form-control" onchange="onReceiptStationeryChange()"></select>
-                    <div style="font-size:11px;color:#666;margin-top:4px;">એક બુક/વસ્તુની અલગ પહોંચ માટે તે વસ્તુ પસંદ કરો. “બંને સાથે”માં પણ પસંદ કરેલી વસ્તુ જ જોડાશે.</div>
+                    <select id="recStationerySelect" class="form-control" multiple size="4" onchange="onReceiptStationeryChange()" style="min-height:110px;"></select>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">એક, બે, ત્રણ અથવા ગમે તેટલી સ્ટેશનરી વસ્તુઓ પસંદ કરી શકો છો. મોબાઇલમાં દરેક જરૂરી વસ્તુ પર ટૅપ કરીને પસંદ કરો; પસંદ કરેલી બધી વસ્તુઓ એક જ પહોંચમાં જોડાશે.</div>
                 </div>
 
                 <div class="form-group">
@@ -3583,9 +3583,19 @@
             openWhatsAppUrl(currentStudent.phone, msg);
         }
 
-        function populateReceiptStationerySelect(selectedId) {
+        function populateReceiptStationerySelect(selectedIds) {
             const el = document.getElementById('recStationerySelect');
             if (!el) return;
+
+            // પહેલાંથી પસંદ કરેલી બધી વસ્તુઓ સાચવી રાખો જેથી type બદલતાં selection ન જાય.
+            let previousSelected = [];
+            if (el.options && el.options.length) {
+                previousSelected = Array.from(el.selectedOptions).map(o => String(o.value));
+            }
+            if (selectedIds == null) selectedIds = previousSelected;
+            if (!Array.isArray(selectedIds)) selectedIds = [selectedIds];
+            selectedIds = selectedIds.filter(v => v !== null && v !== undefined && String(v) !== '');
+
             const items = (currentStudent && Array.isArray(currentStudent.stationery))
                 ? currentStudent.stationery.filter(x => x && Number(x.price) > 0) : [];
 
@@ -3601,32 +3611,40 @@
                 return `<option value="${escapeHtml(id)}">${escapeHtml(x.itemName || 'સ્ટેશનરી')} × ${qty} — ₹${Math.round(amount)} (${x.payType || 'ઉધાર'})</option>`;
             }).join('');
 
-            if (selectedId != null && items.some((x,i) => String(x.id || ('legacy-' + i)) === String(selectedId))) {
-                el.value = String(selectedId);
-            }
+            Array.from(el.options).forEach(option => {
+                option.selected = selectedIds.some(id => String(id) === String(option.value));
+            });
         }
 
         function getSelectedReceiptStationeryItems() {
             if (!currentStudent || !Array.isArray(currentStudent.stationery)) return [];
             const sel = document.getElementById('recStationerySelect');
-            if (!sel || !sel.value) return [];
+            if (!sel) return [];
 
-            const idx = currentStudent.stationery.findIndex((x,i) =>
-                String(x.id || ('legacy-' + i)) === String(sel.value)
-            );
-            if (idx < 0) return [];
+            const selectedIds = Array.from(sel.selectedOptions || [])
+                .map(option => String(option.value))
+                .filter(Boolean);
 
-            const x = currentStudent.stationery[idx];
-            const qty = Number(x.qty) || 1;
-            const amount = Number(x.price) || 0;
-            return [{
-                sourceId: x.id || ('legacy-' + currentStudent.id + '-' + idx),
-                itemName: x.itemName || 'સ્ટેશનરી',
-                qty: qty,
-                price: amount,
-                unitPrice: Number(x.unitPrice) || (qty ? amount / qty : amount),
-                payType: x.payType || 'ઉધાર'
-            }];
+            if (!selectedIds.length) return [];
+
+            return selectedIds.map(selectedId => {
+                const idx = currentStudent.stationery.findIndex((x,i) =>
+                    String(x.id || ('legacy-' + i)) === selectedId
+                );
+                if (idx < 0) return null;
+
+                const x = currentStudent.stationery[idx];
+                const qty = Number(x.qty) || 1;
+                const amount = Number(x.price) || 0;
+                return {
+                    sourceId: x.id || ('legacy-' + currentStudent.id + '-' + idx),
+                    itemName: x.itemName || 'સ્ટેશનરી',
+                    qty: qty,
+                    price: amount,
+                    unitPrice: Number(x.unitPrice) || (qty ? amount / qty : amount),
+                    payType: x.payType || 'ઉધાર'
+                };
+            }).filter(Boolean);
         }
 
         function onReceiptTypeChange() {
@@ -3636,13 +3654,13 @@
 
             if (type === 'stationery') {
                 document.getElementById('recAutoFee').value = 0;
-                populateReceiptStationerySelect(document.getElementById('recStationerySelect')?.value);
+                populateReceiptStationerySelect();
                 onReceiptStationeryChange();
             } else if (type === 'monthly') {
                 document.getElementById('recStationeryFee').value = 0;
                 autoCalculateMonthsFee();
             } else {
-                populateReceiptStationerySelect(document.getElementById('recStationerySelect')?.value);
+                populateReceiptStationerySelect();
                 autoCalculateMonthsFee();
                 onReceiptStationeryChange();
             }
@@ -4152,10 +4170,11 @@
             document.getElementById('recReceiptType').value = editType;
             populateReceiptStationerySelect();
 
-            const firstItem = Array.isArray(r.stationeryItems) && r.stationeryItems.length ? r.stationeryItems[0] : null;
-            if (firstItem) {
-                const sel = document.getElementById('recStationerySelect');
-                if (sel) sel.value = String(firstItem.sourceId || '');
+            const receiptItemIds = Array.isArray(r.stationeryItems)
+                ? r.stationeryItems.map(x => String(x.sourceId || '')).filter(Boolean)
+                : [];
+            if (receiptItemIds.length) {
+                populateReceiptStationerySelect(receiptItemIds);
             }
 
             onReceiptTypeChange();
