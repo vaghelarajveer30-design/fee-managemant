@@ -2231,42 +2231,71 @@ ${serialized}
             const from = dateOnly(fromStr), to = dateOnly(toStr);
             if (!from || !to) return [];
 
+            // માસિક ફી calendar month પ્રમાણે નહીં, પરંતુ વિદ્યાર્થીની
+            // દાખલ/રી-જોઈન્ટ તારીખથી શરૂ થતા 1-મહિનાના billing cycle પ્રમાણે ગણાશે.
+            // ઉદાહરણ: 08-08 થી 07-09 = માત્ર 1 મહિનો (₹200),
+            // 08-09 થી 07-10 = આગળનો મહિનો.
             const result = [];
-            const seen = new Set();
-            let cursor = new Date(from.getFullYear(), from.getMonth(), 1);
+            const periods = Array.isArray(st.attendancePeriods) ? st.attendancePeriods : [];
 
-            while (cursor <= to) {
-                const y = cursor.getFullYear(), m = cursor.getMonth();
-                const first = new Date(y, m, 1);
-                const last = new Date(y, m + 1, 0);
-                const overlapFrom = first > from ? first : from;
-                const overlapTo = last < to ? last : to;
-                const firstCoveredStr = localDateString(overlapFrom);
+            const addMonthsClamped = (date, months) => {
+                const day = date.getDate();
+                const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+                const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+                target.setDate(Math.min(day, lastDay));
+                return target;
+            };
 
-                // A month is charged only when the selected period and a student attendance
-                // period overlap in at least one day.
-                let activeDay = null;
-                for (let d = new Date(overlapFrom); d <= overlapTo; d.setDate(d.getDate()+1)) {
-                    const ds = localDateString(d);
-                    if (isStudentActiveOnDate(st, ds)) { activeDay = ds; break; }
+            const addDays = (date, days) => {
+                const d = new Date(date);
+                d.setDate(d.getDate() + days);
+                return d;
+            };
+
+            periods.forEach(p => {
+                if (!p || !p.fromDate) return;
+                const periodStart = dateOnly(p.fromDate);
+                if (!periodStart) return;
+
+                let periodEnd = p.toDate ? dateOnly(p.toDate) : to;
+                if (!periodEnd) periodEnd = to;
+                if (periodEnd > to) periodEnd = to;
+                if (periodEnd < from || periodStart > to) return;
+
+                // દરેક attendance/re-join periodના પોતાના billing cycles બનાવો.
+                let cycleStart = new Date(periodStart);
+                while (cycleStart <= periodEnd && cycleStart <= to) {
+                    const nextCycleStart = addMonthsClamped(cycleStart, 1);
+                    const cycleEnd = addDays(nextCycleStart, -1);
+
+                    const overlapFrom = cycleStart > from ? cycleStart : from;
+                    const overlapTo = cycleEnd < periodEnd ? cycleEnd : periodEnd;
+                    if (overlapFrom <= overlapTo) {
+                        const cycleStartStr = localDateString(cycleStart);
+                        const activeDay = localDateString(overlapFrom);
+                        const fee = getFeeForDate(st, activeDay);
+                        const key = monthKey(cycleStart.getFullYear(), cycleStart.getMonth());
+
+                        // એક જ billing cycle ફરીથી ઉમેરાય નહીં.
+                        if (!result.some(x => x.key === key && x.cycleFrom === cycleStartStr)) {
+                            result.push({
+                                key,
+                                year: cycleStart.getFullYear(),
+                                month: cycleStart.getMonth(),
+                                name: monthNameGu(cycleStart.getMonth()),
+                                fee,
+                                date: activeDay,
+                                cycleFrom: cycleStartStr,
+                                cycleTo: localDateString(overlapTo)
+                            });
+                        }
+                    }
+
+                    cycleStart = nextCycleStart;
                 }
+            });
 
-                const key = monthKey(y,m);
-                if (activeDay && !seen.has(key)) {
-                    const fee = getFeeForDate(st, activeDay);
-                    result.push({
-                        key,
-                        year:y,
-                        month:m,
-                        name:monthNameGu(m),
-                        fee,
-                        date:activeDay
-                    });
-                    seen.add(key);
-                }
-
-                cursor.setMonth(cursor.getMonth()+1);
-            }
+            result.sort((a,b) => a.cycleFrom.localeCompare(b.cycleFrom));
             return result;
         }
 
