@@ -294,6 +294,11 @@
                     🔴 ઇન-એક્ટિવ વિદ્યાર્થી<br><span id="countInactive" style="font-size: 20px;">0</span>
                 </div>
             </div>
+            <div style="margin-bottom:12px;">
+                <div id="btnFilterCompleted" class="stat-box" style="background-color:#6a1b9a;" onclick="filterStudents('completed')">
+                    ✅ પૂર્ણ ફી / હવે નથી આવતા<br><span id="countCompleted" style="font-size:20px;">0</span>
+                </div>
+            </div>
 
             <div id="studentListContainer"></div>
 
@@ -783,6 +788,7 @@
                     <button class="btn btn-green" onclick="rejoinStudent(currentStudent.id)">🔄 રી-જોઈન્ટ કરો</button>
                     <button class="btn btn-orange" onclick="openFeeChangeBox()">💰 ફી વધારો/બદલો</button>
                 </div>
+                <button class="btn btn-purple" style="margin-top:8px;" onclick="archiveCompletedStudent(currentStudent.id)">✅ સંપૂર્ણ ફી થઈ ગઈ / હવે વિદ્યાર્થી નથી આવતો</button>
 
                 <div id="rejoinBox" class="card" style="display:none; background:#e8f5e9; border-color:#a5d6a7; margin-top:10px; margin-bottom:0;">
                     <div style="font-weight:bold; color:#2e7d32; font-size:13px; margin-bottom:7px;">🔄 રી-જોઈન્ટની નવી વિગતો</div>
@@ -2496,9 +2502,53 @@ ${serialized}
                 currentCourseFilter = null;
                 currentFeeTypeFilter = null;
             }
+            const search=document.getElementById('searchInput');
+            if (search && type === 'completed') search.value = '';
             renderDashboard();
         }
 
+        // સંપૂર્ણ ફી ભરાઈ ગયા પછી વિદ્યાર્થીને મુખ્ય યાદીઓમાંથી છુપાવો.
+        // મૂળ ડેટા studentsમાં જ રહે છે, તેથી કુલ સરવૈયામાં કોઈ ઘટાડો થતો નથી.
+        function archiveCompletedStudent(id) {
+            if (!verifyMasterPassword('વિદ્યાર્થીને પૂર્ણ / Archive')) return;
+            const st = students.find(s => String(s.id) === String(id));
+            if (!st) return;
+            recalculateStudentTotals();
+            if (Number(st.due || 0) > 0.01) {
+                alert('⚠️ આ વિદ્યાર્થીની સંપૂર્ણ ફી હજુ જમા થઈ નથી. પહેલાં બાકી ફી જમા કરો.');
+                return;
+            }
+            if (!confirm('શું આ વિદ્યાર્થીની ફી પૂર્ણ માનીને તેને મુખ્ય યાદીઓમાંથી છુપાવવો છે?\n\nડેટા અને તમામ રેકોર્ડ સુરક્ષિત રહેશે અને કુલમાં કોઈ ફેરફાર નહીં થાય.')) return;
+            normalizeStudentRecords(st);
+            const today = localDateString();
+            st.status = 'completed';
+            st.endDate = today;
+            const open = st.attendancePeriods.find(p => !p.toDate);
+            if (open) open.toDate = today;
+            saveLocalData();
+            currentFilter = null;
+            currentCourseFilter = null;
+            currentFeeTypeFilter = null;
+            renderDashboard();
+            alert('✅ વિદ્યાર્થીને પૂર્ણ ફી યાદીમાં મોકલવામાં આવ્યો. ડેટા સુરક્ષિત છે અને કુલમાં કોઈ ફેરફાર થયો નથી.');
+        }
+
+        function restoreCompletedStudent(id) {
+            if (!verifyMasterPassword('વિદ્યાર્થીને ફરી ચાલુ')) return;
+            const st = students.find(s => String(s.id) === String(id));
+            if (!st) return;
+            normalizeStudentRecords(st);
+            st.status = 'active';
+            st.endDate = '';
+            const last = st.attendancePeriods[st.attendancePeriods.length - 1];
+            if (last && last.toDate) last.toDate = null;
+            saveLocalData();
+            currentFilter = 'active';
+            currentCourseFilter = null;
+            currentFeeTypeFilter = null;
+            renderDashboard();
+            alert('✅ વિદ્યાર્થી ફરી Active થયો.');
+        }
         function selectStudentCourseFilter(encodedCourse) {
             const course = decodeURIComponent(encodedCourse || '');
             if (currentCourseFilter === course) {
@@ -2671,7 +2721,7 @@ ${serialized}
         function searchReceiptsDashboard(){
             const q=(document.getElementById('receiptSearchInput')?.value||'').toLowerCase().trim(), box=document.getElementById('receiptSearchResults'); if(!box)return;
             if(!q){box.innerHTML='<div style="color:#888;text-align:center;padding:8px;">રસીદ નંબર, નામ અથવા મોબાઈલ લખો.</div>';return;}
-            const rows=[]; students.forEach(st=>(st.receipts||[]).forEach(r=>{if(String(r.receiptNo||'').toLowerCase().includes(q)||String(st.name||'').toLowerCase().includes(q)||String(st.phone||'').includes(q))rows.push({st,r});}));
+            const rows=[]; students.filter(st=>st.status!=='completed').forEach(st=>(st.receipts||[]).forEach(r=>{if(String(r.receiptNo||'').toLowerCase().includes(q)||String(st.name||'').toLowerCase().includes(q)||String(st.phone||'').includes(q))rows.push({st,r});}));
             box.innerHTML=rows.length?rows.slice(0,50).map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}');setTimeout(()=>viewReceiptInfo('${escapeHtml(x.r.id)}'),100)"><b>🧾 #${escapeHtml(x.r.receiptNo||'-')} — ${escapeHtml(x.st.name)}</b><div style="font-size:12px;">${formatDate(x.r.date)} | જમા ₹${Math.round(x.r.paidVal||0)} | બાકી ₹${Math.round(x.r.dueVal||0)}</div></div>`).join(''):'<div style="text-align:center;padding:10px;color:#888;">કોઈ રસીદ મળી નથી.</div>';
         }
 
@@ -2687,13 +2737,15 @@ ${serialized}
             let totalDueSum = 0;
             let activeCount = 0;
             let inactiveCount = 0;
+            let completedCount = 0;
 
             // બધા વિદ્યાર્થીઓની ફીનું સરવૈયું અહીં જ રહેશે.
             // ગયા વર્ષનું બાકી અલગ વિભાગમાં છે અને અહીં ક્યારેય ઉમેરવાનું નથી.
             students.forEach(s => {
                 if(!s.status) s.status = 'active';
                 if (s.status === 'active') activeCount++;
-                else inactiveCount++;
+                else if (s.status === 'inactive') inactiveCount++;
+                else if (s.status === 'completed') completedCount++;
 
                 totalFeeSum += (s.totalFeeWithStationery || s.fee);
                 totalPaidSum += s.paid;
@@ -2714,26 +2766,31 @@ ${serialized}
             document.getElementById('sumDueFee').innerText = '₹' + grandDue;
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
+            document.getElementById('countCompleted').innerText = completedCount;
 
             const btnAct = document.getElementById('btnFilterActive');
             const btnInact = document.getElementById('btnFilterInactive');
             const btnAll = document.getElementById('btnFilterAll');
             const btnPaid = document.getElementById('btnFilterPaid');
             const btnDue = document.getElementById('btnFilterDue');
+            const btnCompleted = document.getElementById('btnFilterCompleted');
 
-            [btnAct, btnInact, btnAll, btnPaid, btnDue].forEach(b => b?.classList.remove('active-filter'));
+            [btnAct, btnInact, btnAll, btnPaid, btnDue, btnCompleted].forEach(b => b?.classList.remove('active-filter'));
 
             if (currentFilter === 'active') btnAct.classList.add('active-filter');
             if (currentFilter === 'inactive') btnInact.classList.add('active-filter');
             if (currentFilter === 'paid') btnPaid.classList.add('active-filter');
             if (currentFilter === 'due') btnDue.classList.add('active-filter');
+            if (currentFilter === 'completed') btnCompleted.classList.add('active-filter');
 
             if (currentFilter === null && searchVal === "") {
                 container.innerHTML = '<div style="text-align:center; padding: 20px; color: #666; font-size: 13px;">વિદ્યાર્થીઓ જોવા માટે ઉપરના બટન (એક્ટિવ/ઇન-એક્ટિવ/જમા/બાકી) પર ક્લિક કરો અથવા શોધો.</div>';
                 return;
             }
 
-            let filteredStudents = students;
+            let filteredStudents = currentFilter === 'completed'
+                ? students.filter(s => s.status === 'completed')
+                : students.filter(s => s.status !== 'completed');
 
             if (currentFilter === 'active' || currentFilter === 'inactive') {
                 filteredStudents = filteredStudents.filter(s => s.status === currentFilter);
@@ -2897,6 +2954,8 @@ ${serialized}
                 }
 
                 container.innerHTML = courseHtml;
+            } else if (currentFilter === 'completed') {
+                // પૂર્ણ વિદ્યાર્થીઓ માત્ર આ ખાસ બટન હેઠળ દેખાશે.
             } else if (currentFilter === 'paid') {
                 filteredStudents = filteredStudents.filter(s => s.paid > 0);
             } else if (currentFilter === 'due') {
@@ -2923,6 +2982,25 @@ ${serialized}
             filteredStudents.forEach(s => {
                 const totalDisp = Number(s.totalFeeWithStationery ?? s.fee) || 0;
                 let historyHtml = '';
+                if (currentFilter === 'completed') {
+                    container.innerHTML += `
+                        <div class="student-item-card" style="border-left-color:#6a1b9a;">
+                            <div class="student-item-head">
+                                <span class="student-name" style="color:#6a1b9a;">👤 ${escapeHtml(s.name)}</span>
+                                <span class="student-badge" style="background:#f3e5f5;color:#6a1b9a;">પૂર્ણ</span>
+                            </div>
+                            <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;">
+                                <span>કુલ ફી: ₹${totalDisp}</span>
+                                <span style="color:green;font-weight:bold;">જમા: ₹${Number(s.paid)||0}</span>
+                                <span style="color:red;font-weight:bold;">બાકી: ₹${Number(s.due)||0}</span>
+                            </div>
+                            <div style="margin-top:8px;display:flex;gap:6px;">
+                                <button class="btn btn-blue" style="margin-top:0;flex:1;padding:7px;font-size:12px;" onclick="event.stopPropagation();openStudent('${escapeHtml(s.id)}')">📋 સંપૂર્ણ ડેટા</button>
+                                <button class="btn btn-green" style="margin-top:0;flex:1;padding:7px;font-size:12px;" onclick="event.stopPropagation();restoreCompletedStudent('${escapeHtml(s.id)}')">🔄 ફરી ચાલુ</button>
+                            </div>
+                        </div>`;
+                    return;
+                }
                 if (currentFilter === 'paid' && s.receipts && s.receipts.length > 0) {
                     let receiptList = s.receipts.map(r => `📅 ${formatDate(r.date)}: ₹${r.paidVal}`).join(' | ');
                     historyHtml = `<div style="margin-top: 6px; font-size: 11px; color: #2e7d32; background: #e8f5e9; padding: 4px; border-radius: 4px;"><strong>જમા વિગત:</strong> ${receiptList}</div>`;
