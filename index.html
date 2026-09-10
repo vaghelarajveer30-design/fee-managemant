@@ -5297,74 +5297,146 @@ ${serialized}
             const selectedTo=toEl?.value || defaultTo;
             if(!from || !selectedTo || selectedTo<from) return;
 
-            // આજ સુધી જે મહિના શરૂ થયા છે એટલી જ ફી ગણવી.
-            // ભવિષ્યના મહિના રિપોર્ટમાં દેખાશે, પરંતુ તેમની ફી/જમા/બાકી ₹0 રહેશે.
+            // આજ સુધીના જ શરૂ થયેલા મહિનાની ફી ગણાશે. ભવિષ્યના મહિના ₹0.
             const todayStr=localDateString();
             const calcTo = selectedTo < todayStr ? selectedTo : todayStr;
-
             const start=new Date(from+'T00:00:00');
             const end=new Date(selectedTo+'T00:00:00');
-            const monthMap={};
-            const monthOrder=[];
+            const monthMap={}; const monthOrder=[];
             let cursor=new Date(start.getFullYear(),start.getMonth(),1);
             while(cursor<=end){
                 const key=monthKey(cursor.getFullYear(),cursor.getMonth());
-                monthMap[key]={
-                    key,
-                    label:new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor),
-                    total:0, paid:0, due:0,
-                    year:cursor.getFullYear(), month:cursor.getMonth()
-                };
-                monthOrder.push(key);
-                cursor.setMonth(cursor.getMonth()+1);
+                monthMap[key]={key,label:new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor),total:0,paid:0,due:0,year:cursor.getFullYear(),month:cursor.getMonth()};
+                monthOrder.push(key); cursor.setMonth(cursor.getMonth()+1);
             }
 
-            // દરેક વિદ્યાર્થીના માસિક હિસાબને મહિના પ્રમાણે એકત્રિત કરો.
-            // અહીં વિદ્યાર્થીની અલગ-અલગ rows નહીં, પરંતુ આખા મહિનાનો એક જ total આવશે.
+            // માસિક ફી calendar month પ્રમાણે ગણો — દરેક વિદ્યાર્થી એક મહિનામાં માત્ર એક જ વાર.
+            // વિદ્યાર્થી એ મહિનામાં સક્રિય હોય તો તે મહિનાની ફી એક જ વાર ઉમેરાય; એકથી વધુ
+            // attendance/re-join periods હોવાથી એપ્રિલ જેવી કોઈ પણ મહિનો ડબલ નહીં ગણાય.
             if(calcTo >= from){
                 students.forEach(st=>{
-                    const info=getReminderFeeInfo(st,from,calcTo);
-                    (info.months||[]).forEach(m=>{
-                        const key=m.key || monthKey(Number(m.year),Number(m.month));
-                        if(!monthMap[key]) return;
-                        const fee=Number(m.fee)||0;
-                        const paid=Number(m.paid)||0;
-                        const due=Math.max(0,fee-paid);
-                        monthMap[key].total += fee;
-                        monthMap[key].paid += paid;
-                        monthMap[key].due += due;
+                    const ft=String(st.feeType||'').trim().toLowerCase();
+                    if(!['માસિક','monthly'].includes(ft)) return;
+                    monthOrder.forEach(key=>{
+                        const row=monthMap[key];
+                        const monthStart=new Date(row.year,row.month,1);
+                        const monthEnd=new Date(row.year,row.month+1,0);
+                        const activeFrom=dateOnly(from)>monthStart ? dateOnly(from) : monthStart;
+                        const activeTo=dateOnly(calcTo)<monthEnd ? dateOnly(calcTo) : monthEnd;
+                        if(activeFrom>activeTo) return;
+                        const periods=Array.isArray(st.attendancePeriods)?st.attendancePeriods:[];
+                        const activePeriod=periods.find(p=>{
+                            if(!p || !p.fromDate) return false;
+                            const ps=dateOnly(p.fromDate), pe=p.toDate?dateOnly(p.toDate):null;
+                            return ps && ps<=activeTo && (!pe || pe>=activeFrom);
+                        });
+                        if(!activePeriod) return;
+                        const fee=Math.max(0,Number(getFeeForDate(st,localDateString(activePeriod.fromDate>localDateString(activeFrom)?dateOnly(activePeriod.fromDate):activeFrom)))||0);
+                        row.total += fee;
                     });
                 });
             }
 
-            // 12 માસિક મહિના પછી વાર્ષિક ફી અલગ એક જ rowમાં બતાવો.
-            // વાર્ષિક ફી ધરાવતા દરેક વિદ્યાર્થીની ફી માત્ર એક વખત ગણાશે અને
-            // તે પણ આજ સુધીની જ ગણતરીમાં આવશે.
-            let monthlyGrandTotal=0, monthlyGrandPaid=0, monthlyGrandDue=0;
-            monthOrder.forEach(key=>{
-                const m=monthMap[key];
-                monthlyGrandTotal += m.total;
-                monthlyGrandPaid += m.paid;
-                monthlyGrandDue += m.due;
-            });
-
-            let annualTotal=0, annualPaid=0, annualDue=0;
+            // સ્ટેશનરી પણ મહિના પ્રમાણે કુલ ફીમાં સામેલ છે. Receiptમાં સામેલ stationery ફરીથી ઉમેરાતી નથી.
+            const includedMap=new Map();
+            students.forEach(st=>includedMap.set(String(st.id),getReceiptIncludedStationeryIndices(st)));
             if(calcTo >= from){
                 students.forEach(st=>{
-                    const ft=String(st.feeType||'').trim().toLowerCase();
-                    if(!['વાર્ષિક','annual','yearly','year'].includes(ft)) return;
-                    const info=getReminderFeeInfo(st,from,calcTo);
-                    const annualFee=Math.max(0,Number(st.fee)||0);
-                    if(!annualFee) return;
-                    annualTotal += annualFee;
-                    annualPaid += Math.min(annualFee, Math.max(0,Number(info.paid)||0));
-                    annualDue += Math.max(0, annualFee - Math.min(annualFee, Math.max(0,Number(info.paid)||0)));
+                    const included=includedMap.get(String(st.id))||new Set();
+                    (st.stationery||[]).forEach((x,i)=>{
+                        if(included.has(i) || !x.date || x.date<from || x.date>calcTo) return;
+                        const d=dateOnly(x.date); if(!d)return;
+                        const key=monthKey(d.getFullYear(),d.getMonth()), row=monthMap[key]; if(!row)return;
+                        const amount=Number(x.price)||0;
+                        row.total += amount;
+                    });
                 });
             }
 
-            const grandTotal=monthlyGrandTotal + annualTotal;
-            const grandPaid=monthlyGrandPaid + annualPaid;
-            const grandDue=monthlyGrandDue + annualDue;
+            // જમા રકમને મહિના પ્રમાણે ગણો. Receiptમાં months હોય તો તે જ મહિને,
+            // નહિતર receiptની તારીખના મહિને જમા ગણાશે.
+            if(calcTo >= from){
+                students.forEach(st=>{
+                    (st.receipts||[]).forEach(r=>{
+                        if(!r.date || r.date<from || r.date>calcTo) return;
+                        const paid=Math.max(0,Number(r.paidVal)||0); if(!paid)return;
+                        const receiptMonths=Array.isArray(r.months)?r.months:[];
+                        if(receiptMonths.length){
+                            let pool=paid;
+                            receiptMonths.forEach(rm=>{
+                                if(pool<=0)return;
+                                const key=rm.key || (rm.year!=null&&rm.month!=null?monthKey(Number(rm.year),Number(rm.month)):'');
+                                const row=monthMap[key]; if(!row)return;
+                                const use=Math.min(pool,Math.max(0,Number(rm.fee)||pool));
+                                row.paid += use; pool -= use;
+                            });
+                            if(pool>0){
+                                const d=dateOnly(r.date); if(d){ const row=monthMap[monthKey(d.getFullYear(),d.getMonth())]; if(row) row.paid+=pool; }
+                            }
+                        }else{
+                            const d=dateOnly(r.date); if(!d)return;
+                            const row=monthMap[monthKey(d.getFullYear(),d.getMonth())]; if(row) row.paid+=paid;
+                        }
+                    });
+                });
+
+                // અલગ stationery recordમાં મળેલી actual જમા રકમ receiptમાં ફરીથી ન હોય તો ઉમેરો.
+                students.forEach(st=>{
+                    const included=includedMap.get(String(st.id))||new Set();
+                    (st.stationery||[]).forEach((x,i)=>{
+                        if(included.has(i) || !x.date || x.date<from || x.date>calcTo) return;
+                        if(String(x.payType||'').includes('ઉધાર')) return;
+                        const d=dateOnly(x.date); if(!d)return;
+                        const row=monthMap[monthKey(d.getFullYear(),d.getMonth())];
+                        if(row) row.paid += Number(x.price)||0;
+                    });
+                });
+            }
+
+            // બાકી = કુલ - જમા.
+            monthOrder.forEach(key=>{ const m=monthMap[key]; m.due=Math.max(0,m.total-m.paid); });
+            const monthlyGrandTotal=monthOrder.reduce((a,k)=>a+monthMap[k].total,0);
+            const monthlyGrandPaid=monthOrder.reduce((a,k)=>a+monthMap[k].paid,0);
+            const monthlyGrandDue=monthOrder.reduce((a,k)=>a+monthMap[k].due,0);
+
+            // વાર્ષિક ફી એક જ rowમાં. ફક્ત આજ સુધી લાગુ પડતી વાર્ષિક ફી.
+            let annualTotal=0,annualPaid=0,annualDue=0;
+            if(calcTo>=from){
+                students.forEach(st=>{
+                    const ft=String(st.feeType||'').trim().toLowerCase();
+                    if(!['વાર્ષિક','annual','yearly','year'].includes(ft))return;
+                    const annualFee=Math.max(0,Number(st.fee)||0); if(!annualFee)return;
+                    annualTotal+=annualFee;
+                    const paid=Math.min(annualFee,Math.max(0,Number(st.paid)||0));
+                    annualPaid+=paid; annualDue+=Math.max(0,annualFee-paid);
+                });
+            }
+
+            // ઉછીના આપેલ રકમ પણ કુલમાં સામેલ છે; પરત મળેલી રકમ જમા તરીકે ગણાશે.
+            let loanGiven=0,loanReturned=0;
+            loanRecords.forEach(r=>{
+                if(r.date && r.date>=from && r.date<=calcTo) loanGiven += Number(r.totalAmount)||0;
+                (r.payments||[]).forEach(x=>{ if(x.date && x.date>=from && x.date<=calcTo) loanReturned += Number(x.amount)||0; });
+            });
+            const loanDue=Math.max(0,loanGiven-loanReturned);
+
+            // ઉપરના Dashboard સાથે જમા રકમનું કુલ એકસરખું રહે તે માટે
+            // પસંદ કરેલા સમયગાળાની actual receipts + standalone cash stationery + loan returns ગણો.
+            let periodPaid=0;
+            students.forEach(st=>{
+                (st.receipts||[]).forEach(r=>{
+                    if(r.date && r.date>=from && r.date<=calcTo) periodPaid += Number(r.paidVal)||0;
+                });
+                const included=includedMap.get(String(st.id))||new Set();
+                (st.stationery||[]).forEach((x,i)=>{
+                    if(included.has(i) || !x.date || x.date<from || x.date>calcTo) return;
+                    if(String(x.payType||'').includes('ઉધાર')) return;
+                    periodPaid += Number(x.price)||0;
+                });
+            });
+            const grandTotal=monthlyGrandTotal+annualTotal+loanGiven;
+            const grandPaid=periodPaid+loanReturned;
+            const grandDue=Math.max(0,grandTotal-grandPaid);
 
             document.getElementById('reportTotalFee').innerText='₹'+Math.round(grandTotal);
             document.getElementById('reportPaidFee').innerText='₹'+Math.round(grandPaid);
@@ -5377,7 +5449,8 @@ ${serialized}
             });
             rows.push(`<tr style="font-weight:bold;background:#e8f5e9;"><td>12 મહિનાનો કુલ</td><td>₹${Math.round(monthlyGrandTotal)}</td><td style="color:#2e7d32;">₹${Math.round(monthlyGrandPaid)}</td><td style="color:#d32f2f;">₹${Math.round(monthlyGrandDue)}</td></tr>`);
             rows.push(`<tr style="font-weight:bold;background:#fff8e1;"><td>વાર્ષિક ફી</td><td>₹${Math.round(annualTotal)}</td><td style="color:#2e7d32;">₹${Math.round(annualPaid)}</td><td style="color:#d32f2f;">₹${Math.round(annualDue)}</td></tr>`);
-            rows.push(`<tr style="font-weight:bold;background:#e3f2fd;"><td>કુલ (માસિક + વાર્ષિક)</td><td>₹${Math.round(grandTotal)}</td><td style="color:#2e7d32;">₹${Math.round(grandPaid)}</td><td style="color:#d32f2f;">₹${Math.round(grandDue)}</td></tr>`);
+            rows.push(`<tr style="font-weight:bold;background:#f3e5f5;"><td>ઉછીના આપેલ</td><td>₹${Math.round(loanGiven)}</td><td style="color:#2e7d32;">₹${Math.round(loanReturned)}</td><td style="color:#d32f2f;">₹${Math.round(loanDue)}</td></tr>`);
+            rows.push(`<tr style="font-weight:bold;background:#e3f2fd;"><td>કુલ (માસિક + વાર્ષિક + ઉછીના)</td><td>₹${Math.round(grandTotal)}</td><td style="color:#2e7d32;">₹${Math.round(grandPaid)}</td><td style="color:#d32f2f;">₹${Math.round(grandDue)}</td></tr>`);
             monthBody.innerHTML=rows.join('') || '<tr><td colspan="4">કોઈ માહિતી નથી.</td></tr>';
 
             const dueList=document.getElementById('dueReportList');
