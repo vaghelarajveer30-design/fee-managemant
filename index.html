@@ -698,7 +698,7 @@
             </div>
             <div class="card">
                 <h4>📅 મહિના પ્રમાણે ફી — બાળક પ્રમાણે</h4>
-                <div style="overflow-x:auto;"><table><thead><tr><th>મહિનો</th><th>વિદ્યાર્થી</th><th>કુલ ફી</th><th>જમા</th><th>બાકી</th></tr></thead><tbody id="monthlyReportBody"></tbody></table></div>
+                <div style="overflow-x:auto;"><table><thead><tr><th>મહિનો</th><th>કુલ ફી</th><th>કુલ જમા</th><th>કુલ બાકી</th></tr></thead><tbody id="monthlyReportBody"></tbody></table></div>
             </div>
             <div class="card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -5286,7 +5286,6 @@ ${serialized}
         function renderFeeReports() {
             recalculateStudentTotals();
             const today = new Date();
-            const pad=n=>String(n).padStart(2,'0');
             const defaultFrom = `${today.getFullYear()}-04-01`;
             const fiscalEndYear = today.getMonth() >= 3 ? today.getFullYear()+1 : today.getFullYear();
             const defaultTo = `${fiscalEndYear}-03-31`;
@@ -5298,59 +5297,88 @@ ${serialized}
             const selectedTo=toEl?.value || defaultTo;
             if(!from || !selectedTo || selectedTo<from) return;
 
-            // ભવિષ્યના મહિનાની ફી ક્યારેય રિપોર્ટમાં ગણવી નહીં.
-            // પસંદ કરેલી End Date ભલે આગામી માર્ચ સુધી હોય, હિસાબ આજ સુધી જ રહેશે.
+            // આજ સુધી જે મહિના શરૂ થયા છે એટલી જ ફી ગણવી.
+            // ભવિષ્યના મહિના રિપોર્ટમાં દેખાશે, પરંતુ તેમની ફી/જમા/બાકી ₹0 રહેશે.
             const todayStr=localDateString();
             const calcTo = selectedTo < todayStr ? selectedTo : todayStr;
 
-            let total=0,paid=0,due=0;
+            const start=new Date(from+'T00:00:00');
+            const end=new Date(selectedTo+'T00:00:00');
+            const monthMap={};
+            const monthOrder=[];
+            let cursor=new Date(start.getFullYear(),start.getMonth(),1);
+            while(cursor<=end){
+                const key=monthKey(cursor.getFullYear(),cursor.getMonth());
+                monthMap[key]={
+                    key,
+                    label:new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor),
+                    total:0, paid:0, due:0,
+                    year:cursor.getFullYear(), month:cursor.getMonth()
+                };
+                monthOrder.push(key);
+                cursor.setMonth(cursor.getMonth()+1);
+            }
+
+            // દરેક વિદ્યાર્થીના માસિક હિસાબને મહિના પ્રમાણે એકત્રિત કરો.
+            // અહીં વિદ્યાર્થીની અલગ-અલગ rows નહીં, પરંતુ આખા મહિનાનો એક જ total આવશે.
             if(calcTo >= from){
                 students.forEach(st=>{
                     const info=getReminderFeeInfo(st,from,calcTo);
-                    total += Number(info.total)||0;
-                    paid += Number(info.paid)||0;
-                    due += Number(info.due)||0;
+                    (info.months||[]).forEach(m=>{
+                        const key=m.key || monthKey(Number(m.year),Number(m.month));
+                        if(!monthMap[key]) return;
+                        const fee=Number(m.fee)||0;
+                        const paid=Number(m.paid)||0;
+                        const due=Math.max(0,fee-paid);
+                        monthMap[key].total += fee;
+                        monthMap[key].paid += paid;
+                        monthMap[key].due += due;
+                    });
                 });
             }
-            document.getElementById('reportTotalFee').innerText='₹'+Math.round(total);
-            document.getElementById('reportPaidFee').innerText='₹'+Math.round(paid);
-            document.getElementById('reportDueFee').innerText='₹'+Math.round(due);
+
+            // 12 માસિક મહિના પછી વાર્ષિક ફી અલગ એક જ rowમાં બતાવો.
+            // વાર્ષિક ફી ધરાવતા દરેક વિદ્યાર્થીની ફી માત્ર એક વખત ગણાશે અને
+            // તે પણ આજ સુધીની જ ગણતરીમાં આવશે.
+            let monthlyGrandTotal=0, monthlyGrandPaid=0, monthlyGrandDue=0;
+            monthOrder.forEach(key=>{
+                const m=monthMap[key];
+                monthlyGrandTotal += m.total;
+                monthlyGrandPaid += m.paid;
+                monthlyGrandDue += m.due;
+            });
+
+            let annualTotal=0, annualPaid=0, annualDue=0;
+            if(calcTo >= from){
+                students.forEach(st=>{
+                    const ft=String(st.feeType||'').trim().toLowerCase();
+                    if(!['વાર્ષિક','annual','yearly','year'].includes(ft)) return;
+                    const info=getReminderFeeInfo(st,from,calcTo);
+                    const annualFee=Math.max(0,Number(st.fee)||0);
+                    if(!annualFee) return;
+                    annualTotal += annualFee;
+                    annualPaid += Math.min(annualFee, Math.max(0,Number(info.paid)||0));
+                    annualDue += Math.max(0, annualFee - Math.min(annualFee, Math.max(0,Number(info.paid)||0)));
+                });
+            }
+
+            const grandTotal=monthlyGrandTotal + annualTotal;
+            const grandPaid=monthlyGrandPaid + annualPaid;
+            const grandDue=monthlyGrandDue + annualDue;
+
+            document.getElementById('reportTotalFee').innerText='₹'+Math.round(grandTotal);
+            document.getElementById('reportPaidFee').innerText='₹'+Math.round(grandPaid);
+            document.getElementById('reportDueFee').innerText='₹'+Math.round(grandDue);
 
             const monthBody=document.getElementById('monthlyReportBody');
-            const start=new Date(from+'T00:00:00');
-            const end=new Date(selectedTo+'T00:00:00');
-            const rows=[];
-            let grandStudentTotal=0,grandStudentPaid=0,grandStudentDue=0;
-            let cursor=new Date(start.getFullYear(),start.getMonth(),1);
-            while(cursor<=end){
-                const year=cursor.getFullYear(), month=cursor.getMonth();
-                const range=getMonthDateRange(year,month);
-                const monthFrom = range.from < from ? from : range.from;
-                const monthTo = range.to > selectedTo ? selectedTo : range.to;
-                const monthIsFuture = monthFrom > todayStr;
-                const effectiveTo = monthIsFuture ? null : (monthTo > todayStr ? todayStr : monthTo);
-                const label = new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor);
-
-                students.forEach(st=>{
-                    let stTotal=0,stPaid=0,stDue=0;
-                    if(effectiveTo && effectiveTo>=monthFrom){
-                        const info=getReminderFeeInfo(st,monthFrom,effectiveTo);
-                        stTotal=Number(info.total)||0;
-                        stPaid=Number(info.paid)||0;
-                        stDue=Number(info.due)||0;
-                    }
-                    // વિદ્યાર્થીની આ મહિનાની ફી જ હોય ત્યારે જ નામની row બતાવો.
-                    // ભવિષ્યના મહિનામાં પણ સ્પષ્ટ રીતે ₹0 બતાવાશે.
-                    const showRow = stTotal>0 || stPaid>0 || stDue>0 || monthIsFuture;
-                    if(showRow){
-                        rows.push(`<tr><td>${label}</td><td style="font-weight:bold;text-align:left;">${escapeHtml(st.name||'-')}</td><td>₹${Math.round(stTotal)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(stPaid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(stDue)}</td></tr>`);
-                    }
-                    grandStudentTotal+=stTotal; grandStudentPaid+=stPaid; grandStudentDue+=stDue;
-                });
-                cursor.setMonth(cursor.getMonth()+1);
-            }
-            rows.push(`<tr style="font-weight:bold;background:#e8f5e9;"><td colspan="2">કુલ</td><td>₹${Math.round(grandStudentTotal)}</td><td style="color:#2e7d32;">₹${Math.round(grandStudentPaid)}</td><td style="color:#d32f2f;">₹${Math.round(grandStudentDue)}</td></tr>`);
-            monthBody.innerHTML=rows.join('') || '<tr><td colspan="5">કોઈ માહિતી નથી.</td></tr>';
+            const rows=monthOrder.map(key=>{
+                const m=monthMap[key];
+                return `<tr><td style="font-weight:bold;">${m.label}</td><td>₹${Math.round(m.total)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(m.paid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(m.due)}</td></tr>`;
+            });
+            rows.push(`<tr style="font-weight:bold;background:#e8f5e9;"><td>12 મહિનાનો કુલ</td><td>₹${Math.round(monthlyGrandTotal)}</td><td style="color:#2e7d32;">₹${Math.round(monthlyGrandPaid)}</td><td style="color:#d32f2f;">₹${Math.round(monthlyGrandDue)}</td></tr>`);
+            rows.push(`<tr style="font-weight:bold;background:#fff8e1;"><td>વાર્ષિક ફી</td><td>₹${Math.round(annualTotal)}</td><td style="color:#2e7d32;">₹${Math.round(annualPaid)}</td><td style="color:#d32f2f;">₹${Math.round(annualDue)}</td></tr>`);
+            rows.push(`<tr style="font-weight:bold;background:#e3f2fd;"><td>કુલ (માસિક + વાર્ષિક)</td><td>₹${Math.round(grandTotal)}</td><td style="color:#2e7d32;">₹${Math.round(grandPaid)}</td><td style="color:#d32f2f;">₹${Math.round(grandDue)}</td></tr>`);
+            monthBody.innerHTML=rows.join('') || '<tr><td colspan="4">કોઈ માહિતી નથી.</td></tr>';
 
             const dueList=document.getElementById('dueReportList');
             const dueStudents=students.filter(st=>Number(st.due)>0).sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
