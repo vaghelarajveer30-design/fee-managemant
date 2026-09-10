@@ -697,8 +697,8 @@
                 </div>
             </div>
             <div class="card">
-                <h4>📅 મહિના પ્રમાણે ફી</h4>
-                <div style="overflow-x:auto;"><table><thead><tr><th>મહિનો</th><th>કુલ ફી</th><th>જમા</th><th>બાકી</th></tr></thead><tbody id="monthlyReportBody"></tbody></table></div>
+                <h4>📅 મહિના પ્રમાણે ફી — બાળક પ્રમાણે</h4>
+                <div style="overflow-x:auto;"><table><thead><tr><th>મહિનો</th><th>વિદ્યાર્થી</th><th>કુલ ફી</th><th>જમા</th><th>બાકી</th></tr></thead><tbody id="monthlyReportBody"></tbody></table></div>
             </div>
             <div class="card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -2601,28 +2601,30 @@ ${serialized}
             })); return out;
         }
         function sumStationerySales(from,to){
-            let sales=0,cost=0,cash=0;
+            let sales=0,cost=0,cash=0,upi=0,bank=0,other=0,received=0;
+            const addSale=(x,itemCost)=>{
+                const qty=Number(x.qty)||0;
+                const sell=Number(x.price)||0;
+                sales+=sell;
+                cost+=(Number(x.unitCost ?? itemCost)||0)*qty;
+                const p=String(x.payType||'').toLowerCase();
+                if(p==='રોકડ'||p.includes('cash')){cash+=sell;received+=sell;}
+                else if(p==='upi'||p.includes('online')||p.includes('ઓનલાઈન')||p.includes('ઓન લાઈન')){upi+=sell;received+=sell;}
+                else if(p==='બેંક'||p.includes('bank')){bank+=sell;received+=sell;}
+                else if(p==='ઉધાર'||p.includes('credit')){ /* ઉધાર મળેલી રકમ નથી */ }
+                else {other+=sell;received+=sell;}
+            };
             students.forEach(st=>(st.stationery||[]).forEach(x=>{
                 if(x.date>=from&&x.date<=to){
-                    const qty=Number(x.qty)||0;
-                    const sell=Number(x.price)||0;
                     const item=stockList.find(z=>z.name===x.itemName);
-                    sales+=sell;
-                    cost+=(Number(x.unitCost ?? item?.costPrice)||0)*qty;
-                    if(x.payType==='રોકડ')cash+=sell;
+                    addSale(x,item?.costPrice);
                 }
             }));
             const external=Array.isArray(masterSettings.externalStationerySales)?masterSettings.externalStationerySales:[];
             external.forEach(x=>{
-                if(x.date>=from&&x.date<=to){
-                    const qty=Number(x.qty)||0;
-                    const sell=Number(x.price)||0;
-                    sales+=sell;
-                    cost+=(Number(x.unitCost)||0)*qty;
-                    if(x.payType==='રોકડ')cash+=sell;
-                }
+                if(x.date>=from&&x.date<=to) addSale(x,0);
             });
-            return {sales,cost,profit:sales-cost,cash};
+            return {sales,cost,profit:sales-cost,cash,upi,bank,other,received};
         }
         function sumExpenses(from,to){ return expenses.reduce((a,x)=>a+((x.date>=from&&x.date<=to)?(Number(x.amount)||0):0),0); }
         function sumLoans(from,to){ let given=0,returned=0; loanRecords.forEach(r=>{if(r.date>=from&&r.date<=to)given+=Number(r.totalAmount)||0;(r.payments||[]).forEach(x=>{if(x.date>=from&&x.date<=to)returned+=Number(x.amount)||0;});});return {given,returned}; }
@@ -2637,8 +2639,10 @@ ${serialized}
             set('fdTodayIncome',formatDashboardMoney(feeToday.total+stockToday.sales+loansToday.returned)); set('fdTodayExpense',formatDashboardMoney(expToday+loansToday.given)); set('fdTodayProfit',formatDashboardMoney(feeToday.total+stockToday.profit-expToday));
             set('fdMonthIncome',formatDashboardMoney(feeMonth.total+stockMonth.sales+loansMonth.returned)); set('fdMonthExpense',formatDashboardMoney(expMonth+loansMonth.given)); set('fdMonthProfit',formatDashboardMoney(feeMonth.total+stockMonth.profit-expMonth));
             set('fdDue',formatDashboardMoney(totalDue)); set('fdStockProfit',formatDashboardMoney(stockMonth.profit)); set('fdLoanGiven',formatDashboardMoney(loanRecords.reduce((a,r)=>a+(Number(r.totalAmount)||0),0))); set('fdLoanReturned',formatDashboardMoney(loanRecords.reduce((a,r)=>a+loanPaidAmount(r),0))); set('fdCash',formatDashboardMoney(cashMonth));
-            set('fdCashMode',`Cash ₹${Math.round(feeMonth.cash+stockMonth.cash)} | UPI ₹${Math.round(feeMonth.upi)} | Bank ₹${Math.round(feeMonth.bank)} | અન્ય ₹${Math.round(feeMonth.other)}`);
-            const mode=document.getElementById('fdModeReport'); if(mode) mode.innerHTML=`<tr><td>💵 Cash</td><td>₹${Math.round(feeMonth.cash+stockMonth.cash)}</td></tr><tr><td>📱 UPI / Online</td><td>₹${Math.round(feeMonth.upi)}</td></tr><tr><td>🏦 Bank</td><td>₹${Math.round(feeMonth.bank)}</td></tr><tr><td>અન્ય</td><td>₹${Math.round(feeMonth.other)}</td></tr><tr style="font-weight:bold"><td>કુલ</td><td>₹${Math.round(feeMonth.total+stockMonth.sales)}</td></tr>`;
+            const modeCash=feeMonth.cash+stockMonth.cash, modeUpi=feeMonth.upi+stockMonth.upi, modeBank=feeMonth.bank+stockMonth.bank, modeOther=feeMonth.other+stockMonth.other;
+            const modeReceived=modeCash+modeUpi+modeBank+modeOther;
+            set('fdCashMode',`Cash ₹${Math.round(modeCash)} | UPI ₹${Math.round(modeUpi)} | Bank ₹${Math.round(modeBank)} | અન્ય ₹${Math.round(modeOther)}`);
+            const mode=document.getElementById('fdModeReport'); if(mode) mode.innerHTML=`<tr><td>💵 Cash</td><td>₹${Math.round(modeCash)}</td></tr><tr><td>📱 UPI / Online</td><td>₹${Math.round(modeUpi)}</td></tr><tr><td>🏦 Bank</td><td>₹${Math.round(modeBank)}</td></tr><tr><td>અન્ય</td><td>₹${Math.round(modeOther)}</td></tr><tr style="font-weight:bold"><td>કુલ</td><td>₹${Math.round(modeReceived)}</td></tr>`;
             const low=document.getElementById('fdLowStock'); if(low) low.innerHTML=stockList.filter(x=>(Number(x.qty)||0)<=Number(x.minQty||5)).map(x=>`<div class="finance-card low-stock">⚠️ ${escapeHtml(x.name)} — માત્ર ${x.qty} નંગ બાકી</div>`).join('')||'<div style="color:#2e7d32;text-align:center">✅ કોઈ Low Stock નથી.</div>';
         }
         function renderDashboardAdvanced(){
@@ -5291,43 +5295,62 @@ ${serialized}
             if(fromEl && !fromEl.value) fromEl.value=defaultFrom;
             if(toEl && !toEl.value) toEl.value=defaultTo;
             const from=fromEl?.value || defaultFrom;
-            const to=toEl?.value || defaultTo;
-            if(!from || !to || to<from) return;
+            const selectedTo=toEl?.value || defaultTo;
+            if(!from || !selectedTo || selectedTo<from) return;
+
+            // ભવિષ્યના મહિનાની ફી ક્યારેય રિપોર્ટમાં ગણવી નહીં.
+            // પસંદ કરેલી End Date ભલે આગામી માર્ચ સુધી હોય, હિસાબ આજ સુધી જ રહેશે.
+            const todayStr=localDateString();
+            const calcTo = selectedTo < todayStr ? selectedTo : todayStr;
 
             let total=0,paid=0,due=0;
-            students.forEach(st=>{
-                const info=getReminderFeeInfo(st,from,to);
-                total += Number(info.total)||0;
-                paid += Number(info.paid)||0;
-                due += Number(info.due)||0;
-            });
+            if(calcTo >= from){
+                students.forEach(st=>{
+                    const info=getReminderFeeInfo(st,from,calcTo);
+                    total += Number(info.total)||0;
+                    paid += Number(info.paid)||0;
+                    due += Number(info.due)||0;
+                });
+            }
             document.getElementById('reportTotalFee').innerText='₹'+Math.round(total);
             document.getElementById('reportPaidFee').innerText='₹'+Math.round(paid);
             document.getElementById('reportDueFee').innerText='₹'+Math.round(due);
 
             const monthBody=document.getElementById('monthlyReportBody');
             const start=new Date(from+'T00:00:00');
-            const end=new Date(to+'T00:00:00');
+            const end=new Date(selectedTo+'T00:00:00');
             const rows=[];
+            let grandStudentTotal=0,grandStudentPaid=0,grandStudentDue=0;
             let cursor=new Date(start.getFullYear(),start.getMonth(),1);
             while(cursor<=end){
-                const range=getMonthDateRange(cursor.getFullYear(),cursor.getMonth());
-                const mf = cursor.getTime()===new Date(start.getFullYear(),start.getMonth(),1).getTime() ? from : range.from;
-                const mt = (cursor.getFullYear()===end.getFullYear() && cursor.getMonth()===end.getMonth()) ? to : range.to;
-                let mtot=0,mpaid=0,mdue=0;
-                students.forEach(st=>{
-                    const info=getReminderFeeInfo(st,mf,mt);
-                    mdue += Number(info.due)||0;
-                    (st.receipts||[]).forEach(r=>{
-                        if(r.date && r.date>=mf && r.date<=mt) mpaid += Number(r.paidVal)||0;
-                    });
-                });
-                mtot = mpaid + mdue;
+                const year=cursor.getFullYear(), month=cursor.getMonth();
+                const range=getMonthDateRange(year,month);
+                const monthFrom = range.from < from ? from : range.from;
+                const monthTo = range.to > selectedTo ? selectedTo : range.to;
+                const monthIsFuture = monthFrom > todayStr;
+                const effectiveTo = monthIsFuture ? null : (monthTo > todayStr ? todayStr : monthTo);
                 const label = new Intl.DateTimeFormat('gu-IN',{month:'long',year:'numeric'}).format(cursor);
-                rows.push(`<tr><td>${label}</td><td>₹${Math.round(mtot)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(mpaid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(mdue)}</td></tr>`);
+
+                students.forEach(st=>{
+                    let stTotal=0,stPaid=0,stDue=0;
+                    if(effectiveTo && effectiveTo>=monthFrom){
+                        const info=getReminderFeeInfo(st,monthFrom,effectiveTo);
+                        stTotal=Number(info.total)||0;
+                        stPaid=Number(info.paid)||0;
+                        stDue=Number(info.due)||0;
+                    }
+                    // વિદ્યાર્થીની આ મહિનાની ફી જ હોય ત્યારે જ નામની row બતાવો.
+                    // ભવિષ્યના મહિનામાં પણ સ્પષ્ટ રીતે ₹0 બતાવાશે.
+                    const showRow = stTotal>0 || stPaid>0 || stDue>0 || monthIsFuture;
+                    if(showRow){
+                        rows.push(`<tr><td>${label}</td><td style="font-weight:bold;text-align:left;">${escapeHtml(st.name||'-')}</td><td>₹${Math.round(stTotal)}</td><td style="color:#2e7d32;font-weight:bold;">₹${Math.round(stPaid)}</td><td style="color:#d32f2f;font-weight:bold;">₹${Math.round(stDue)}</td></tr>`);
+                    }
+                    grandStudentTotal+=stTotal; grandStudentPaid+=stPaid; grandStudentDue+=stDue;
+                });
                 cursor.setMonth(cursor.getMonth()+1);
             }
-            monthBody.innerHTML=rows.join('') || '<tr><td colspan="4">કોઈ માહિતી નથી.</td></tr>';
+            rows.push(`<tr style="font-weight:bold;background:#e8f5e9;"><td colspan="2">કુલ</td><td>₹${Math.round(grandStudentTotal)}</td><td style="color:#2e7d32;">₹${Math.round(grandStudentPaid)}</td><td style="color:#d32f2f;">₹${Math.round(grandStudentDue)}</td></tr>`);
+            monthBody.innerHTML=rows.join('') || '<tr><td colspan="5">કોઈ માહિતી નથી.</td></tr>';
 
             const dueList=document.getElementById('dueReportList');
             const dueStudents=students.filter(st=>Number(st.due)>0).sort((a,b)=>(Number(b.due)||0)-(Number(a.due)||0));
@@ -5335,7 +5358,7 @@ ${serialized}
 
             const currentMonthRange=getMonthDateRange(today.getFullYear(),today.getMonth());
             const cmFrom = today.getFullYear()===start.getFullYear() && today.getMonth()===start.getMonth() ? from : currentMonthRange.from;
-            const cmTo = today.getFullYear()===end.getFullYear() && today.getMonth()===end.getMonth() ? to : currentMonthRange.to;
+            const cmTo = today.getFullYear()===end.getFullYear() && today.getMonth()===end.getMonth() ? (selectedTo>todayStr?todayStr:selectedTo) : currentMonthRange.to;
             const currentDue=students.map(st=>({st,info:getReminderFeeInfo(st,cmFrom,cmTo)})).filter(x=>x.info.due>0).sort((a,b)=>b.info.due-a.info.due);
             const currentList=document.getElementById('currentMonthDueList');
             currentList.innerHTML=currentDue.length ? currentDue.map(x=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(x.st.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(x.st.name)}</span><span class="student-badge">${escapeHtml(x.st.std||'')}</span></div><div style="margin-top:6px;color:#d32f2f;font-weight:bold;">આ મહિને બાકી: ₹${Math.round(x.info.due)}</div></div>`).join('') : '<div style="text-align:center;padding:15px;color:#2e7d32;font-weight:bold;">✅ આ મહિને કોઈ ફી બાકી નથી.</div>';
