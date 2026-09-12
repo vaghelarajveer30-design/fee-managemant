@@ -129,7 +129,7 @@
         </div>
     </div>
     <div class="brand-subhead" id="appBrandHead">નિર્મળા નવોદય ક્લાિસિસ</div>
-    <div class="container" style="padding-top:8px;padding-bottom:0;">
+    <div class="container" id="rMenuContainer" style="padding-top:8px;padding-bottom:0;">
         <div class="r-menu-wrap">
             <button class="r-menu-btn" onclick="toggleRMenu()" title="R મેનુ">R</button>
             <div id="rMenuPanel" class="r-menu-panel">
@@ -1089,7 +1089,7 @@
                     <div class="grid-2">
                         <button id="btnDownloadImageLink" class="btn btn-green" type="button" onclick="downloadImageDirectly()">📥 ડાઉનલોડ ઈમેજ</button>
                                             </div>
-                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ મોકલો</button>
+                    <button class="btn btn-whatsapp" style="margin-top:6px;" onclick="shareWhatsAppImage()">🟢 વ્હોટ્સએપ પર ઈમેજ શેર કરો</button>
                                                         </div>
             </div>
 
@@ -1410,60 +1410,152 @@
 
         // Receipt HTMLને PNGમાં ફેરવવા માટેનું local/offline helper.
         // External libraryની જરૂર નથી, એટલે ZIP/APK અને offline modeમાં પણ કામ કરી શકે.
+        // Receipt ને સંપૂર્ણ local Canvas પર PNG બનાવે છે.
+        // foreignObject/SVG વાપરતું નથી, એટલે Chrome/Androidમાં "Tainted canvas" સમસ્યા નહીં આવે.
         async function receiptElementToBlob(element) {
             if (!element) throw new Error('રસીદ મળી નથી.');
-            const rect = element.getBoundingClientRect();
-            const width = Math.max(320, Math.ceil(rect.width || element.scrollWidth || 480));
-            const height = Math.max(200, Math.ceil(element.scrollHeight || rect.height || 300));
-            const clone = element.cloneNode(true);
-            clone.style.width = width + 'px';
-            clone.style.height = height + 'px';
-            clone.style.margin = '0';
-            clone.style.boxSizing = 'border-box';
-            clone.style.background = '#ffffff';
 
-            let cssText = '';
-            document.querySelectorAll('style').forEach(style => { cssText += style.textContent || ''; });
-            const serialized = new XMLSerializer().serializeToString(clone);
-            const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-<foreignObject x="0" y="0" width="100%" height="100%">
-<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;background:#fff;">
-<style>${cssText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</style>
-${serialized}
-</div>
-</foreignObject></svg>`;
+            const standalone = element.id === 'standalonePrintArea';
+            const prefix = standalone ? 'sR' : 'r';
+            const get = id => {
+                const el = document.getElementById(id);
+                return el ? (el.innerText || el.textContent || '').trim() : '-';
+            };
 
-            const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
-            const svgUrl = URL.createObjectURL(svgBlob);
-            try {
-                const img = new Image();
-                img.decoding = 'async';
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = () => reject(new Error('રસીદની Image તૈયાર થઈ શકી નથી.'));
-                    img.src = svgUrl;
+            const receiptNo = get(prefix + 'ReceiptNo');
+            const name = get(prefix + 'Name');
+            const std = get(prefix + 'Std');
+            const course = get(prefix + 'Course');
+            const payDate = get(prefix + 'PayDate');
+            const periodFrom = get(prefix + 'PeriodFrom');
+            const periodTo = get(prefix + 'PeriodTo');
+            const total = get(prefix + 'TotalVal');
+            const paid = get(prefix + 'PaidVal');
+            const due = get(prefix + 'DueVal');
+            const mode = get(prefix + 'Mode');
+            const payer = get(prefix + 'Payer');
+
+            const tbody = document.getElementById(standalone ? 'sRTableBody' : 'receiptTableBody');
+            const rows = tbody ? Array.from(tbody.querySelectorAll('tr')).map(tr =>
+                Array.from(tr.querySelectorAll('td')).map(td => (td.innerText || td.textContent || '').trim())
+            ).filter(r => r.length >= 3) : [];
+
+            const W = 900;
+            const rowH = 52;
+            const headerH = 82;
+            const infoH = 92;
+            const tableHeadH = 52;
+            const totalsH = 156;
+            const footerH = 52;
+            const detailsH = 108;
+            const H = Math.max(620, headerH + infoH + tableHeadH + Math.max(1, rows.length) * rowH + totalsH + footerH + detailsH + 24);
+            const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(W * scale);
+            canvas.height = Math.round(H * scale);
+            const ctx = canvas.getContext('2d', {alpha:false});
+            if (!ctx) throw new Error('Canvas ઉપલબ્ધ નથી.');
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            const font = (size, bold=false) => `${bold ? '700' : '400'} ${size}px "Noto Sans Gujarati", "Nirmala UI", "Shruti", "Segoe UI", Arial, sans-serif`;
+            const text = (value, x, y, size=22, bold=false, color='#333', align='left') => {
+                ctx.font = font(size, bold);
+                ctx.fillStyle = color;
+                ctx.textAlign = align;
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(value || '-'), x, y);
+            };
+            const wrap = (value, maxWidth, size=22, bold=false) => {
+                ctx.font = font(size, bold);
+                const words = String(value || '-').split(/\s+/);
+                const out = [];
+                let line = '';
+                words.forEach(word => {
+                    const test = line ? line + ' ' + word : word;
+                    if (ctx.measureText(test).width > maxWidth && line) { out.push(line); line = word; }
+                    else line = test;
                 });
-                const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.round(width * scale);
-                canvas.height = Math.round(height * scale);
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0,0,canvas.width,canvas.height);
-                ctx.drawImage(img,0,0,canvas.width,canvas.height);
-                return await new Promise((resolve, reject) => {
-                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG બનાવવામાં ભૂલ આવી.')), 'image/png');
-                });
-            } finally {
-                URL.revokeObjectURL(svgUrl);
-            }
+                if (line) out.push(line);
+                return out.length ? out : ['-'];
+            };
+            const rect = (x,y,w,h,fill,stroke='#d0d0d0',lw=1) => {
+                ctx.fillStyle = fill; ctx.fillRect(x,y,w,h);
+                if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.strokeRect(x,y,w,h); }
+            };
+
+            // Header
+            rect(0, 0, W, headerH, '#1976d2', '#1976d2');
+            text('નિર્મળા નવોદય ક્લાસિસ', W/2, 30, 30, true, '#fff', 'center');
+            text('ઓનલાઈન ફી રસીદ', W/2, 62, 20, true, '#fff', 'center');
+
+            // Student information
+            rect(0, headerH, W, infoH, '#f0f4f8', '#dcdcdc');
+            text('પહોંચ નં.: ' + receiptNo, 24, headerH + 24, 20, true, '#1a237e');
+            text('વિદ્યાર્થીનું નામ: ' + name, 420, headerH + 24, 20, true, '#1a237e');
+            text('ધોરણ: ' + std, 24, headerH + 62, 19, true, '#333');
+            text('કોર્સ: ' + course, 220, headerH + 62, 19, true, '#333');
+            text('તારીખ: ' + payDate, 560, headerH + 62, 19, true, '#333');
+
+            // Table
+            let y = headerH + infoH;
+            const col1 = 90, col2 = 600, col3 = W - col1 - col2;
+            rect(0, y, W, tableHeadH, '#f5f5f5', '#d0d0d0');
+            text('ક્રમ', col1/2, y + tableHeadH/2, 20, true, '#333', 'center');
+            text('વિગત', col1 + col2/2, y + tableHeadH/2, 20, true, '#333', 'center');
+            text('ફી (₹)', col1 + col2 + col3/2, y + tableHeadH/2, 20, true, '#333', 'center');
+            y += tableHeadH;
+
+            const dataRows = rows.length ? rows : [['-', 'કોઈ વિગત નથી.', '-']];
+            dataRows.forEach(r => {
+                rect(0, y, W, rowH, '#fff', '#e0e0e0');
+                ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(col1, y); ctx.lineTo(col1, y+rowH); ctx.moveTo(col1+col2, y); ctx.lineTo(col1+col2, y+rowH); ctx.stroke();
+                text(r[0] || '-', col1/2, y+rowH/2, 19, false, '#333', 'center');
+                const detailLines = wrap(r[1] || '-', col2 - 24, 18, false).slice(0,2);
+                detailLines.forEach((ln,i) => text(ln, col1+12, y+rowH/2 + (i-(detailLines.length-1)/2)*21, 18, false, '#333'));
+                text(r[2] || '-', col1+col2+col3/2, y+rowH/2, 19, true, '#333', 'center');
+                y += rowH;
+            });
+
+            // Totals
+            const totalRows = [
+                ['કુલ રકમ', total, '#1565c0'],
+                ['જમા કરેલ ફી', paid, '#2e7d32'],
+                ['બાકી રહેતી ફી', due, '#d32f2f']
+            ];
+            totalRows.forEach(item => {
+                rect(0, y, W, totalsH/3, '#fff', '#e0e0e0');
+                text(item[0], col1 + col2 - 18, y + totalsH/6, 20, true, item[2], 'right');
+                text(item[1], col1 + col2 + col3/2, y + totalsH/6, 20, true, item[2], 'center');
+                y += totalsH/3;
+            });
+
+            // Period
+            rect(0, y, W, footerH, '#e8f0fe', '#dcdcdc');
+            text('સમયગાળો: ' + periodFrom + ' થી ' + periodTo, W/2, y + footerH/2, 20, true, '#1565c0', 'center');
+            y += footerH;
+
+            // Payment details
+            rect(0, y, W, detailsH, '#fff', '#fff');
+            text('મોડ: ' + mode, 24, y + 28, 19, true, '#333');
+            text('ભરનાર: ' + payer, 480, y + 28, 19, true, '#333');
+            ctx.strokeStyle = '#ccc'; ctx.setLineDash([7,5]); ctx.beginPath(); ctx.moveTo(24,y+52); ctx.lineTo(W-24,y+52); ctx.stroke(); ctx.setLineDash([]);
+            text('વાઘેલા રવિ વિનોદભાઈ (9033197515)', W/2, y + 82, 21, true, '#1565c0', 'center');
+
+            return await new Promise((resolve, reject) => {
+                canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG બનાવવામાં ભૂલ આવી.')), 'image/png');
+            });
         }
 
         function renderStandaloneReceipt(data) {
             document.getElementById('mainAppContainer').style.display = 'none';
             document.getElementById('appNavbar').style.display = 'none';
             document.getElementById('appBrandHead').style.display = 'none';
+            const rMenuContainer = document.getElementById('rMenuContainer');
+            if (rMenuContainer) rMenuContainer.style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
             document.getElementById('sRReceiptNo').innerText = data.receiptNo || '-';
@@ -1626,7 +1718,7 @@ ${serialized}
                 document.getElementById('receiptGeneratedUrl').value=link;
                 // WhatsAppમાં મોકલાતી link સાથે download=1 રહેશે. વિદ્યાર્થી link ખોલે ત્યારે
                 // પહોંચની PNG Image auto-download કરવાનો પ્રયાસ થશે.
-                const whatsappLink = link + (link.includes('?') ? '&' : '?') + 'download=1';
+                const whatsappLink = link;
                 const text=`🙏🏻 *નમસ્તે વાલીશ્રી,*\n\n*નિર્મળા નવોદય ક્લાિસિસ* તરફથી આપના બાળક *${currentStudent.name}* ની ફી પહોંચ ડાઉનલોડ/ઓનલાઈન જોવા માટે નીચેની લિંક પર ક્લિક કરો:\n\n🔗 ${whatsappLink}\n\nઆભાર!\n*નિર્મળા નવોદય ક્લાિસિસ*\nવાઘેલા રવિ વિનોદભાઈ (9033197515)`;
                 openWhatsAppUrl(currentStudent.phone,text);
             } catch(err) { alert('❌ પહોંચ લિંક બનાવવામાં ભૂલ: '+err.message); }
@@ -2269,10 +2361,22 @@ ${serialized}
                 if (periodEnd < from || periodStart > to) return;
 
                 // દરેક attendance/re-join periodના પોતાના billing cycles બનાવો.
+                // મહત્વનું: એક મહિનો તેની શરૂઆતની તારીખથી આગળની એ જ તારીખ સુધીનો છે.
+                // ઉદાહરણ: 12-09-2026થી દાખલ વિદ્યાર્થીનો પ્રથમ cycle 12-09થી 11-10 છે
+                // અને 12-10-2026એ જ તેનો પહેલો મહિનો પૂર્ણ ગણાશે.
+                // એટલે nextCycleStart સુધી પહોંચ્યા વગર (એ જ તારીખે) cycleને
+                // પૂર્ણ થયેલો ગણશો નહીં.
                 let cycleStart = new Date(periodStart);
                 while (cycleStart <= periodEnd && cycleStart <= to) {
                     const nextCycleStart = addMonthsClamped(cycleStart, 1);
                     const cycleEnd = addDays(nextCycleStart, -1);
+
+                    // માસિક ફી માત્ર પૂર્ણ થયેલા cycle માટે જ ગણવી.
+                    // તેથી 12-09એ દાખલ થયેલા વિદ્યાર્થી માટે 12-09એ 0 મહિનો,
+                    // અને 12-10એ 1 મહિનો ગણાશે.
+                    if (nextCycleStart > to || nextCycleStart > periodEnd) {
+                        break;
+                    }
 
                     const overlapFrom = cycleStart > from ? cycleStart : from;
                     const overlapTo = cycleEnd < periodEnd ? cycleEnd : periodEnd;
