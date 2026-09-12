@@ -2361,22 +2361,10 @@
                 if (periodEnd < from || periodStart > to) return;
 
                 // દરેક attendance/re-join periodના પોતાના billing cycles બનાવો.
-                // મહત્વનું: એક મહિનો તેની શરૂઆતની તારીખથી આગળની એ જ તારીખ સુધીનો છે.
-                // ઉદાહરણ: 12-09-2026થી દાખલ વિદ્યાર્થીનો પ્રથમ cycle 12-09થી 11-10 છે
-                // અને 12-10-2026એ જ તેનો પહેલો મહિનો પૂર્ણ ગણાશે.
-                // એટલે nextCycleStart સુધી પહોંચ્યા વગર (એ જ તારીખે) cycleને
-                // પૂર્ણ થયેલો ગણશો નહીં.
                 let cycleStart = new Date(periodStart);
                 while (cycleStart <= periodEnd && cycleStart <= to) {
                     const nextCycleStart = addMonthsClamped(cycleStart, 1);
                     const cycleEnd = addDays(nextCycleStart, -1);
-
-                    // માસિક ફી માત્ર પૂર્ણ થયેલા cycle માટે જ ગણવી.
-                    // તેથી 12-09એ દાખલ થયેલા વિદ્યાર્થી માટે 12-09એ 0 મહિનો,
-                    // અને 12-10એ 1 મહિનો ગણાશે.
-                    if (nextCycleStart > to || nextCycleStart > periodEnd) {
-                        break;
-                    }
 
                     const overlapFrom = cycleStart > from ? cycleStart : from;
                     const overlapTo = cycleEnd < periodEnd ? cycleEnd : periodEnd;
