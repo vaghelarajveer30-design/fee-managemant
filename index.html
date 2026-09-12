@@ -3586,10 +3586,13 @@
             // દરેક પહોંચમાં કયા મહિના માટે ફી ભરાઈ છે તે આધારે જ તે મહિને
             // જમા રકમ ગણીશું. એટલે એપ્રિલ ભરેલો હોય તો એપ્રિલ ફરી બાકી નહીં ગણાય.
             (st.receipts || []).forEach(r => {
-                const paidDate = r.date || '';
-                if (paidDate && paidDate > toStr) return;
-
+                // Receiptની તારીખ billing period પછીની હોય તો પણ, જો Receiptમાં
+                // ચોક્કસ મહિના (જેમ કે જુલાઈ + ઓગસ્ટ) સેવ થયેલા હોય તો તે મહિના
+                // જમા ગણવાના. ઉદાહરણ: 12-09ની Receiptમાં 01-07 થી 09-09ની
+                // ફી ભરેલી હોય તો જુલાઈ/ઓગસ્ટ લીલા જ દેખાવા જોઈએ.
                 let receiptMonths = Array.isArray(r.months) && r.months.length ? r.months : [];
+                const paidDate = r.date || '';
+                if (!receiptMonths.length && paidDate && paidDate > toStr) return;
                 if (!receiptMonths.length && r.fromDate && r.toDate) {
                     receiptMonths = getTuitionForPeriod(st,r.fromDate,r.toDate).months || [];
                 }
@@ -3636,8 +3639,10 @@
                 }
             });
 
-            const paidMonths = monthRows.filter(m => m.paid >= m.fee && m.fee > 0);
-            const unpaidMonths = monthRows.filter(m => m.remaining > 0);
+            // સંપૂર્ણ જમા થયેલા મહિના લીલા અને બાકી રહેલા મહિના લાલ.
+            // નાની/આંશિક જમા હોય તો તે મહિનો હજુ બાકી તરીકે જ દેખાશે.
+            const paidMonths = monthRows.filter(m => m.fee > 0 && m.remaining <= 0.01);
+            const unpaidMonths = monthRows.filter(m => m.fee > 0 && m.remaining > 0.01);
             const total = tuitionTotal + stationeryDue;
             const paid = tuitionPaid;
             const due = Math.max(0, tuitionDue + stationeryDue);
@@ -3933,8 +3938,8 @@
                 const pm = p.info.paidMonths || [];
                 const um = p.info.unpaidMonths || [];
                 const allMonths = p.info.months || [];
-                const paidText = pm.length ? pm.map(m => `<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:5px;padding:3px 6px;margin:2px;">✅ ${m.name} ${m.year} ₹${Math.round(m.paid)}</span>`).join('') : '<span style="color:#888;">કોઈ મહિનો સંપૂર્ણ જમા નથી.</span>';
-                const dueText = um.length ? um.map(m => `<span style="display:inline-block;background:#ffebee;color:#d32f2f;border:1px solid #ef9a9a;border-radius:5px;padding:3px 6px;margin:2px;">❗ ${m.name} ${m.year} ₹${Math.round(m.remaining)}</span>`).join('') : '<span style="color:#2e7d32;font-weight:bold;">✅ આ સમયગાળાના બધા મહિના જમા.</span>';
+                const paidText = pm.length ? pm.map(m => `<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #81c784;border-radius:5px;padding:4px 8px;margin:2px;font-weight:800;">✅ ${m.name} ${m.year} ₹${Math.round(m.paid)}</span>`).join('') : '<span style="color:#888;">કોઈ મહિનો સંપૂર્ણ જમા નથી.</span>';
+                const dueText = um.length ? um.map(m => `<span style="display:inline-block;background:#ffebee;color:#d32f2f;border:1px solid #e57373;border-radius:5px;padding:4px 8px;margin:2px;font-weight:800;">❗ ${m.name} ${m.year} ₹${Math.round(m.remaining)}</span>`).join('') : '<span style="color:#2e7d32;font-weight:bold;">✅ આ સમયગાળાના બધા મહિના જમા.</span>';
                 return `<div style="margin-top:${i ? '10px' : '0'};padding:8px;border:1px solid #d7e3ef;border-radius:7px;background:#fff;">
                     <div style="font-weight:bold;color:#1565c0;margin-bottom:5px;">${p.index}. 📅 ${formatDate(p.from)} થી ${p.closed ? formatDate(p.to) : 'હાલ ચાલુ'} &nbsp; | &nbsp; કુલ ${allMonths.length} મહિના</div>
                     <div style="font-size:12px;font-weight:bold;color:#2e7d32;margin-bottom:2px;">જમા થયેલા મહિના:</div>
