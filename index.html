@@ -83,11 +83,6 @@
         .r-menu-btn { border:none; border-radius:8px; background:#7b1fa2; color:#fff; font-weight:bold; font-size:16px; min-width:42px; padding:8px 12px; cursor:pointer; }
         .r-menu-panel { position:absolute; right:0; top:46px; z-index:9999; width:270px; background:#fff; border:1px solid #ddd; border-radius:10px; padding:10px; box-shadow:0 8px 24px rgba(0,0,0,.2); display:none; }
         .r-menu-panel .btn { margin-top:5px; font-size:12px; padding:9px 8px; }
-        /* Standalone receipt: never show the R menu or main app UI */
-        body.standalone-receipt-mode #rMenuContainer { display:none !important; }
-        body.standalone-receipt-mode #appNavbar,
-        body.standalone-receipt-mode #appBrandHead,
-        body.standalone-receipt-mode #mainAppContainer { display:none !important; }
 
 
         /* એપ લોક સ્ક્રીન */
@@ -208,7 +203,7 @@
                     </div>
                 </div>
             </div>
-            <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 ફી પહોંચ તૈયાર છે. App/WebViewમાં આપમેળે સેવ ન થાય તો નીચેનું ડાઉનલોડ બટન દબાવો.</div>
+            <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 આ લિંક WhatsApp પરથી ખોલતાં ફી પહોંચની Image આપમેળે ડાઉનલોડ કરવાનો પ્રયાસ થશે.</div>
             <button class="btn btn-green" style="margin-top:8px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
@@ -1556,16 +1551,11 @@
         }
 
         function renderStandaloneReceipt(data) {
-            // Public receipt mode: hide the complete app UI, including R.
-            document.body.classList.add('standalone-receipt-mode');
             document.getElementById('mainAppContainer').style.display = 'none';
             document.getElementById('appNavbar').style.display = 'none';
             document.getElementById('appBrandHead').style.display = 'none';
             const rMenuContainer = document.getElementById('rMenuContainer');
-            if (rMenuContainer) {
-                rMenuContainer.style.display = 'none';
-                rMenuContainer.hidden = true;
-            }
+            if (rMenuContainer) rMenuContainer.style.display = 'none';
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
             document.getElementById('sRReceiptNo').innerText = data.receiptNo || '-';
@@ -1655,49 +1645,51 @@
                 const studentName = (document.getElementById('sRName')?.innerText || 'Receipt').trim();
                 const safeName = studentName.replace(/[\\/:*?"<>|]/g, '_') || 'Receipt';
                 const fileName = `Fee_Receipt_${safeName}.png`;
-                const base64 = await blobToBase64(blob);
 
-                // APK native download bridge first.
-                if (await tryNativeImageAction(base64, fileName, 'download')) {
-                    const note = document.getElementById('standaloneDownloadNote');
-                    if (note) note.innerHTML = '✅ ફી પહોંચની Image સેવ થઈ ગઈ.';
-                    return;
-                }
-
-                // Chrome Save File Picker.
+                // Android/Chromeમાં શક્ય હોય તો સીધું Save File dialog ખોલો.
                 if (window.showSaveFilePicker) {
                     try {
                         const handle = await window.showSaveFilePicker({
                             suggestedName: fileName,
-                            types: [{description:'PNG Image', accept:{'image/png':['.png']}}]
+                            types: [{description: 'PNG Image', accept: {'image/png': ['.png']}}]
                         });
                         const writable = await handle.createWritable();
                         await writable.write(blob);
                         await writable.close();
-                        const note = document.getElementById('standaloneDownloadNote');
-                        if (note) note.innerHTML = '✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.';
+                        alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
                         return;
                     } catch(e) {
                         if (e && e.name === 'AbortError') return;
                     }
                 }
 
-                // Normal browser/WebView fallback.
-                const dataUrl = 'data:image/png;base64,' + base64;
+                // સામાન્ય Chrome/Browser download.
+                const blobUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = dataUrl;
+                link.href = blobUrl;
                 link.download = fileName;
                 link.rel = 'noopener';
                 link.style.position = 'fixed';
                 link.style.left = '-9999px';
                 document.body.appendChild(link);
-                try { link.click(); } catch (_) {}
-                setTimeout(() => link.remove(), 1500);
+                link.click();
+                setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 3000);
 
-                // WebView often ignores download= for generated data. Show the real image.
+                // WhatsAppના in-app browserમાં download attribute ઘણી વાર block થાય છે.
+                // તેથી actual PNG ને નવી tabમાં ખોલવાનો fallback આપીએ છીએ.
                 setTimeout(() => {
-                    try { window.location.href = dataUrl; } catch (_) {}
-                }, 250);
+                    try {
+                        const dataUrl = URL.createObjectURL(blob);
+                        const w = window.open(dataUrl, '_blank');
+                        if (!w) {
+                            // popup block હોય તો એ જ પેજમાં image ખોલો; અહીંથી Save/Download કરી શકાય.
+                            window.location.href = dataUrl;
+                        }
+                        setTimeout(() => URL.revokeObjectURL(dataUrl), 60000);
+                    } catch(e) {
+                        alert('❌ તમારા બ્રાઉઝરમાં સીધું ડાઉનલોડ બંધ છે. પહોંચની Image ખોલ્યા પછી લાંબું દબાવી Save Image કરો.');
+                    }
+                }, 400);
             } catch(e) {
                 console.error(e);
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
@@ -3757,6 +3749,72 @@
                 .sort((a,b)=>(a.fromDate||'').localeCompare(b.fromDate||''))
                 .filter(p => p && p.fromDate && p.fromDate <= today);
 
+            // દરેક સમયગાળાના મહિનાની ફી અલગ બનાવીએ અને Receiptમાં ખરેખર
+            // કયા મહિનાની ફી જમા થઈ છે તે મુજબ paid ગણીએ.
+            // ખાસ કરીને 2 મહિના એક જ Receiptમાં ભરાયા હોય ત્યારે બંને મહિના
+            // લીલા/જમા અને માત્ર બાકી મહિનો લાલ દેખાવો જોઈએ.
+            const getPeriodFeeStatus = (p) => {
+                const from = p.fromDate;
+                const to = p.toDate && p.toDate < today ? p.toDate : today;
+                if (!from || to < from) return {months:[], total:0, paid:0, due:0};
+
+                const tuitionInfo = getTuitionForPeriod(currentStudent, from, to);
+                const months = (tuitionInfo.months || []).map(m => ({
+                    ...m,
+                    fee: Number(m.fee) || 0,
+                    paid: 0,
+                    remaining: Number(m.fee) || 0
+                }));
+
+                // Receiptના months detail પરથી paid amount યોગ્ય billing cycleમાં મૂકો.
+                (currentStudent.receipts || []).forEach(r => {
+                    const paidDate = String(r.date || '');
+                    if (paidDate && paidDate > today) return;
+                    let receiptMonths = Array.isArray(r.months) && r.months.length ? r.months : [];
+                    if (!receiptMonths.length && r.fromDate && r.toDate) {
+                        receiptMonths = getTuitionForPeriod(currentStudent, r.fromDate, r.toDate).months || [];
+                    }
+
+                    let pool = Math.max(0, Number(r.paidVal) || 0);
+                    if (!pool) return;
+
+                    if (receiptMonths.length) {
+                        receiptMonths.forEach(rm => {
+                            if (pool <= 0) return;
+                            const rmKey = rm.key || (rm.year != null && rm.month != null
+                                ? monthKey(Number(rm.year), Number(rm.month)) : '');
+                            let row = months.find(m => rmKey && m.key === rmKey);
+                            if (!row) {
+                                row = months.find(m => String(m.name) === String(rm.name) && Number(m.year) === Number(rm.year) && m.remaining > 0);
+                            }
+                            if (!row || row.remaining <= 0) return;
+                            const rmFee = Math.max(0, Number(rm.fee) || row.fee);
+                            const use = Math.min(row.remaining, pool, rmFee);
+                            row.paid += use;
+                            row.remaining -= use;
+                            pool -= use;
+                        });
+                    }
+
+                    // જૂની Receiptમાં months detail ન હોય અથવા match ન થાય તો
+                    // Receiptના fromDate/toDate પરથી આ periodના બાકી મહિનામાં ક્રમથી ફાળવો.
+                    if (pool > 0 && r.fromDate && r.toDate && !(r.toDate < from || r.fromDate > to)) {
+                        months.forEach(row => {
+                            if (pool <= 0 || row.remaining <= 0) return;
+                            const use = Math.min(row.remaining, pool);
+                            row.paid += use;
+                            row.remaining -= use;
+                            pool -= use;
+                        });
+                    }
+                });
+
+                const total = months.reduce((a,m)=>a+m.fee,0);
+                const paid = months.reduce((a,m)=>a+m.paid,0);
+                const due = months.reduce((a,m)=>a+m.remaining,0);
+                return {months,total,paid,due};
+            };
+
             let tuitionTotal = 0, tuitionPaid = 0, tuitionDue = 0;
 
             const rows = periods.map((p, idx) => {
@@ -3764,10 +3822,10 @@
                 const to = p.toDate && p.toDate < today ? p.toDate : today;
                 if (!from || to < from) return '';
 
-                const info = getReminderFeeInfo(currentStudent, from, to);
-                const periodTuitionTotal = Math.max(0, (Number(info.total) || 0) - (Number(info.stationeryDue) || 0));
-                const periodTuitionDue = Math.max(0, (Number(info.due) || 0) - (Number(info.stationeryDue) || 0));
-                const periodTuitionPaid = Math.max(0, periodTuitionTotal - periodTuitionDue);
+                const info = getPeriodFeeStatus(p);
+                const periodTuitionTotal = Math.max(0, Number(info.total) || 0);
+                const periodTuitionPaid = Math.min(periodTuitionTotal, Math.max(0, Number(info.paid) || 0));
+                const periodTuitionDue = Math.max(0, periodTuitionTotal - periodTuitionPaid);
 
                 tuitionTotal += periodTuitionTotal;
                 tuitionPaid += periodTuitionPaid;
@@ -3787,20 +3845,18 @@
                                     ${formatDate(from)} થી ${p.toDate && p.toDate < today ? formatDate(p.toDate) : 'હાલ સુધી'}
                                 </div>
                             </div>
-                            <strong style="font-size:17px;color:#d32f2f;white-space:nowrap;">₹${Math.round(periodTuitionDue)}</strong>
+                            <strong style="font-size:17px;color:${periodTuitionDue > 0 ? '#d32f2f' : '#2e7d32'};white-space:nowrap;">₹${Math.round(periodTuitionDue)}</strong>
                         </div>
 
                         <div style="display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:7px;">
                             <span>માસિક ફી: ₹${Math.round(monthlyFee)}</span>
                             <span>કુલ: ₹${Math.round(periodTuitionTotal)}</span>
                             <span style="color:#2e7d32;font-weight:bold;">જમા: ₹${Math.round(periodTuitionPaid)}</span>
-                            <span style="color:#d32f2f;font-weight:bold;">બાકી: ₹${Math.round(periodTuitionDue)}</span>
+                            <span style="color:${periodTuitionDue > 0 ? '#d32f2f' : '#2e7d32'};font-weight:bold;">બાકી: ₹${Math.round(periodTuitionDue)}</span>
                         </div>
                     </div>`;
             }).join('');
 
-            // સ્ટેશનરી કોર્ષના કુલમાં ક્યારેય ઉમેરવી નહીં.
-            // ઉપરના મુખ્ય કુલમાં જ તેનો સરવાળો કરવો અને અહીં વસ્તુનું સાચું નામ બતાવવું.
             const stationeryItems = (currentStudent.stationery || []).filter(x => x && Number(x.price) > 0);
             const stationeryTotal = stationeryItems.reduce((a,x) => a + (Number(x.price) || 0), 0);
             const stationeryDue = stationeryItems
@@ -3809,8 +3865,8 @@
             const stationeryPaid = Math.max(0, stationeryTotal - stationeryDue);
 
             const grandTotal = tuitionTotal + stationeryTotal;
-            const grandPaid = tuitionPaid + stationeryPaid;
-            const grandDue = tuitionDue + stationeryDue;
+            const grandPaid = Math.min(grandTotal, tuitionPaid + stationeryPaid);
+            const grandDue = Math.max(0, grandTotal - grandPaid);
 
             const stationeryHtml = stationeryItems.length ? stationeryItems.map(s => `
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:#f0f2f5;border-radius:8px;margin-top:6px;">
@@ -3826,7 +3882,7 @@
                     </div>
                     <div style="background:#f5f5f5;border-radius:8px;padding:10px;text-align:center;">
                         <div style="font-size:12px;color:#555;">Total Due Amount</div>
-                        <strong style="font-size:20px;">₹${Math.round(grandDue)}</strong>
+                        <strong style="font-size:20px;color:${grandDue > 0 ? '#d32f2f' : '#2e7d32'};">₹${Math.round(grandDue)}</strong>
                     </div>
                 </div>
 
@@ -4343,77 +4399,13 @@
             document.getElementById('previewContainer').style.display = 'none';
         }
 
-        // WebView/APK native file helpers. Browserમાં આ functions safely skip થાય છે.
-        async function tryNativeImageAction(base64, fileName, action) {
-            try {
-                // Existing Android bridge used by this app.
-                if (window.Android) {
-                    const names = action === 'share'
-                        ? ['shareImageBase64','shareBase64','shareFileBase64']
-                        : ['downloadImageBase64','saveImageBase64','downloadBase64','saveFileBase64'];
-                    for (const name of names) {
-                        if (typeof window.Android[name] === 'function') {
-                            const result = window.Android[name](base64, fileName);
-                            if (result && typeof result.then === 'function') await result;
-                            return true;
-                        }
-                    }
-                }
-
-                // Median/WebView style bridges (if the APK builder exposes them).
-                if (window.median && window.median.share) {
-                    if (action === 'share' && typeof window.median.share.shareBase64 === 'function') {
-                        await window.median.share.shareBase64({contentInBase64: base64, fileName});
-                        return true;
-                    }
-                    if (action === 'download' && typeof window.median.share.downloadBase64 === 'function') {
-                        await window.median.share.downloadBase64({contentInBase64: base64, fileName});
-                        return true;
-                    }
-                }
-
-                // Common WebViewJavascriptBridge handler names.
-                const bridge = window.WebViewJavascriptBridge;
-                if (bridge && typeof bridge.callHandler === 'function') {
-                    const handler = action === 'share' ? 'shareBase64' : 'downloadBase64';
-                    await new Promise((resolve, reject) => {
-                        try {
-                            bridge.callHandler(handler, {contentInBase64: base64, fileName}, () => resolve());
-                        } catch (e) { reject(e); }
-                    });
-                    return true;
-                }
-            } catch (e) {
-                console.warn('Native image bridge unavailable:', e);
-            }
-            return false;
-        }
-
-        async function blobToBase64(blob) {
-            return await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        }
-
-        async function downloadImageDirectly(options = {}) {
-            const silent = !!options.silent;
+        async function downloadImageDirectly() {
             try {
                 if (!generatedBlob) await generateReceiptCanvas();
                 if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
                 const safeName = (currentStudent?.name || 'Student').replace(/[\\/:*?"<>|]/g, '_') || 'Student';
                 const fileName = `Fee_Receipt_${safeName}.png`;
 
-                // First try the native APK/WebView download bridge.
-                const base64 = await blobToBase64(generatedBlob);
-                if (await tryNativeImageAction(base64, fileName, 'download')) {
-                    if (!silent) alert('✅ ફી પહોંચની Image સેવ થઈ ગઈ.');
-                    return;
-                }
-
-                // Chrome/normal browser: Save File Picker.
                 if (window.showSaveFilePicker) {
                     try {
                         const handle = await window.showSaveFilePicker({
@@ -4423,35 +4415,38 @@
                         const writable = await handle.createWritable();
                         await writable.write(generatedBlob);
                         await writable.close();
-                        if (!silent) alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
+                        alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
                         return;
                     } catch (e) {
                         if (e && e.name === 'AbortError') return;
                     }
                 }
 
-                // Browser fallback. Use the data URL directly; some Android WebViews
-                // block blob downloads but still allow the current page to navigate to data:.
-                const dataUrl = 'data:image/png;base64,' + base64;
+                const blobUrl = URL.createObjectURL(generatedBlob);
                 const link = document.createElement('a');
-                link.href = dataUrl;
+                link.href = blobUrl;
                 link.download = fileName;
                 link.rel = 'noopener';
+                link.target = '_blank';
                 link.style.position = 'fixed';
                 link.style.left = '-9999px';
                 document.body.appendChild(link);
-                try { link.click(); } catch (_) {}
-                setTimeout(() => link.remove(), 1500);
+                link.click();
 
-                // If the WebView ignored download, show the actual PNG instead of doing nothing.
-                if (!silent) {
-                    setTimeout(() => {
-                        try { window.location.href = dataUrl; } catch (_) {}
-                    }, 250);
-                }
+                // Android Chrome/WebViewમાં download attribute block થાય તો image નવી tabમાં ખોલો.
+                setTimeout(() => {
+                    try {
+                        const opened = window.open(blobUrl, '_blank');
+                        if (!opened) {
+                            window.location.href = blobUrl;
+                        }
+                    } catch (e) {
+                        window.location.href = blobUrl;
+                    }
+                    setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
+                }, 350);
             } catch (e) {
-                if (!silent) alert('❌ Image download થઈ નથી: ' + (e.message || e));
-                else console.warn('Image download fallback:', e);
+                alert('❌ Image download થઈ નથી: ' + (e.message || e));
             }
         }
 
@@ -4459,31 +4454,32 @@
             try {
                 if (!generatedBlob) await generateReceiptCanvas();
                 if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
-                const safeName = (currentStudent?.name || 'Student').replace(/[\\/:*?"<>|]/g, '_') || 'Student';
-                const fileName = `Fee_Receipt_${safeName}.png`;
-                const base64 = await blobToBase64(generatedBlob);
-
-                // 1) Native APK bridge — this is the only reliable way for a WebView
-                // to attach a generated local PNG directly to WhatsApp.
-                if (await tryNativeImageAction(base64, fileName, 'share')) return;
-
-                // 2) Browser/WebView Web Share with a real File.
+                const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
                 const file = new File([generatedBlob], fileName, {type:'image/png'});
-                if (navigator.share) {
-                    let canShareFile = true;
-                    try {
-                        canShareFile = !navigator.canShare || navigator.canShare({files:[file]});
-                    } catch (_) { canShareFile = false; }
-                    if (canShareFile) {
-                        await navigator.share({files:[file], title:'ફી પહોંચ'});
-                        return;
-                    }
+
+                // 1) Android APK native bridge, if the wrapper exposes it.
+                if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
+                    const reader = new FileReader();
+                    reader.onloadend = function(){
+                        try {
+                            window.Android.shareImageBase64(reader.result.split(',')[1], fileName);
+                        } catch(e) {
+                            alert('❌ WhatsApp Image Shareમાં ભૂલ આવી.');
+                        }
+                    };
+                    reader.readAsDataURL(generatedBlob);
+                    return;
                 }
 
-                // 3) No native bridge / file-share support: do not pretend the image
-                // was attached. Open the actual PNG so the user can Save/Share it.
-                const dataUrl = 'data:image/png;base64,' + base64;
-                window.location.href = dataUrl;
+                // 2) Android Chrome / WebView versions supporting Web Share with files.
+                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+                    await navigator.share({files:[file], title:'ફી પહોંચ'});
+                    return;
+                }
+
+                // Do not send a text/link as a substitute. Give the user a real image file.
+                await downloadImageDirectly();
+                alert('આ WebViewમાં Direct Image Share સપોર્ટ નથી. Image Download થઈ છે. આ સુવિધા APKમાં native share bridgeથી જ સંપૂર્ણ Direct WhatsApp attachment તરીકે કામ કરશે.');
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
                 alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
