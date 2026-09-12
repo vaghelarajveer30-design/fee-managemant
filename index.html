@@ -83,6 +83,11 @@
         .r-menu-btn { border:none; border-radius:8px; background:#7b1fa2; color:#fff; font-weight:bold; font-size:16px; min-width:42px; padding:8px 12px; cursor:pointer; }
         .r-menu-panel { position:absolute; right:0; top:46px; z-index:9999; width:270px; background:#fff; border:1px solid #ddd; border-radius:10px; padding:10px; box-shadow:0 8px 24px rgba(0,0,0,.2); display:none; }
         .r-menu-panel .btn { margin-top:5px; font-size:12px; padding:9px 8px; }
+        /* Standalone receipt: never show the R menu or main app UI */
+        body.standalone-receipt-mode #rMenuContainer { display:none !important; }
+        body.standalone-receipt-mode #appNavbar,
+        body.standalone-receipt-mode #appBrandHead,
+        body.standalone-receipt-mode #mainAppContainer { display:none !important; }
 
 
         /* એપ લોક સ્ક્રીન */
@@ -203,7 +208,7 @@
                     </div>
                 </div>
             </div>
-            <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 આ લિંક WhatsApp પરથી ખોલતાં ફી પહોંચની Image આપમેળે ડાઉનલોડ કરવાનો પ્રયાસ થશે.</div>
+            <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 ફી પહોંચ તૈયાર છે. App/WebViewમાં આપમેળે સેવ ન થાય તો નીચેનું ડાઉનલોડ બટન દબાવો.</div>
             <button class="btn btn-green" style="margin-top:8px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
         </div>
     </div>
@@ -1551,11 +1556,16 @@
         }
 
         function renderStandaloneReceipt(data) {
+            // Public receipt mode: hide the complete app UI, including R.
+            document.body.classList.add('standalone-receipt-mode');
             document.getElementById('mainAppContainer').style.display = 'none';
             document.getElementById('appNavbar').style.display = 'none';
             document.getElementById('appBrandHead').style.display = 'none';
             const rMenuContainer = document.getElementById('rMenuContainer');
-            if (rMenuContainer) rMenuContainer.style.display = 'none';
+            if (rMenuContainer) {
+                rMenuContainer.style.display = 'none';
+                rMenuContainer.hidden = true;
+            }
             document.getElementById('standaloneReceiptView').style.display = 'block';
 
             document.getElementById('sRReceiptNo').innerText = data.receiptNo || '-';
@@ -4335,7 +4345,8 @@
             document.getElementById('previewContainer').style.display = 'none';
         }
 
-        async function downloadImageDirectly() {
+        async function downloadImageDirectly(options = {}) {
+            const silent = !!options.silent;
             try {
                 if (!generatedBlob) await generateReceiptCanvas();
                 if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
@@ -4351,7 +4362,7 @@
                         const writable = await handle.createWritable();
                         await writable.write(generatedBlob);
                         await writable.close();
-                        alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
+                        if (!silent) alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
                         return;
                     } catch (e) {
                         if (e && e.name === 'AbortError') return;
@@ -4382,7 +4393,8 @@
                     setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
                 }, 350);
             } catch (e) {
-                alert('❌ Image download થઈ નથી: ' + (e.message || e));
+                if (!silent) alert('❌ Image download થઈ નથી: ' + (e.message || e));
+                else console.warn('WebView image download fallback:', e);
             }
         }
 
@@ -4413,9 +4425,10 @@
                     return;
                 }
 
-                // Do not send a text/link as a substitute. Give the user a real image file.
-                await downloadImageDirectly();
-                alert('આ WebViewમાં Direct Image Share સપોર્ટ નથી. Image Download થઈ છે. આ સુવિધા APKમાં native share bridgeથી જ સંપૂર્ણ Direct WhatsApp attachment તરીકે કામ કરશે.');
+                // WebView fallback: many wrappers do not support Web Share with files.
+                // Download the real PNG without showing a blocking JavaScript alert.
+                await downloadImageDirectly({silent: true});
+                return;
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
                 alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
