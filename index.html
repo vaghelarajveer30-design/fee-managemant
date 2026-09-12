@@ -1655,51 +1655,49 @@
                 const studentName = (document.getElementById('sRName')?.innerText || 'Receipt').trim();
                 const safeName = studentName.replace(/[\\/:*?"<>|]/g, '_') || 'Receipt';
                 const fileName = `Fee_Receipt_${safeName}.png`;
+                const base64 = await blobToBase64(blob);
 
-                // Android/Chromeમાં શક્ય હોય તો સીધું Save File dialog ખોલો.
+                // APK native download bridge first.
+                if (await tryNativeImageAction(base64, fileName, 'download')) {
+                    const note = document.getElementById('standaloneDownloadNote');
+                    if (note) note.innerHTML = '✅ ફી પહોંચની Image સેવ થઈ ગઈ.';
+                    return;
+                }
+
+                // Chrome Save File Picker.
                 if (window.showSaveFilePicker) {
                     try {
                         const handle = await window.showSaveFilePicker({
                             suggestedName: fileName,
-                            types: [{description: 'PNG Image', accept: {'image/png': ['.png']}}]
+                            types: [{description:'PNG Image', accept:{'image/png':['.png']}}]
                         });
                         const writable = await handle.createWritable();
                         await writable.write(blob);
                         await writable.close();
-                        alert('✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.');
+                        const note = document.getElementById('standaloneDownloadNote');
+                        if (note) note.innerHTML = '✅ ફી પહોંચ સફળતાપૂર્વક સેવ થઈ ગઈ.';
                         return;
                     } catch(e) {
                         if (e && e.name === 'AbortError') return;
                     }
                 }
 
-                // સામાન્ય Chrome/Browser download.
-                const blobUrl = URL.createObjectURL(blob);
+                // Normal browser/WebView fallback.
+                const dataUrl = 'data:image/png;base64,' + base64;
                 const link = document.createElement('a');
-                link.href = blobUrl;
+                link.href = dataUrl;
                 link.download = fileName;
                 link.rel = 'noopener';
                 link.style.position = 'fixed';
                 link.style.left = '-9999px';
                 document.body.appendChild(link);
-                link.click();
-                setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 3000);
+                try { link.click(); } catch (_) {}
+                setTimeout(() => link.remove(), 1500);
 
-                // WhatsAppના in-app browserમાં download attribute ઘણી વાર block થાય છે.
-                // તેથી actual PNG ને નવી tabમાં ખોલવાનો fallback આપીએ છીએ.
+                // WebView often ignores download= for generated data. Show the real image.
                 setTimeout(() => {
-                    try {
-                        const dataUrl = URL.createObjectURL(blob);
-                        const w = window.open(dataUrl, '_blank');
-                        if (!w) {
-                            // popup block હોય તો એ જ પેજમાં image ખોલો; અહીંથી Save/Download કરી શકાય.
-                            window.location.href = dataUrl;
-                        }
-                        setTimeout(() => URL.revokeObjectURL(dataUrl), 60000);
-                    } catch(e) {
-                        alert('❌ તમારા બ્રાઉઝરમાં સીધું ડાઉનલોડ બંધ છે. પહોંચની Image ખોલ્યા પછી લાંબું દબાવી Save Image કરો.');
-                    }
-                }, 400);
+                    try { window.location.href = dataUrl; } catch (_) {}
+                }, 250);
             } catch(e) {
                 console.error(e);
                 alert('❌ Image download થઈ નથી: ' + (e.message || e));
@@ -4345,6 +4343,61 @@
             document.getElementById('previewContainer').style.display = 'none';
         }
 
+        // WebView/APK native file helpers. Browserમાં આ functions safely skip થાય છે.
+        async function tryNativeImageAction(base64, fileName, action) {
+            try {
+                // Existing Android bridge used by this app.
+                if (window.Android) {
+                    const names = action === 'share'
+                        ? ['shareImageBase64','shareBase64','shareFileBase64']
+                        : ['downloadImageBase64','saveImageBase64','downloadBase64','saveFileBase64'];
+                    for (const name of names) {
+                        if (typeof window.Android[name] === 'function') {
+                            const result = window.Android[name](base64, fileName);
+                            if (result && typeof result.then === 'function') await result;
+                            return true;
+                        }
+                    }
+                }
+
+                // Median/WebView style bridges (if the APK builder exposes them).
+                if (window.median && window.median.share) {
+                    if (action === 'share' && typeof window.median.share.shareBase64 === 'function') {
+                        await window.median.share.shareBase64({contentInBase64: base64, fileName});
+                        return true;
+                    }
+                    if (action === 'download' && typeof window.median.share.downloadBase64 === 'function') {
+                        await window.median.share.downloadBase64({contentInBase64: base64, fileName});
+                        return true;
+                    }
+                }
+
+                // Common WebViewJavascriptBridge handler names.
+                const bridge = window.WebViewJavascriptBridge;
+                if (bridge && typeof bridge.callHandler === 'function') {
+                    const handler = action === 'share' ? 'shareBase64' : 'downloadBase64';
+                    await new Promise((resolve, reject) => {
+                        try {
+                            bridge.callHandler(handler, {contentInBase64: base64, fileName}, () => resolve());
+                        } catch (e) { reject(e); }
+                    });
+                    return true;
+                }
+            } catch (e) {
+                console.warn('Native image bridge unavailable:', e);
+            }
+            return false;
+        }
+
+        async function blobToBase64(blob) {
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
         async function downloadImageDirectly(options = {}) {
             const silent = !!options.silent;
             try {
@@ -4353,6 +4406,14 @@
                 const safeName = (currentStudent?.name || 'Student').replace(/[\\/:*?"<>|]/g, '_') || 'Student';
                 const fileName = `Fee_Receipt_${safeName}.png`;
 
+                // First try the native APK/WebView download bridge.
+                const base64 = await blobToBase64(generatedBlob);
+                if (await tryNativeImageAction(base64, fileName, 'download')) {
+                    if (!silent) alert('✅ ફી પહોંચની Image સેવ થઈ ગઈ.');
+                    return;
+                }
+
+                // Chrome/normal browser: Save File Picker.
                 if (window.showSaveFilePicker) {
                     try {
                         const handle = await window.showSaveFilePicker({
@@ -4369,32 +4430,28 @@
                     }
                 }
 
-                const blobUrl = URL.createObjectURL(generatedBlob);
+                // Browser fallback. Use the data URL directly; some Android WebViews
+                // block blob downloads but still allow the current page to navigate to data:.
+                const dataUrl = 'data:image/png;base64,' + base64;
                 const link = document.createElement('a');
-                link.href = blobUrl;
+                link.href = dataUrl;
                 link.download = fileName;
                 link.rel = 'noopener';
-                link.target = '_blank';
                 link.style.position = 'fixed';
                 link.style.left = '-9999px';
                 document.body.appendChild(link);
-                link.click();
+                try { link.click(); } catch (_) {}
+                setTimeout(() => link.remove(), 1500);
 
-                // Android Chrome/WebViewમાં download attribute block થાય તો image નવી tabમાં ખોલો.
-                setTimeout(() => {
-                    try {
-                        const opened = window.open(blobUrl, '_blank');
-                        if (!opened) {
-                            window.location.href = blobUrl;
-                        }
-                    } catch (e) {
-                        window.location.href = blobUrl;
-                    }
-                    setTimeout(() => { link.remove(); URL.revokeObjectURL(blobUrl); }, 60000);
-                }, 350);
+                // If the WebView ignored download, show the actual PNG instead of doing nothing.
+                if (!silent) {
+                    setTimeout(() => {
+                        try { window.location.href = dataUrl; } catch (_) {}
+                    }, 250);
+                }
             } catch (e) {
                 if (!silent) alert('❌ Image download થઈ નથી: ' + (e.message || e));
-                else console.warn('WebView image download fallback:', e);
+                else console.warn('Image download fallback:', e);
             }
         }
 
@@ -4402,33 +4459,31 @@
             try {
                 if (!generatedBlob) await generateReceiptCanvas();
                 if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
-                const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
+                const safeName = (currentStudent?.name || 'Student').replace(/[\\/:*?"<>|]/g, '_') || 'Student';
+                const fileName = `Fee_Receipt_${safeName}.png`;
+                const base64 = await blobToBase64(generatedBlob);
+
+                // 1) Native APK bridge — this is the only reliable way for a WebView
+                // to attach a generated local PNG directly to WhatsApp.
+                if (await tryNativeImageAction(base64, fileName, 'share')) return;
+
+                // 2) Browser/WebView Web Share with a real File.
                 const file = new File([generatedBlob], fileName, {type:'image/png'});
-
-                // 1) Android APK native bridge, if the wrapper exposes it.
-                if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
-                    const reader = new FileReader();
-                    reader.onloadend = function(){
-                        try {
-                            window.Android.shareImageBase64(reader.result.split(',')[1], fileName);
-                        } catch(e) {
-                            alert('❌ WhatsApp Image Shareમાં ભૂલ આવી.');
-                        }
-                    };
-                    reader.readAsDataURL(generatedBlob);
-                    return;
+                if (navigator.share) {
+                    let canShareFile = true;
+                    try {
+                        canShareFile = !navigator.canShare || navigator.canShare({files:[file]});
+                    } catch (_) { canShareFile = false; }
+                    if (canShareFile) {
+                        await navigator.share({files:[file], title:'ફી પહોંચ'});
+                        return;
+                    }
                 }
 
-                // 2) Android Chrome / WebView versions supporting Web Share with files.
-                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
-                    await navigator.share({files:[file], title:'ફી પહોંચ'});
-                    return;
-                }
-
-                // WebView fallback: many wrappers do not support Web Share with files.
-                // Download the real PNG without showing a blocking JavaScript alert.
-                await downloadImageDirectly({silent: true});
-                return;
+                // 3) No native bridge / file-share support: do not pretend the image
+                // was attached. Open the actual PNG so the user can Save/Share it.
+                const dataUrl = 'data:image/png;base64,' + base64;
+                window.location.href = dataUrl;
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
                 alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
