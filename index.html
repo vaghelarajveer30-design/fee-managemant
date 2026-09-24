@@ -327,12 +327,13 @@
                 <form onsubmit="event.preventDefault(); saveStudent();">
                     <input type="hidden" id="editStudentId">
                     <div class="form-group" style="margin-top: 10px;">
-                        <label>🔗 NIRMLA STUDY ZON વિદ્યાર્થી ID</label>
-                        <input type="text" id="inpStudentId" class="form-control" placeholder="દા.ત. STU1001 / વિદ્યાર્થીનો ID નંબર" autocomplete="off">
-                        <small style="color:#666;display:block;margin-top:4px;">આ જ ID NIRMLA STUDY ZONમાં વિદ્યાર્થીને Fee Management સાથે જોડવા માટે વપરાશે.</small>
-                    </div>
                         <label>વિદ્યાર્થીનું નામ</label>
                         <input type="text" id="inpName" class="form-control" required autocomplete="name" placeholder="દા.ત. રવિ" oninput="handleStudentNameInput()">
+                    </div>
+                    <div class="form-group">
+                        <label>🔗 Study ZON વિદ્યાર્થી ID</label>
+                        <input type="text" id="inpStudentId" class="form-control" inputmode="numeric" maxlength="3" placeholder="દા.ત. 025" autocomplete="off">
+                        <small style="color:#666;">Study ZON માં જે 3 અંકનો Student ID છે તે જ અહીં નાખો.</small>
                     </div>
                     <div class="form-group">
                         <label>મોબાઈલ નં</label>
@@ -2103,8 +2104,6 @@ ${serialized}
         }
 
         function normalizeStudentRecords(st) {
-            st.studentId = String(st.studentId || st.studentCode || '').trim();
-            st.studentCode = String(st.studentCode || st.studentId || '').trim();
             st.phone = st.phone || '';
             st.fatherName = st.fatherName || '';
             st.motherName = st.motherName || '';
@@ -3033,7 +3032,6 @@ ${serialized}
             document.getElementById('formTitle').innerText = "નવો વિદ્યાર્થી ઉમેરો";
             document.getElementById('btnSaveStudent').innerText = "સેવ કરો";
             document.getElementById('editStudentId').value = "";
-            document.getElementById('inpStudentId').value = "";
             document.getElementById('inpName').value = "";
             document.getElementById('inpPhone').value = "";
             document.getElementById('inpFatherName').value = "";
@@ -3057,7 +3055,9 @@ ${serialized}
 
         async function saveStudent() {
             const id = document.getElementById('editStudentId').value;
-            const studentId = document.getElementById('inpStudentId').value.trim();
+            const studentIdRaw = document.getElementById('inpStudentId').value.trim();
+            const studentIdDigits = studentIdRaw.replace(/\D/g,'');
+            const studentId = studentIdDigits ? studentIdDigits.slice(-3).padStart(3,'0') : '';
             const name = document.getElementById('inpName').value.trim();
             const phone = document.getElementById('inpPhone').value.trim();
             const fatherName = document.getElementById('inpFatherName').value.trim();
@@ -3103,9 +3103,9 @@ ${serialized}
                 if (st) {
                     normalizeStudentRecords(st);
                     const oldJoinDate = st.joinDate;
+                    st.name = name;
                     st.studentId = studentId;
                     st.studentCode = studentId;
-                    st.name = name;
                     st.phone = phone;
                     st.fatherName = fatherName;
                     st.motherName = motherName;
@@ -3159,9 +3159,9 @@ ${serialized}
                 const recordDate = joinDate || localDateString();
                 let newSt = {
                     id: Date.now().toString(),
+                    name: name,
                     studentId: studentId,
                     studentCode: studentId,
-                    name: name,
                     phone: phone,
                     fatherName: fatherName,
                     motherName: motherName,
@@ -3188,6 +3188,9 @@ ${serialized}
             }
 
             saveLocalData();
+            // Study ZON reads the Fee Management Firebase backup.
+            // Push the latest student record immediately so the ID link works without waiting for auto-backup.
+            try { await backupDataToCloud(true); } catch (e) { console.warn('Immediate Fee backup failed:', e); }
             alert("વિદ્યાર્થીની વિગત સેવ થઈ ગઈ છે!");
             navigateTo('pageDashboard');
             renderDashboard();
@@ -3297,7 +3300,7 @@ ${serialized}
             document.getElementById('formTitle').innerText = "વિદ્યાર્થી સુધારો";
             document.getElementById('btnSaveStudent').innerText = "અપડેટ કરો";
             document.getElementById('editStudentId').value = st.id;
-            document.getElementById('inpStudentId').value = st.studentId || st.studentCode || '';
+            document.getElementById('inpStudentId').value = String(st.studentId || st.studentCode || '').replace(/\D/g,'').slice(-3).padStart(3,'0') === '000' ? '' : String(st.studentId || st.studentCode || '').replace(/\D/g,'').slice(-3).padStart(3,'0');
             document.getElementById('inpName').value = st.name || '';
             document.getElementById('inpPhone').value = st.phone || '';
             document.getElementById('inpFatherName').value = st.fatherName || '';
