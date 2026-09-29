@@ -180,6 +180,10 @@
                             <td style="font-weight: bold; color: #1565c0;" id="sRTotalVal">₹0</td>
                         </tr>
                         <tr>
+                            <td colspan="2" style="text-align: right; font-weight: bold; color: #7b1fa2;">ડિસ્કાઉન્ટ</td>
+                            <td style="font-weight: bold; color: #7b1fa2;" id="sRDiscountVal">₹0</td>
+                        </tr>
+                        <tr>
                             <td colspan="2" style="text-align: right; font-weight: bold; color: green;">જમા કરેલ ફી</td>
                             <td style="font-weight: bold; color: green;" id="sRPaidVal">₹0</td>
                         </tr>
@@ -309,6 +313,7 @@
                     <div id="btnFilterAll" class="stat-box" style="background: #1976d2;" onclick="filterStudents(null)">કુલ ફી<br><span id="sumTotalFee">₹0</span></div>
                     <div id="btnFilterPaid" class="stat-box" style="background: #388e3c;" onclick="filterStudents('paid')">કુલ જમા<br><span id="sumPaidFee">₹0</span></div>
                     <div id="btnFilterDue" class="stat-box" style="background: #d32f2f;" onclick="filterStudents('due')">કુલ બાકી<br><span id="sumDueFee">₹0</span></div>
+                    <div class="stat-box" style="background:#7b1fa2;cursor:default;">કુલ ડિસ્કાઉન્ટ<br><span id="sumDiscountFee">₹0</span></div>
                 </div>
             </div>
 
@@ -988,6 +993,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label>🎁 ડિસ્કાઉન્ટ (₹) — માફ કરેલી ફી</label>
+                    <input type="number" id="recDiscountInput" class="form-control" value="0" min="0" oninput="calculateReceiptTotals()" placeholder="0">
+                    <small style="color:#666;">બાકી ફીમાંથી માફ કરેલી રકમ ઘટાડાશે અને રસીદમાં દેખાશે.</small>
+                </div>
+
+                <div class="form-group">
                     <label>પેમેન્ટ મોડ</label>
                     <select id="recPayMode" class="form-control">
                         <option value="રોકડા/ઓન લાઈન">રોકડા/ઓન લાઈન</option>
@@ -1055,6 +1066,10 @@
                             <tr>
                                 <td colspan="2" style="text-align: right; font-weight: bold; color: #1565c0;">કુલ રકમ</td>
                                 <td style="font-weight: bold; color: #1565c0;" id="rTotalVal">350</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: right; font-weight: bold; color: #7b1fa2;">ડિસ્કાઉન્ટ</td>
+                                <td style="font-weight: bold; color: #7b1fa2;" id="rDiscountVal">₹0</td>
                             </tr>
                             <tr>
                                 <td colspan="2" style="text-align: right; font-weight: bold; color: green;">જમા કરેલ ફી</td>
@@ -1509,6 +1524,7 @@ ${serialized}
             tbody.innerHTML = rows.join('') || '<tr><td colspan="3">કોઈ વિગત નથી.</td></tr>';
 
             document.getElementById('sRTotalVal').innerText = '₹' + data.grandTotal;
+            document.getElementById('sRDiscountVal').innerText = '₹' + Math.round(Number(data.discountVal)||0);
             document.getElementById('sRPaidVal').innerText = '₹' + data.paidVal;
             document.getElementById('sRDueVal').innerText = '₹' + data.dueVal;
             document.getElementById('sRMode').innerText = data.payMode || "-";
@@ -2450,7 +2466,9 @@ ${serialized}
                 const prevRecord = previousYearDues.find(x => String(x.studentId) === String(st.id));
                 st.previousYearPaid = prevRecord ? previousPaidAmount(prevRecord) : 0;
                 st.previousYearDue = prevRecord ? previousDueAmount(prevRecord) : 0;
-                st.due = st.totalFeeWithStationery - st.paid;
+                const totalDiscount = (st.receipts || []).reduce((sum, r) => sum + Math.max(0, Number(r.discountVal)||0), 0);
+                st.discountTotal = totalDiscount;
+                st.due = st.totalFeeWithStationery - st.paid - totalDiscount;
                 if (st.due < 0) st.due = 0;
 
                 // Keep the student's main fee field equal to the latest effective fee.
@@ -2740,6 +2758,7 @@ ${serialized}
             let totalFeeSum = 0;
             let totalPaidSum = 0;
             let totalDueSum = 0;
+            let totalDiscountSum = 0;
             let activeCount = 0;
             let inactiveCount = 0;
             let completedCount = 0;
@@ -2755,6 +2774,7 @@ ${serialized}
                 totalFeeSum += (s.totalFeeWithStationery || s.fee);
                 totalPaidSum += s.paid;
                 totalDueSum += s.due;
+                totalDiscountSum += Number(s.discountTotal)||0;
             });
 
             const loanTotal = loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
@@ -2769,6 +2789,8 @@ ${serialized}
             document.getElementById('sumTotalFee').innerText = '₹' + grandTotal;
             document.getElementById('sumPaidFee').innerText = '₹' + grandPaid;
             document.getElementById('sumDueFee').innerText = '₹' + grandDue;
+            const discountEl = document.getElementById('sumDiscountFee');
+            if(discountEl) discountEl.innerText = '₹' + Math.round(totalDiscountSum);
             document.getElementById('countActive').innerText = activeCount;
             document.getElementById('countInactive').innerText = inactiveCount;
             document.getElementById('countCompleted').innerText = completedCount;
@@ -3937,6 +3959,7 @@ ${serialized}
             document.getElementById('recPayMode').value = "રોકડા/ઓન લાઈન";
             document.getElementById('recPayer').value = currentStudent ? currentStudent.name + " ના વાલી" : "";
             document.getElementById('recPaidInput').value = "0";
+            if(document.getElementById('recDiscountInput')) document.getElementById('recDiscountInput').value = "0";
 
             autoCalculateMonthsFee();
             onReceiptStationeryChange();
@@ -3990,7 +4013,8 @@ ${serialized}
             document.getElementById('recGrandTotal').value = grandTotal;
 
             const paid = parseFloat(document.getElementById('recPaidInput').value) || 0;
-            let due = grandTotal - paid;
+            const discount = Math.max(0, parseFloat(document.getElementById('recDiscountInput')?.value) || 0);
+            let due = grandTotal - paid - discount;
             if (due < 0) due = 0;
 
             document.getElementById('recDueInput').value = due;
@@ -4011,7 +4035,7 @@ ${serialized}
         }
 
         function receiptPublicData(receiptObj) {
-            return {receiptNo:receiptObj.receiptNo || '',receiptType:receiptObj.receiptType || '',name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
+            return {receiptNo:receiptObj.receiptNo || '',receiptType:receiptObj.receiptType || '',name:currentStudent.name,std:currentStudent.std,course:currentStudent.course,phone:currentStudent.phone,date:receiptObj.date,fromDate:receiptObj.fromDate,toDate:receiptObj.toDate,tuitionFee:receiptObj.tuitionFee,statFee:receiptObj.statFee,grandTotal:receiptObj.grandTotal,paidVal:receiptObj.paidVal,discountVal:receiptObj.discountVal||0,dueVal:receiptObj.dueVal,payMode:receiptObj.payMode,payer:receiptObj.payer,months:receiptObj.months||[],stationeryItems:receiptObj.stationeryItems||[]};
         }
 
         async function publishReceiptAndGetLink(receiptObj) {
@@ -4129,7 +4153,9 @@ ${serialized}
             const grandTotal = tuitionFee + statFee;
 
             const paidVal = parseFloat(document.getElementById('recPaidInput').value) || 0;
-            const dueVal = Math.max(0, grandTotal - paidVal);
+            const discountVal = Math.max(0, parseFloat(document.getElementById('recDiscountInput')?.value) || 0);
+            if (discountVal + paidVal > grandTotal) { alert("ડિસ્કાઉન્ટ અને જમા રકમ કુલ ફી કરતાં વધુ ન હોઈ શકે."); return; }
+            const dueVal = Math.max(0, grandTotal - paidVal - discountVal);
             const payMode = document.getElementById('recPayMode').value;
             const payer = document.getElementById('recPayer').value.trim() || (currentStudent.name + " ના વાલી");
 
@@ -4153,6 +4179,7 @@ ${serialized}
                 statFee: statFee,
                 grandTotal: grandTotal,
                 paidVal: paidVal,
+                discountVal: discountVal,
                 dueVal: dueVal,
                 payMode: payMode,
                 payer: payer,
@@ -4220,6 +4247,7 @@ ${serialized}
 
             tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="3" style="color:#888;">કોઈ વિગત નથી.</td></tr>`;
             document.getElementById('rTotalVal').innerText = '₹' + Math.round(Number(receiptObj.grandTotal)||0);
+            document.getElementById('rDiscountVal').innerText = '₹' + Math.round(Number(receiptObj.discountVal)||0);
             document.getElementById('rPaidVal').innerText = '₹' + Math.round(Number(receiptObj.paidVal)||0);
             document.getElementById('rDueVal').innerText = '₹' + Math.round(Number(receiptObj.dueVal)||0);
             document.getElementById('rMode').innerText = receiptObj.payMode || '-';
@@ -4364,6 +4392,7 @@ ${serialized}
                         <td>${formatDate(r.date)}</td>
                         <td>₹${r.grandTotal}</td>
                         <td>₹${r.paidVal}</td>
+                        <td style="color:#7b1fa2;font-weight:bold;">₹${Math.round(Number(r.discountVal)||0)}</td>
                         <td>₹${r.dueVal}</td>
                         <td>${statusBadge}</td>
                         <td>
@@ -4399,6 +4428,7 @@ ${serialized}
             document.getElementById('recStationeryFee').value = r.statFee;
             document.getElementById('recGrandTotal').value = r.grandTotal;
             document.getElementById('recPaidInput').value = r.paidVal;
+            document.getElementById('recDiscountInput').value = Number(r.discountVal)||0;
             document.getElementById('recDueInput').value = r.dueVal;
             document.getElementById('recPayMode').value = r.payMode;
             document.getElementById('recPayer').value = r.payer;
