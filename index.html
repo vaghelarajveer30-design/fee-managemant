@@ -2254,74 +2254,47 @@ ${serialized}
 
         function getMonthsBreakdown(st, fromStr, toStr) {
             if (!fromStr || !toStr || toStr < fromStr) return [];
-
             const from = dateOnly(fromStr), to = dateOnly(toStr);
             if (!from || !to) return [];
 
-            // માસિક ફી calendar month પ્રમાણે નહીં, પરંતુ વિદ્યાર્થીની
-            // દાખલ/રી-જોઈન્ટ તારીખથી શરૂ થતા 1-મહિનાના billing cycle પ્રમાણે ગણાશે.
-            // ઉદાહરણ: 08-08 થી 07-09 = માત્ર 1 મહિનો (₹200),
-            // 08-09 થી 07-10 = આગળનો મહિનો.
+            // માસિક ફી કેલેન્ડર મહિનાના દિવસો પ્રમાણે ગણો: શરૂઆત/અંતના
+            // અધૂરા મહિના દૈનિક દરે અને વચ્ચેના મહિના પૂરા ગણાય.
             const result = [];
             const periods = Array.isArray(st.attendancePeriods) ? st.attendancePeriods : [];
-
-            const addMonthsClamped = (date, months) => {
-                const day = date.getDate();
-                const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
-                const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-                target.setDate(Math.min(day, lastDay));
-                return target;
-            };
-
-            const addDays = (date, days) => {
-                const d = new Date(date);
-                d.setDate(d.getDate() + days);
-                return d;
-            };
-
             periods.forEach(p => {
                 if (!p || !p.fromDate) return;
                 const periodStart = dateOnly(p.fromDate);
                 if (!periodStart) return;
-
                 let periodEnd = p.toDate ? dateOnly(p.toDate) : to;
-                if (!periodEnd) periodEnd = to;
-                if (periodEnd > to) periodEnd = to;
-                if (periodEnd < from || periodStart > to) return;
+                if (!periodEnd || periodEnd > to) periodEnd = to;
+                const rangeFrom = periodStart > from ? periodStart : from;
+                const rangeTo = periodEnd < to ? periodEnd : to;
+                if (rangeFrom > rangeTo) return;
 
-                // દરેક attendance/re-join periodના પોતાના billing cycles બનાવો.
-                let cycleStart = new Date(periodStart);
-                while (cycleStart <= periodEnd && cycleStart <= to) {
-                    const nextCycleStart = addMonthsClamped(cycleStart, 1);
-                    const cycleEnd = addDays(nextCycleStart, -1);
-
-                    const overlapFrom = cycleStart > from ? cycleStart : from;
-                    const overlapTo = cycleEnd < periodEnd ? cycleEnd : periodEnd;
-                    if (overlapFrom <= overlapTo) {
-                        const cycleStartStr = localDateString(cycleStart);
-                        const activeDay = localDateString(overlapFrom);
-                        const fee = getFeeForDate(st, activeDay);
-                        const key = monthKey(cycleStart.getFullYear(), cycleStart.getMonth());
-
-                        // એક જ billing cycle ફરીથી ઉમેરાય નહીં.
-                        if (!result.some(x => x.key === key && x.cycleFrom === cycleStartStr)) {
-                            result.push({
-                                key,
-                                year: cycleStart.getFullYear(),
-                                month: cycleStart.getMonth(),
-                                name: monthNameGu(cycleStart.getMonth()),
-                                fee,
-                                date: activeDay,
-                                cycleFrom: cycleStartStr,
-                                cycleTo: localDateString(overlapTo)
-                            });
-                        }
+                let cursor = new Date(rangeFrom.getFullYear(), rangeFrom.getMonth(), 1);
+                while (cursor <= rangeTo) {
+                    const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+                    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth()+1, 0);
+                    const activeFrom = rangeFrom > monthStart ? rangeFrom : monthStart;
+                    const activeTo = rangeTo < monthEnd ? rangeTo : monthEnd;
+                    if (activeFrom <= activeTo) {
+                        const daysInMonth = monthEnd.getDate();
+                        const activeDays = Math.round((activeTo-activeFrom)/86400000)+1;
+                        const activeDate = localDateString(activeFrom);
+                        const monthlyFee = getFeeForDate(st, activeDate);
+                        const amount = activeDays === daysInMonth ? monthlyFee : monthlyFee * activeDays / daysInMonth;
+                        const key = monthKey(cursor.getFullYear(), cursor.getMonth());
+                        const existing = result.find(x => x.key === key && x.cycleFrom === localDateString(activeFrom));
+                        if (!existing) result.push({
+                            key, year:cursor.getFullYear(), month:cursor.getMonth(),
+                            name:monthNameGu(cursor.getMonth()), fee:amount,
+                            date:activeDate, cycleFrom:localDateString(activeFrom),
+                            cycleTo:localDateString(activeTo), days:activeDays, daysInMonth
+                        });
                     }
-
-                    cycleStart = nextCycleStart;
+                    cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
                 }
             });
-
             result.sort((a,b) => a.cycleFrom.localeCompare(b.cycleFrom));
             return result;
         }
@@ -2786,9 +2759,9 @@ ${serialized}
             const grandPaid = totalPaidSum + loanPaid;
             const grandDue = Math.max(0, grandTotal - grandPaid);
 
-            document.getElementById('sumTotalFee').innerText = '₹' + grandTotal;
-            document.getElementById('sumPaidFee').innerText = '₹' + grandPaid;
-            document.getElementById('sumDueFee').innerText = '₹' + grandDue;
+            document.getElementById('sumTotalFee').innerText = '₹' + Math.round(Number(grandTotal)||0);
+            document.getElementById('sumPaidFee').innerText = '₹' + Math.round(Number(grandPaid)||0);
+            document.getElementById('sumDueFee').innerText = '₹' + Math.round(Number(grandDue)||0);
             const discountEl = document.getElementById('sumDiscountFee');
             if(discountEl) discountEl.innerText = '₹' + Math.round(totalDiscountSum);
             document.getElementById('countActive').innerText = activeCount;
@@ -2875,7 +2848,7 @@ ${serialized}
                                         📚 ${escapeHtml(c)}<br>
                                         <span style="font-size:18px;">${arr.length}</span> વિદ્યાર્થી
                                         <small style="display:block;margin-top:4px;font-weight:normal;">
-                                            ફી ₹${ct} | જમા ₹${cp} | બાકી ₹${cd}
+                                            ફી ₹${Math.round(ct)} | જમા ₹${Math.round(cp)} | બાકી ₹${Math.round(cd)}
                                         </small>
                                     </button>`;
                             }).join('')}
@@ -2917,7 +2890,7 @@ ${serialized}
                                 ${label}<br>
                                 <span style="font-size:18px;">${arr.length}</span> વિદ્યાર્થી
                                 <small style="display:block;margin-top:4px;font-weight:normal;">
-                                    ફી ₹${total} | જમા ₹${paid} | બાકી ₹${due}
+                                    ફી ₹${Math.round(total)} | જમા ₹${Math.round(paid)} | બાકી ₹${Math.round(due)}
                                 </small>
                             </button>`;
                     };
@@ -2959,9 +2932,9 @@ ${serialized}
                                 ${currentFeeTypeFilter ? escapeHtml(currentFeeTypeFilter) : 'બધા ફી પ્રકાર'} — ${filteredStudents.length} વિદ્યાર્થી
                             </div>
                             <div class="grid-3" style="margin-top:8px;">
-                                <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span>₹${visibleTotal}</span></div>
-                                <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span>₹${visiblePaid}</span></div>
-                                <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span>₹${visibleDue}</span></div>
+                                <div class="stat-box" style="background:#1976d2;cursor:default;">કુલ ફી<br><span>₹${Math.round(visibleTotal)}</span></div>
+                                <div class="stat-box" style="background:#388e3c;cursor:default;">કુલ જમા<br><span>₹${Math.round(visiblePaid)}</span></div>
+                                <div class="stat-box" style="background:#d32f2f;cursor:default;">કુલ બાકી<br><span>₹${Math.round(visibleDue)}</span></div>
                             </div>
                         </div>`;
                 } else {
@@ -3007,7 +2980,7 @@ ${serialized}
             // કાર્ડ દબાવવાથી પહેલાની જેમ સંપૂર્ણ વિદ્યાર્થી વિગતો ખુલશે.
 
             filteredStudents.forEach(s => {
-                const totalDisp = Number(s.totalFeeWithStationery ?? s.fee) || 0;
+                const totalDisp = Math.round(Number(s.totalFeeWithStationery ?? s.fee) || 0);
                 let historyHtml = '';
                 if (currentFilter === 'completed') {
                     container.innerHTML += `
@@ -3018,8 +2991,8 @@ ${serialized}
                             </div>
                             <div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between;">
                                 <span>કુલ ફી: ₹${totalDisp}</span>
-                                <span style="color:green;font-weight:bold;">જમા: ₹${Number(s.paid)||0}</span>
-                                <span style="color:red;font-weight:bold;">બાકી: ₹${Number(s.due)||0}</span>
+                                <span style="color:green;font-weight:bold;">જમા: ₹${Math.round(Number(s.paid)||0)}</span>
+                                <span style="color:red;font-weight:bold;">બાકી: ₹${Math.round(Number(s.due)||0)}</span>
                             </div>
                             <div style="margin-top:8px;display:flex;gap:6px;">
                                 <button class="btn btn-blue" style="margin-top:0;flex:1;padding:7px;font-size:12px;" onclick="event.stopPropagation();openStudent('${escapeHtml(s.id)}')">📋 સંપૂર્ણ ડેટા</button>
@@ -3041,8 +3014,8 @@ ${serialized}
                         </div>
                         <div style="margin-top: 6px; font-size: 13px; color: #555; display:flex; justify-content:space-between;">
                             <span>કુલ ફી: ₹${totalDisp}</span>
-                            <span style="color:green; font-weight:bold;">જમા: ₹${s.paid}</span>
-                            <span style="color:red; font-weight:bold;">બાકી: ₹${s.due}</span>
+                            <span style="color:green; font-weight:bold;">જમા: ₹${Math.round(Number(s.paid)||0)}</span>
+                            <span style="color:red; font-weight:bold;">બાકી: ₹${Math.round(Number(s.due)||0)}</span>
                         </div>
                         ${historyHtml}
                     </div>
@@ -3293,9 +3266,9 @@ ${serialized}
                 badge.style.background = "#2e7d32";
             }
 
-            document.getElementById('profFee').innerText = '₹' + (st.totalFeeWithStationery || st.fee);
-            document.getElementById('profPaid').innerText = '₹' + st.paid;
-            document.getElementById('profDue').innerText = '₹' + st.due;
+            document.getElementById('profFee').innerText = '₹' + Math.round(Number(st.totalFeeWithStationery || st.fee)||0);
+            document.getElementById('profPaid').innerText = '₹' + Math.round(Number(st.paid)||0);
+            document.getElementById('profDue').innerText = '₹' + Math.round(Number(st.due)||0);
 
             document.getElementById('alertFromDate').value = st.joinDate || localDateString();
             document.getElementById('alertToDate').value = localDateString();
@@ -5243,8 +5216,8 @@ ${serialized}
             const chosen=select.value;
             const arr=chosen==='__ALL__'?activeStudents:activeStudents.filter(s=>(s.course||'કોર્સ વગર').trim()===chosen);
             const paid=arr.reduce((n,s)=>n+(Number(s.paid)||0),0), due=arr.reduce((n,s)=>n+(Number(s.due)||0),0);
-            summary.innerHTML=`<div style="padding:10px;background:#f3e5f5;border-radius:8px;font-weight:bold;color:#6a1b9a;">કુલ Active બાળકો: ${activeStudents.length} &nbsp; | &nbsp; ${chosen==='__ALL__'?'બધા કોર્સ':escapeHtml(chosen)}: ${arr.length} બાળકો</div><div class="grid-2" style="margin-top:8px;"><div class="stat-box" style="background:#2e7d32">જમા<br><span>₹${paid}</span></div><div class="stat-box" style="background:#d32f2f">બાકી<br><span>₹${due}</span></div></div>`;
-            list.innerHTML=arr.length?arr.map(s=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(s.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(s.name)}</span><span class="student-badge">${escapeHtml(s.course||'કોર્સ વગર')}</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between"><span>ધોરણ: ${escapeHtml(s.std||'-')}</span><span style="color:green;font-weight:bold">જમા ₹${Number(s.paid)||0}</span><span style="color:red;font-weight:bold">બાકી ₹${Number(s.due)||0}</span></div></div>`).join(''):'<div style="text-align:center;padding:20px;color:#888">આ પસંદગીમાં કોઈ Active વિદ્યાર્થી નથી.</div>';
+            summary.innerHTML=`<div style="padding:10px;background:#f3e5f5;border-radius:8px;font-weight:bold;color:#6a1b9a;">કુલ Active બાળકો: ${activeStudents.length} &nbsp; | &nbsp; ${chosen==='__ALL__'?'બધા કોર્સ':escapeHtml(chosen)}: ${arr.length} બાળકો</div><div class="grid-2" style="margin-top:8px;"><div class="stat-box" style="background:#2e7d32">જમા<br><span>₹${Math.round(paid)}</span></div><div class="stat-box" style="background:#d32f2f">બાકી<br><span>₹${Math.round(due)}</span></div></div>`;
+            list.innerHTML=arr.length?arr.map(s=>`<div class="student-item-card" onclick="openStudent('${escapeHtml(s.id)}')"><div class="student-item-head"><span class="student-name">👤 ${escapeHtml(s.name)}</span><span class="student-badge">${escapeHtml(s.course||'કોર્સ વગર')}</span></div><div style="margin-top:6px;font-size:13px;display:flex;justify-content:space-between"><span>ધોરણ: ${escapeHtml(s.std||'-')}</span><span style="color:green;font-weight:bold">જમા ₹${Math.round(Number(s.paid)||0)}</span><span style="color:red;font-weight:bold">બાકી ₹${Math.round(Number(s.due)||0)}</span></div></div>`).join(''):'<div style="text-align:center;padding:20px;color:#888">આ પસંદગીમાં કોઈ Active વિદ્યાર્થી નથી.</div>';
         }
 
         function escapeHtml(v){ return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
