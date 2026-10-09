@@ -5267,6 +5267,28 @@ ${serialized}
         }
         function previousDueAmount(r) { return Math.max(0,(parseFloat(r.totalAmount)||0)-previousPaidAmount(r)); }
 
+        function consolidateDuplicateLoanRecords() {
+            const grouped = new Map();
+            const cleaned = [];
+            loanRecords.forEach(r => {
+                const key = String(r.person || '').trim().toLocaleLowerCase();
+                if (!key || !grouped.has(key)) {
+                    if (key) grouped.set(key, r);
+                    cleaned.push(r);
+                    return;
+                }
+                const base = grouped.get(key);
+                if (!Array.isArray(base.advances)) base.advances = [{id:String(base.id)+'a', date:base.date, amount:Number(base.totalAmount)||0, detail:base.detail||''}];
+                if (Array.isArray(r.advances) && r.advances.length) base.advances.push(...r.advances);
+                else base.advances.push({id:String(r.id)+'a', date:r.date, amount:Number(r.totalAmount)||0, detail:r.detail||''});
+                base.totalAmount = (Number(base.totalAmount)||0) + (Number(r.totalAmount)||0);
+                base.payments = (Array.isArray(base.payments)?base.payments:[]).concat(Array.isArray(r.payments)?r.payments:[]);
+                if (!base.phone && r.phone) base.phone = r.phone;
+                if (r.detail && !String(base.detail||'').includes(r.detail)) base.detail = [base.detail,r.detail].filter(Boolean).join('; ');
+            });
+            loanRecords = cleaned;
+        }
+
         function saveLoanRecord() {
             const person=document.getElementById('loanPerson').value.trim();
             const date=document.getElementById('loanDate').value;
@@ -5276,13 +5298,47 @@ ${serialized}
             const initial=parseFloat(document.getElementById('loanInitialPaid').value)||0;
             if(!person || !date || total<=0){alert('કૃપા કરીને નામ, તારીખ અને કુલ રકમ દાખલ કરો.');return;}
             if(initial>total){alert('આજે જમા રકમ કુલ ઉછીના કરતાં વધુ ન હોઈ શકે.');return;}
-            const r={id:Date.now().toString(),person,date,phone,detail,totalAmount:total,payments:[]};
-            if(initial>0) r.payments.push({id:Date.now().toString()+'p',date,amount:initial,note:'પ્રથમ જમા'});
-            loanRecords.push(r);
+
+            // એક જ વ્યક્તિને ફરી ઉછીના આપીએ તો નવી મુખ્ય નોંધ બનાવવાને બદલે
+            // એ જ નોંધમાં અલગ તારીખ અને રકમ તરીકે નવી એન્ટ્રી ઉમેરો.
+            consolidateDuplicateLoanRecords();
+            let r=loanRecords.find(x=>String(x.person||'').trim().toLocaleLowerCase()===person.toLocaleLowerCase());
+            const advance={id:Date.now().toString()+'a',date,amount:total,detail};
+            if(r){
+                if(!Array.isArray(r.advances)) r.advances=[{id:String(r.id)+'a',date:r.date,amount:parseFloat(r.totalAmount)||0,detail:r.detail||''}];
+                r.advances.push(advance);
+                r.totalAmount=(parseFloat(r.totalAmount)||0)+total;
+                if(!r.phone && phone) r.phone=phone;
+                if(detail) r.detail=r.detail ? r.detail+'; '+detail : detail;
+            }else{
+                r={id:Date.now().toString(),person,date,phone,detail,totalAmount:total,payments:[],advances:[advance]};
+                loanRecords.push(r);
+            }
+            if(initial>0){r.payments=r.payments||[];r.payments.push({id:Date.now().toString()+'p',date,amount:initial,note:'પ્રથમ જમા'});}
             saveLocalData(); renderLoanPage(); renderDashboard();
             document.getElementById('loanPerson').value=''; document.getElementById('loanPhone').value='';
             document.getElementById('loanDetail').value=''; document.getElementById('loanAmount').value=''; document.getElementById('loanInitialPaid').value='0';
-            alert('✅ ઉછીનાની નોંધ સેવ થઈ ગઈ.');
+            alert('✅ ઉછીનાની નોંધ સેવ થઈ ગઈ.'+(r.advances.length>1?' આ વ્યક્તિની અગાઉની નોંધમાં નવી ઉછીની રકમ ઉમેરાઈ છે.':''));
+        }
+
+        function addLoanAdvance(id) {
+            const r=loanRecords.find(x=>String(x.id)===String(id));
+            if(!r) return;
+            const date=prompt('બીજી ઉછીની એન્ટ્રીની તારીખ (YYYY-MM-DD):',localDateString());
+            if(!date) return;
+            const amount=prompt('આ વખતે કેટલા રૂપિયા આપ્યા?', '');
+            if(amount===null) return;
+            const val=parseFloat(amount);
+            if(!Number.isFinite(val) || val<=0){alert('કૃપા કરીને સાચી રકમ દાખલ કરો.');return;}
+            const detail=prompt('આ એન્ટ્રીની વિગત (વૈકલ્પિક):','')||'';
+            if(!Array.isArray(r.advances) || !r.advances.length){
+                r.advances=[{id:String(r.id)+'a',date:r.date,amount:parseFloat(r.totalAmount)||0,detail:r.detail||''}];
+            }
+            r.advances.push({id:Date.now().toString()+'a',date,amount:val,detail});
+            r.totalAmount=(parseFloat(r.totalAmount)||0)+val;
+            if(detail) r.detail=r.detail ? r.detail+'; '+detail : detail;
+            saveLocalData(); renderLoanPage(); renderDashboard();
+            alert('✅ આ જ વ્યક્તિના ખાતામાં બીજી ઉછીની એન્ટ્રી ઉમેરાઈ ગઈ. કુલ રકમ અપડેટ થઈ ગઈ.');
         }
 
         function addLoanPayment(id) {
@@ -5306,6 +5362,7 @@ ${serialized}
         }
 
         function renderLoanPage() {
+            consolidateDuplicateLoanRecords();
             const today=localDateString();
             const ld=document.getElementById('loanDate'); if(ld && !ld.value)ld.value=today;
             const total=loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
@@ -5322,11 +5379,13 @@ ${serialized}
                 return `<div class="finance-card">
                     <div style="display:flex;justify-content:space-between;gap:8px;"><strong style="color:#0097a7;">👤 ${escapeHtml(r.person)}</strong><span>${formatDate(r.date)}</span></div>
                     <div style="font-size:12px;margin-top:5px;">📱 ${escapeHtml(r.phone||'-')} &nbsp; | &nbsp; ${escapeHtml(r.detail||'-')}</div>
+                    ${(Array.isArray(r.advances)&&r.advances.length)?`<div style="margin-top:8px;"><strong>ઉછીના આપ્યાની વિગત:</strong><table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>આપેલી રકમ</th><th>વિગત</th></tr></thead><tbody>${r.advances.map((a,i)=>`<tr><td>${i+1}</td><td>${formatDate(a.date)}</td><td>₹${parseFloat(a.amount)||0}</td><td>${escapeHtml(a.detail||'-')}</td></tr>`).join('')}</tbody></table></div>`:''}
                     <div class="grid-3" style="margin-top:8px;">
                         <div class="stat-box" style="background:#1976d2;">કુલ<br>₹${r.totalAmount}</div>
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
+                    <button class="btn btn-cyan" style="margin-top:8px;" onclick="addLoanAdvance('${r.id}')">➕ આ જ વ્યક્તિના ખાતામાં બીજી ઉછીની એન્ટ્રી</button>
                     <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
