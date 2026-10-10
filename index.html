@@ -104,6 +104,7 @@
         .profit-positive { color:#2e7d32; font-weight:bold; } .profit-negative { color:#d32f2f; font-weight:bold; }
         @media(max-width:360px){.fin-grid{grid-template-columns:1fr}}
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
     <!-- એપ લોક સ્ક્રીન: ઓનલાઈન ફી પહોંચની standalone link પર આ સ્ક્રીન દેખાશે નહીં -->
@@ -115,7 +116,8 @@
             <form onsubmit="event.preventDefault(); unlockApp();">
                 <input type="password" id="appLockPassword" class="app-lock-input" autocomplete="current-password" placeholder="પાસવર્ડ દાખલ કરો">
                 <div id="appLockError" class="app-lock-error"></div>
-                <button type="submit" class="btn btn-blue" style="margin-top:8px;">🔓 એપ ખોલો</button>
+                <button type="submit" class="btn btn-blue" style="margin-top:8px;">🔓 પાસવર્ડથી એપ ખોલો</button>
+                <button type="button" class="btn btn-purple" style="margin-top:8px;" onclick="unlockWithFingerprint()">👆 ફિંગરપ્રિન્ટથી એપ ખોલો</button>
             </form>
             <div id="appLockSetupNote" style="display:none; color:#666; font-size:12px; line-height:1.5; margin-top:8px;">પહેલી વાર એપ ખોલી રહ્યા હો તો ઉપરનો પાસવર્ડ જ તમારો નવો એપ લોક પાસવર્ડ બનશે.</div>
         </div>
@@ -125,6 +127,7 @@
     <div class="navbar" id="appNavbar">
         <h1>FEE MANAGEMENT</h1>
         <div style="display:flex;align-items:center;gap:8px;">
+            <button type="button" class="btn btn-cyan" style="width:auto;margin:0;padding:7px 9px;font-size:12px;" onclick="refreshWholeApp()" title="આખી એપ રીફ્રેશ કરો">🔄 રીફ્રેશ</button>
             <div id="netStatusBadge" class="net-status net-online">ONLINE</div>
         </div>
     </div>
@@ -208,7 +211,7 @@
                 </div>
             </div>
             <div id="standaloneDownloadNote" style="font-size:12px;color:#1565c0;background:#eef5ff;border-radius:7px;padding:7px;margin-top:10px;text-align:center;">📥 આ લિંક WhatsApp પરથી ખોલતાં ફી પહોંચની Image આપમેળે ડાઉનલોડ કરવાનો પ્રયાસ થશે.</div>
-            <button class="btn btn-green" style="margin-top:8px;" onclick="downloadStandaloneImage()">📥 ડાઉનલોડ ફી પહોંચ (Image)</button>
+            <div class="grid-2" style="margin-top:8px;"><button class="btn btn-green" onclick="downloadStandaloneImage()">📥 ઈમેજ ડાઉનલોડ</button><button class="btn btn-whatsapp" onclick="shareStandaloneReceiptImage()">🟢 ઈમેજ WhatsApp પર મોકલો</button></div>
         </div>
     </div>
 
@@ -1296,6 +1299,41 @@
             events.forEach(ev=>document.addEventListener(ev,()=>resetInactivityTimer(),{passive:true}));
         }
 
+        function refreshWholeApp() {
+            // આખી એપ ફરી લોડ થાય છે; લોકલ/ક્લાઉડમાં સેવ થયેલો ડેટા ડિલીટ થતો નથી.
+            if (confirm('આખી એપ રીફ્રેશ કરવી છે? પહેલા સેવ ન કરેલો ફેરફાર ગુમાઈ શકે છે.')) location.reload();
+        }
+
+        async function unlockWithFingerprint() {
+            const err = document.getElementById('appLockError');
+            // Native Android app must expose this bridge and launch Android BiometricPrompt.
+            if (window.Android && typeof window.Android.authenticateBiometric === 'function') {
+                try {
+                    window.Android.authenticateBiometric();
+                    return;
+                } catch (e) {
+                    if (err) err.innerText = 'ફિંગરપ્રિન્ટ શરૂ થઈ નથી. પાસવર્ડથી ખોલો.';
+                    return;
+                }
+            }
+            if (err) err.innerText = 'ફિંગરપ્રિન્ટ માટે APKમાં Android BiometricPrompt bridge જરૂરી છે. આ HTML/બ્રાઉઝર એકલું ફિંગરપ્રિન્ટથી એપ અનલોક કરી શકતું નથી.';
+        }
+
+        // Native Android bridge should call this after BiometricPrompt reports success.
+        window.onBiometricAuthSuccess = function () {
+            appUnlocked = true;
+            const lock = document.getElementById('appLockScreen');
+            if (lock) lock.style.display = 'none';
+            document.getElementById('appNavbar').style.display = 'flex';
+            document.getElementById('appBrandHead').style.display = 'block';
+            document.getElementById('mainAppContainer').style.display = 'block';
+            resetInactivityTimer();
+        };
+        window.onBiometricAuthFailure = function () {
+            const err = document.getElementById('appLockError');
+            if (err) err.innerText = 'ફિંગરપ્રિન્ટ ઓળખાઈ નથી. ફરી પ્રયાસ કરો અથવા પાસવર્ડ વાપરો.';
+        };
+
         function showAppLock() {
             clearTimeout(inactivityTimer);
             appUnlocked = false;
@@ -1432,6 +1470,30 @@
         // External libraryની જરૂર નથી, એટલે ZIP/APK અને offline modeમાં પણ કામ કરી શકે.
         async function receiptElementToBlob(element) {
             if (!element) throw new Error('રસીદ મળી નથી.');
+            // WebView / App Mintમાં SVG foreignObject ઘણી વાર render થતું નથી.
+            // html2canvas ઉપલબ્ધ હોય તો DOMને સીધું canvasમાં રેન્ડર કરો.
+            if (typeof window.html2canvas === 'function') {
+                const canvas = await window.html2canvas(element, {
+                    scale: Math.min(2, Math.max(1, window.devicePixelRatio || 1)),
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                    imageTimeout: 12000,
+                    onclone: clonedDoc => {
+                        const cloned = clonedDoc.getElementById(element.id);
+                        if (cloned) {
+                            cloned.style.display = 'block';
+                            cloned.style.opacity = '1';
+                            cloned.style.visibility = 'visible';
+                            cloned.style.transform = 'none';
+                        }
+                    }
+                });
+                return await new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG બનાવવામાં ભૂલ આવી.')), 'image/png');
+                });
+            }
             const rect = element.getBoundingClientRect();
             const width = Math.max(320, Math.ceil(rect.width || element.scrollWidth || 480));
             const height = Math.max(200, Math.ceil(element.scrollHeight || rect.height || 300));
@@ -1562,6 +1624,33 @@ ${serialized}
                 console.warn('Auto receipt download:', e);
                 const note = document.getElementById('standaloneDownloadNote');
                 if (note) note.innerHTML = '📥 આપમેળે ડાઉનલોડ ન થયું હોય તો નીચેનું <b>📥 ડાઉનલોડ</b> બટન દબાવો.';
+            }
+        }
+
+        async function shareStandaloneReceiptImage() {
+            try {
+                const area = document.getElementById('standalonePrintArea');
+                if (!area) throw new Error('ફી પહોંચ મળી નથી.');
+                const blob = await receiptElementToBlob(area);
+                const name = (document.getElementById('sRName')?.innerText || 'Student').trim().replace(/[\\/:*?"<>|]/g, '_');
+                const fileName = `Fee_Receipt_${name || 'Student'}.png`;
+                if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
+                    const reader = new FileReader();
+                    reader.onloadend = () => window.Android.shareImageBase64(String(reader.result).split(',')[1], fileName);
+                    reader.readAsDataURL(blob);
+                    return;
+                }
+                const file = new File([blob], fileName, {type:'image/png'});
+                if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+                    await navigator.share({files:[file], title:'વિદ્યાર્થીની ફી પહોંચ'});
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
+                alert('આ બ્રાઉઝર સીધી ઈમેજ શેરિંગ સપોર્ટ કરતું નથી, તેથી PNG ઈમેજ ડાઉનલોડ કરી છે. હવે WhatsAppમાં ઈમેજ જોડો.');
+            } catch (e) {
+                if (e?.name !== 'AbortError') alert('ઈમેજ શેર થઈ નથી: ' + (e.message || e));
             }
         }
 
@@ -5267,28 +5356,6 @@ ${serialized}
         }
         function previousDueAmount(r) { return Math.max(0,(parseFloat(r.totalAmount)||0)-previousPaidAmount(r)); }
 
-        function consolidateDuplicateLoanRecords() {
-            const grouped = new Map();
-            const cleaned = [];
-            loanRecords.forEach(r => {
-                const key = String(r.person || '').trim().toLocaleLowerCase();
-                if (!key || !grouped.has(key)) {
-                    if (key) grouped.set(key, r);
-                    cleaned.push(r);
-                    return;
-                }
-                const base = grouped.get(key);
-                if (!Array.isArray(base.advances)) base.advances = [{id:String(base.id)+'a', date:base.date, amount:Number(base.totalAmount)||0, detail:base.detail||''}];
-                if (Array.isArray(r.advances) && r.advances.length) base.advances.push(...r.advances);
-                else base.advances.push({id:String(r.id)+'a', date:r.date, amount:Number(r.totalAmount)||0, detail:r.detail||''});
-                base.totalAmount = (Number(base.totalAmount)||0) + (Number(r.totalAmount)||0);
-                base.payments = (Array.isArray(base.payments)?base.payments:[]).concat(Array.isArray(r.payments)?r.payments:[]);
-                if (!base.phone && r.phone) base.phone = r.phone;
-                if (r.detail && !String(base.detail||'').includes(r.detail)) base.detail = [base.detail,r.detail].filter(Boolean).join('; ');
-            });
-            loanRecords = cleaned;
-        }
-
         function saveLoanRecord() {
             const person=document.getElementById('loanPerson').value.trim();
             const date=document.getElementById('loanDate').value;
@@ -5298,47 +5365,13 @@ ${serialized}
             const initial=parseFloat(document.getElementById('loanInitialPaid').value)||0;
             if(!person || !date || total<=0){alert('કૃપા કરીને નામ, તારીખ અને કુલ રકમ દાખલ કરો.');return;}
             if(initial>total){alert('આજે જમા રકમ કુલ ઉછીના કરતાં વધુ ન હોઈ શકે.');return;}
-
-            // એક જ વ્યક્તિને ફરી ઉછીના આપીએ તો નવી મુખ્ય નોંધ બનાવવાને બદલે
-            // એ જ નોંધમાં અલગ તારીખ અને રકમ તરીકે નવી એન્ટ્રી ઉમેરો.
-            consolidateDuplicateLoanRecords();
-            let r=loanRecords.find(x=>String(x.person||'').trim().toLocaleLowerCase()===person.toLocaleLowerCase());
-            const advance={id:Date.now().toString()+'a',date,amount:total,detail};
-            if(r){
-                if(!Array.isArray(r.advances)) r.advances=[{id:String(r.id)+'a',date:r.date,amount:parseFloat(r.totalAmount)||0,detail:r.detail||''}];
-                r.advances.push(advance);
-                r.totalAmount=(parseFloat(r.totalAmount)||0)+total;
-                if(!r.phone && phone) r.phone=phone;
-                if(detail) r.detail=r.detail ? r.detail+'; '+detail : detail;
-            }else{
-                r={id:Date.now().toString(),person,date,phone,detail,totalAmount:total,payments:[],advances:[advance]};
-                loanRecords.push(r);
-            }
-            if(initial>0){r.payments=r.payments||[];r.payments.push({id:Date.now().toString()+'p',date,amount:initial,note:'પ્રથમ જમા'});}
+            const r={id:Date.now().toString(),person,date,phone,detail,totalAmount:total,payments:[]};
+            if(initial>0) r.payments.push({id:Date.now().toString()+'p',date,amount:initial,note:'પ્રથમ જમા'});
+            loanRecords.push(r);
             saveLocalData(); renderLoanPage(); renderDashboard();
             document.getElementById('loanPerson').value=''; document.getElementById('loanPhone').value='';
             document.getElementById('loanDetail').value=''; document.getElementById('loanAmount').value=''; document.getElementById('loanInitialPaid').value='0';
-            alert('✅ ઉછીનાની નોંધ સેવ થઈ ગઈ.'+(r.advances.length>1?' આ વ્યક્તિની અગાઉની નોંધમાં નવી ઉછીની રકમ ઉમેરાઈ છે.':''));
-        }
-
-        function addLoanAdvance(id) {
-            const r=loanRecords.find(x=>String(x.id)===String(id));
-            if(!r) return;
-            const date=prompt('બીજી ઉછીની એન્ટ્રીની તારીખ (YYYY-MM-DD):',localDateString());
-            if(!date) return;
-            const amount=prompt('આ વખતે કેટલા રૂપિયા આપ્યા?', '');
-            if(amount===null) return;
-            const val=parseFloat(amount);
-            if(!Number.isFinite(val) || val<=0){alert('કૃપા કરીને સાચી રકમ દાખલ કરો.');return;}
-            const detail=prompt('આ એન્ટ્રીની વિગત (વૈકલ્પિક):','')||'';
-            if(!Array.isArray(r.advances) || !r.advances.length){
-                r.advances=[{id:String(r.id)+'a',date:r.date,amount:parseFloat(r.totalAmount)||0,detail:r.detail||''}];
-            }
-            r.advances.push({id:Date.now().toString()+'a',date,amount:val,detail});
-            r.totalAmount=(parseFloat(r.totalAmount)||0)+val;
-            if(detail) r.detail=r.detail ? r.detail+'; '+detail : detail;
-            saveLocalData(); renderLoanPage(); renderDashboard();
-            alert('✅ આ જ વ્યક્તિના ખાતામાં બીજી ઉછીની એન્ટ્રી ઉમેરાઈ ગઈ. કુલ રકમ અપડેટ થઈ ગઈ.');
+            alert('✅ ઉછીનાની નોંધ સેવ થઈ ગઈ.');
         }
 
         function addLoanPayment(id) {
@@ -5362,7 +5395,6 @@ ${serialized}
         }
 
         function renderLoanPage() {
-            consolidateDuplicateLoanRecords();
             const today=localDateString();
             const ld=document.getElementById('loanDate'); if(ld && !ld.value)ld.value=today;
             const total=loanRecords.reduce((a,r)=>a+(parseFloat(r.totalAmount)||0),0);
@@ -5379,13 +5411,11 @@ ${serialized}
                 return `<div class="finance-card">
                     <div style="display:flex;justify-content:space-between;gap:8px;"><strong style="color:#0097a7;">👤 ${escapeHtml(r.person)}</strong><span>${formatDate(r.date)}</span></div>
                     <div style="font-size:12px;margin-top:5px;">📱 ${escapeHtml(r.phone||'-')} &nbsp; | &nbsp; ${escapeHtml(r.detail||'-')}</div>
-                    ${(Array.isArray(r.advances)&&r.advances.length)?`<div style="margin-top:8px;"><strong>ઉછીના આપ્યાની વિગત:</strong><table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>આપેલી રકમ</th><th>વિગત</th></tr></thead><tbody>${r.advances.map((a,i)=>`<tr><td>${i+1}</td><td>${formatDate(a.date)}</td><td>₹${parseFloat(a.amount)||0}</td><td>${escapeHtml(a.detail||'-')}</td></tr>`).join('')}</tbody></table></div>`:''}
                     <div class="grid-3" style="margin-top:8px;">
                         <div class="stat-box" style="background:#1976d2;">કુલ<br>₹${r.totalAmount}</div>
                         <div class="stat-box" style="background:#388e3c;">જમા<br>₹${p}</div>
                         <div class="stat-box" style="background:#d32f2f;">બાકી<br>₹${d}</div>
                     </div>
-                    <button class="btn btn-cyan" style="margin-top:8px;" onclick="addLoanAdvance('${r.id}')">➕ આ જ વ્યક્તિના ખાતામાં બીજી ઉછીની એન્ટ્રી</button>
                     <button class="btn btn-green" style="margin-top:8px;" onclick="addLoanPayment('${r.id}')">💵 જમા રકમ ઉમેરો</button>
                     <div class="payment-history"><strong>જમા હિસ્ટ્રી:</strong>
                     <table><thead><tr><th>ક્રમ</th><th>તારીખ</th><th>જમા</th><th>વિગત</th><th>બાકી</th></tr></thead>
