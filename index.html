@@ -453,7 +453,11 @@
                         <label>ડિફોલ્ટ કોર્સનું નામ</label>
                         <input type="text" id="mDefaultCourse" class="form-control" value="Navoday">
                     </div>
-<input type="hidden" id="mReceiptBaseUrl" value="">
+                    <div class="form-group">
+                        <label>ઓનલાઈન ફી પહોંચનું Base URL (લિંક એપ/વેબ માટે)</label>
+                        <input type="url" id="mReceiptBaseUrl" class="form-control" placeholder="https://તમારી-site.com/index.html">
+                        <small style="color:#666;">ZIP/APK માંથી WhatsApp લિંક મોકલવી હોય તો પહોંચ ખોલતી HTML વેબ પર હોવી જરૂરી છે.</small>
+                    </div>
 
                     <div class="form-group" style="background:#f3f8ff;padding:8px;border-radius:7px;border:1px solid #bbdefb;">
                         <label><input type="checkbox" id="mAutoBackup"> ☁️ Auto Cloud Backup (દર 24 કલાકે, Internet હોય ત્યારે)</label>
@@ -941,7 +945,7 @@
                 <div class="form-group" id="recStationerySelectWrap" style="display:none;">
                     <label>📚 સ્ટેશનરી / બુક પસંદ કરો</label>
                     <select id="recStationerySelect" class="form-control" multiple size="4" onchange="onReceiptStationeryChange()" style="min-height:110px;"></select>
-                    <div style="font-size:11px;color:#666;margin-top:4px;">એક, બે, ત્રણ અથવા ગમે તેટલી સ્ટેશનરી વસ્તુઓ પસંદ કરી શકો છો. મોબાઇલમાં દરેક જરૂરી વસ્તુ પર ટૅપ કરીને પસંદ કરો; પસંદ કરેલી બધી વસ્તુઓ એક જ પહોંચમાં જોડાશે.</div>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">ફક્ત બાકી બુક/સ્ટેશનરી અહીં દેખાશે. મંથલી ફી સાથે બાકી વસ્તુઓ પસંદ કરી એક જ પહોંચ બનાવી શકો છો. સંપૂર્ણ રૂપિયા જમા થયા પછી વસ્તુ ફરી પસંદ કરી શકાશે નહીં.</div>
                 </div>
 
                 <div class="form-group">
@@ -1095,7 +1099,14 @@
                     </div>
                 </div>
 
-<input type="hidden" id="receiptGeneratedUrl" value="">
+                <div class="short-link-card">
+                    <div class="short-link-title">🔗 આ વિદ્યાર્થીની પહોંચ ઓનલાઈન જોવા માટેની લિંક:</div>
+                    <input type="text" id="receiptGeneratedUrl" class="form-control" style="margin-bottom: 8px; color: #1565c0; font-weight: bold;" readonly>
+                    <div class="grid-2">
+                        <button class="btn btn-purple" onclick="copyReceiptLink()">📋 લિંક કોપી કરો</button>
+                        <button class="btn btn-whatsapp" onclick="shareReceiptLinkWhatsApp()">💬 WhatsApp પર લિંક મોકલો</button>
+                    </div>
+                </div>
 
                 <div style="margin-top: 15px;">
                     <div class="grid-2">
@@ -1305,7 +1316,7 @@
                     return;
                 }
             }
-            if (err) err.innerText = 'આ APKમાં Android BiometricPrompt native bridge ઉપલબ્ધ નથી. App Mintમાં native biometric support/bridge ઉમેર્યા પછી જ વાસ્તવિક ફિંગરપ્રિન્ટ ચાલુ થશે.';
+            if (err) err.innerText = 'ફિંગરપ્રિન્ટ માટે APKમાં Android BiometricPrompt bridge જરૂરી છે. આ HTML/બ્રાઉઝર એકલું ફિંગરપ્રિન્ટથી એપ અનલોક કરી શકતું નથી.';
         }
 
         // Native Android bridge should call this after BiometricPrompt reports success.
@@ -3935,8 +3946,10 @@ ${serialized}
             if (!Array.isArray(selectedIds)) selectedIds = [selectedIds];
             selectedIds = selectedIds.filter(v => v !== null && v !== undefined && String(v) !== '');
 
+            // ફી પહોંચમાં ફક્ત બાકી/ઉધાર સ્ટેશનરી જ બતાવો.
+            // રોકડ/ચૂકવેલ વસ્તુઓ ફરીથી પહોંચમાં ઉમેરાઈ શકશે નહીં.
             const items = (currentStudent && Array.isArray(currentStudent.stationery))
-                ? currentStudent.stationery.filter(x => x && Number(x.price) > 0) : [];
+                ? currentStudent.stationery.filter(x => x && Number(x.price) > 0 && String(x.payType || 'ઉધાર').trim() === 'ઉધાર') : [];
 
             if (!items.length) {
                 el.innerHTML = '<option value="">કોઈ સ્ટેશનરી નોંધ ઉપલબ્ધ નથી</option>';
@@ -4275,6 +4288,21 @@ ${serialized}
             if (existingIdx >= 0) currentStudent.receipts[existingIdx] = newReceipt;
             else currentStudent.receipts.push(newReceipt);
 
+            // બુક/સ્ટેશનરીની સંપૂર્ણ રકમ જમા થઈ હોય ત્યારે જ તેને ચૂકવેલ ગણો.
+            // આથી partial payment પર બાકી વસ્તુઓ ભૂલથી દૂર નહીં થાય.
+            const receiptFullySettled = (paidVal + discountVal) >= grandTotal;
+            if (receiptFullySettled && selectedStationery.length) {
+                const paidIds = new Set(selectedStationery.map(x => String(x.sourceId || '')));
+                (currentStudent.stationery || []).forEach((item, idx) => {
+                    const itemId = String(item.id || ('legacy-' + currentStudent.id + '-' + idx));
+                    if (paidIds.has(itemId)) {
+                        item.payType = 'રોકડ';
+                        item.paidDate = dateVal || localDateString();
+                        item.paidByReceiptId = String(receiptId);
+                    }
+                });
+            }
+
             syncReceiptToPreviousYearDue(currentStudent.id, newReceipt);
             saveLocalData();
             recalculateStudentTotals();
@@ -4415,50 +4443,38 @@ ${serialized}
 
         async function shareWhatsAppImage() {
             try {
-                if (!currentStudent) throw new Error('પહેલા વિદ્યાર્થી પસંદ કરો.');
-                const phone = normalizeWhatsAppPhone(currentStudent.phone || '');
-                if (!phone) throw new Error('આ વિદ્યાર્થીનો માન્ય મોબાઈલ નંબર સેવ કરો.');
                 if (!generatedBlob) await generateReceiptCanvas();
                 if (!generatedBlob) throw new Error('ફી પહોંચની Image તૈયાર થઈ નથી.');
-                const fileName = `Fee_Receipt_${String(currentStudent.name || 'Student').replace(/[\\/:*?"<>|]/g, '_')}.png`;
+                const fileName = `Fee_Receipt_${currentStudent ? currentStudent.name : 'Student'}.png`;
+                const file = new File([generatedBlob], fileName, {type:'image/png'});
 
-                // App Mint APKમાં આ native bridge અમલમાં હોય તો નંબર પર સીધી image મોકલે.
-                if (window.Android && typeof window.Android.shareImageBase64ToWhatsApp === 'function') {
+                // 1) Android APK native bridge, if the wrapper exposes it.
+                if (window.Android && typeof window.Android.shareImageBase64 === 'function') {
                     const reader = new FileReader();
-                    reader.onload = function () {
+                    reader.onloadend = function(){
                         try {
-                            window.Android.shareImageBase64ToWhatsApp(String(reader.result).split(',')[1], fileName, phone);
-                        } catch (e) { alert('❌ WhatsApp પર ઈમેજ મોકલી શકાઈ નથી: ' + (e.message || e)); }
+                            window.Android.shareImageBase64(reader.result.split(',')[1], fileName);
+                        } catch(e) {
+                            alert('❌ WhatsApp Image Shareમાં ભૂલ આવી.');
+                        }
                     };
                     reader.readAsDataURL(generatedBlob);
                     return;
                 }
 
-                // Standard Android Web Share image file fallback. Android/WhatsApp may ask
-                // the user to choose the recipient; web APIs cannot force a specific chat.
-                const file = new File([generatedBlob], fileName, {type:'image/png'});
+                // 2) Android Chrome / WebView versions supporting Web Share with files.
                 if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
                     await navigator.share({files:[file], title:'ફી પહોંચ'});
                     return;
                 }
-                // Fallback opens the student's WhatsApp chat, but cannot attach the image
-                // automatically without the native Android share bridge.
-                const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent('નમસ્તે, '+(currentStudent.name || 'વિદ્યાર્થી')+'ની ફી પહોંચ મોકલી રહ્યો છું.')}`;
-                window.open(waUrl, '_blank');
-                alert('WhatsAppમાં વિદ્યાર્થીનો ચેટ ખોલ્યો છે. આ App Mint WebViewમાં સીધી Image જોડવા માટે APKમાં shareImageBase64ToWhatsApp native bridge જરૂરી છે.');
+
+                // Do not send a text/link as a substitute. Give the user a real image file.
+                await downloadImageDirectly();
+                alert('આ WebViewમાં Direct Image Share સપોર્ટ નથી. Image Download થઈ છે. આ સુવિધા APKમાં native share bridgeથી જ સંપૂર્ણ Direct WhatsApp attachment તરીકે કામ કરશે.');
             } catch (e) {
                 if (e && e.name === 'AbortError') return;
                 alert('❌ Image શેર થઈ નથી: ' + (e.message || e));
             }
-        }
-
-        function normalizeWhatsAppPhone(value) {
-            let digits = String(value || '').replace(/\D/g, '');
-            if (digits.startsWith('00')) digits = digits.slice(2);
-            // Indian local 10-digit numbers are prefixed with country code 91.
-            if (digits.length === 10) digits = '91' + digits;
-            if (digits.length < 11 || digits.length > 15) return '';
-            return digits;
         }
 
         function closeCustomModal() {
@@ -5202,9 +5218,10 @@ ${serialized}
             }
 
             currentStudent.stationery.forEach(s => {
+                const isPaid = String(s.payType || '').trim() !== 'ઉધાર';
                 tbody.innerHTML += `
-                    <tr>
-                        <td>${s.itemName}</td>
+                    <tr style="background:${isPaid ? '#effaf1' : '#fff5f5'};">
+                        <td>${escapeHtml(s.itemName || 'સ્ટેશનરી')}<br><small style="color:${isPaid ? '#218838' : '#c62828'};font-weight:bold;">${isPaid ? '✅ રૂપિયા આવી ગયા' : '⏳ રૂપિયા બાકી'}</small></td>
                         <td>${s.qty}</td>
                         <td>₹${s.price}</td>
                         <td><span style="color:${s.payType === 'ઉધાર' ? 'red' : 'green'}; font-weight:bold;">${s.payType}</span></td>
