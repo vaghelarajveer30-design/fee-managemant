@@ -830,6 +830,16 @@
                     <div id="profJoinHistory" style="font-size:12px; color:#333;"></div>
                 </div>
 
+                <div class="card" style="background:#fff8e1;border-color:#ffe082;margin-top:10px;margin-bottom:0;">
+                    <div style="font-weight:bold;color:#e65100;font-size:13px;margin-bottom:6px;">⏭️ ફી ગણતરીમાંથી મહિનો Skip કરો</div>
+                    <div style="font-size:12px;color:#555;margin-bottom:8px;">વિદ્યાર્થી જે મહિને આવ્યો ન હોય તે મહિનો પસંદ કરો. પસંદ કરેલો મહિનો કુલ ફી અને બાકી ફીમાં ગણાશે નહીં.</div>
+                    <button type="button" class="btn btn-orange" onclick="toggleFeeSkipManager()">📅 મહિના પસંદ કરો / Skip મેનેજ કરો</button>
+                    <div id="feeSkipManager" style="display:none;margin-top:10px;">
+                        <div id="feeSkipMonthList" style="max-height:300px;overflow:auto;"></div>
+                        <button type="button" class="btn btn-green" onclick="saveSkippedFeeCycles()">💾 Skip મહિના સેવ કરો</button>
+                    </div>
+                </div>
+
                 <div id="feeChangeBox" class="card" style="display:none; background:#fff8e1; border-color:#ffe082; margin-top:10px; margin-bottom:0;">
                     <div style="font-weight:bold; color:#e65100; font-size:13px; margin-bottom:7px;">💰 વચ્ચેથી ફી વધારવી / બદલવી</div>
                     <div class="grid-2">
@@ -2217,6 +2227,8 @@ ${serialized}
             st.address = st.address || '';
             st.photo = st.photo || '';
             st.endDate = st.endDate || '';
+            if (!Array.isArray(st.skippedFeeCycles)) st.skippedFeeCycles = [];
+            st.skippedFeeCycles = st.skippedFeeCycles.map(String).filter(Boolean);
             if (!st.feeHistory || !Array.isArray(st.feeHistory) || st.feeHistory.length === 0) {
                 st.feeHistory = [{ fromDate: st.joinDate || localDateString(), fee: parseFloat(st.fee) || 0 }];
             }
@@ -2341,7 +2353,7 @@ ${serialized}
             });
         }
 
-        function getMonthsBreakdown(st, fromStr, toStr) {
+        function getMonthsBreakdown(st, fromStr, toStr, includeSkipped = false) {
             if (!fromStr || !toStr || toStr < fromStr) return [];
 
             const from = dateOnly(fromStr), to = dateOnly(toStr);
@@ -2412,7 +2424,63 @@ ${serialized}
             });
 
             result.sort((a,b) => a.cycleFrom.localeCompare(b.cycleFrom));
-            return result;
+            if (includeSkipped) return result;
+            const skipped = new Set(Array.isArray(st.skippedFeeCycles) ? st.skippedFeeCycles.map(String) : []);
+            return result.filter(x => !skipped.has(String(x.cycleFrom)));
+        }
+
+        function toggleFeeSkipManager() {
+            const box = document.getElementById('feeSkipManager');
+            if (!box) return;
+            const opening = box.style.display === 'none' || !box.style.display;
+            box.style.display = opening ? 'block' : 'none';
+            if (opening) renderFeeSkipManager();
+        }
+
+        function renderFeeSkipManager() {
+            if (!currentStudent) return;
+            normalizeStudentRecords(currentStudent);
+            const list = document.getElementById('feeSkipMonthList');
+            if (!list) return;
+            const today = localDateString();
+            const first = (currentStudent.attendancePeriods || [])
+                .filter(p => p && p.fromDate)
+                .map(p => p.fromDate)
+                .sort()[0];
+            if (!first) {
+                list.innerHTML = '<div style="color:#b71c1c;font-size:12px;">દાખલ તારીખ ઉપલબ્ધ નથી.</div>';
+                return;
+            }
+            const cycles = getMonthsBreakdown(currentStudent, first, today, true);
+            const skipped = new Set(currentStudent.skippedFeeCycles || []);
+            if (!cycles.length) {
+                list.innerHTML = '<div style="color:#666;font-size:12px;">હાલમાં પસંદ કરવા માટે કોઈ મહિનો નથી.</div>';
+                return;
+            }
+            list.innerHTML = cycles.map(c => {
+                const checked = skipped.has(String(c.cycleFrom)) ? 'checked' : '';
+                const from = formatDate(c.cycleFrom);
+                const to = formatDate(c.cycleTo);
+                return `<label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #ddd;border-radius:7px;margin:5px 0;background:${checked ? '#fff3e0' : '#fff'};">
+                    <input type="checkbox" class="fee-skip-cycle" value="${escapeHtml(c.cycleFrom)}" ${checked} style="width:18px;height:18px;flex-shrink:0;">
+                    <span style="font-size:13px;"><strong>${escapeHtml(c.name)} ${c.year}</strong><br><small>${from} થી ${to} · ₹${Math.round(Number(c.fee)||0)}</small></span>
+                    <span style="margin-left:auto;color:${checked ? '#e65100' : '#2e7d32'};font-weight:bold;font-size:12px;">${checked ? 'SKIP' : 'ગણાશે'}</span>
+                </label>`;
+            }).join('');
+        }
+
+        function saveSkippedFeeCycles() {
+            if (!currentStudent) return;
+            const selected = Array.from(document.querySelectorAll('.fee-skip-cycle:checked')).map(el => String(el.value));
+            currentStudent.skippedFeeCycles = selected;
+            saveLocalData();
+            recalculateStudentTotals();
+            renderDashboard();
+            renderFeeSkipManager();
+            // Refresh currently visible student fee details and month ledger if available.
+            if (typeof renderStudentDueStyleSummary === 'function') renderStudentDueStyleSummary();
+            if (typeof renderStudentFeeDetails === 'function') renderStudentFeeDetails();
+            alert('Skip મહિના સેવ થઈ ગયા. પસંદ કરેલા મહિના ફી ગણતરીમાં નહીં આવે.');
         }
 
         function getTuitionForPeriod(st, fromStr, toStr) {
@@ -3611,7 +3679,7 @@ ${serialized}
 
             const tuitionInfo = getTuitionForPeriod(st, fromStr, toStr);
             const monthRows = (tuitionInfo.months || []).map(m => ({
-                key:m.key || monthKey(m.year,m.month), name:m.name, year:m.year,
+                key:m.key || monthKey(m.year,m.month), name:m.name, year:m.year, month:m.month,
                 fee:parseFloat(m.fee)||0, remaining:parseFloat(m.fee)||0, paid:0
             }));
 
@@ -3626,36 +3694,60 @@ ${serialized}
                     receiptMonths = getTuitionForPeriod(st,r.fromDate,r.toDate).months || [];
                 }
 
-                let pool = Math.max(0, parseFloat(r.paidVal) || 0);
+                // પહોંચમાં બુક/સ્ટેશનરીની રકમ હોય તો તે માસિક ટ્યુશન ફીમાં ન ગણવી.
+                // કુલ જમા અને બાકીનું સરવૈયું એક જ રહે તે માટે ફક્ત ટ્યુશનનો ભાગ અહીં વહેંચાય છે.
+                const receiptStationery = Math.max(0, Number(r.statFee) || 0);
+                let pool = Math.max(0, (parseFloat(r.paidVal) || 0) - receiptStationery);
+                const receiptFrom = r.fromDate || '';
+                const receiptTo = r.toDate || '';
+                let matchedAny = false;
                 receiptMonths.forEach(rm => {
                     if (pool <= 0) return;
                     const key = rm.key || (rm.year != null && rm.month != null ? monthKey(Number(rm.year),Number(rm.month)) : '');
-                    const row = monthRows.find(m => key && m.key === key) ||
-                                monthRows.find(m => String(m.name) === String(rm.name) && Number(m.year) === Number(rm.year));
+                    const row = monthRows.find(m => key && String(m.key) === String(key)) ||
+                                monthRows.find(m => String(m.name).trim() === String(rm.name).trim() && Number(m.year) === Number(rm.year)) ||
+                                monthRows.find(m => Number(m.year) === Number(rm.year) && Number(m.month) === Number(rm.month));
                     if (!row) return;
                     const rmFee = Math.max(0, parseFloat(rm.fee) || row.fee);
                     const use = Math.min(row.remaining, pool, rmFee);
+                    if (use > 0) matchedAny = true;
                     row.remaining -= use;
                     row.paid += use;
                     pool -= use;
                 });
+
+                // જૂની પહોંચમાં મહિના-કી અલગ હોય તો તારીખના સમયગાળામાં સૌથી જૂના બાકી મહિના પહેલાં ભરેલા ગણો.
+                // આ fallback ન હોવાથી કુલ જમા હોવા છતાં મહિના લાલ/બાકી દેખાઈ શકે છે.
+                if (pool > 0.009 && receiptFrom && receiptTo) {
+                    monthRows.filter(row => {
+                        const rowKey = row.key || '';
+                        const rowDate = `${row.year}-${String(Number(row.month) + 1).padStart(2,'0')}-01`;
+                        const fromDate = new Date(receiptFrom + 'T00:00:00');
+                        const toDate = new Date(receiptTo + 'T00:00:00');
+                        const rowDateObj = new Date(rowDate + 'T00:00:00');
+                        return row.remaining > 0 && rowDateObj.getFullYear() * 12 + rowDateObj.getMonth() >= fromDate.getFullYear() * 12 + fromDate.getMonth()
+                            && rowDateObj.getFullYear() * 12 + rowDateObj.getMonth() <= toDate.getFullYear() * 12 + toDate.getMonth();
+                    }).forEach(row => {
+                        if (pool <= 0) return;
+                        const use = Math.min(row.remaining, pool);
+                        row.remaining -= use;
+                        row.paid += use;
+                        pool -= use;
+                    });
+                }
+                // જો જૂની receiptમાં month detail ન હોય તો સમયગાળાની અંદરના મહિના પ્રમાણે વહેંચો.
+                if (pool > 0.009 && !matchedAny && !receiptMonths.length) {
+                    monthRows.filter(row => row.remaining > 0).forEach(row => {
+                        if (pool <= 0) return;
+                        const use = Math.min(row.remaining, pool);
+                        row.remaining -= use;
+                        row.paid += use;
+                        pool -= use;
+                    });
+                }
             });
 
-            // જૂના receiptsમાં month detail ન હોય તો પણ તારીખના સમયગાળા પરથી
-            // ચૂકવણીને યોગ્ય મહિનાઓમાં વહેંચી દઈએ.
-            (st.receipts || []).forEach(r => {
-                const paid = Math.max(0, parseFloat(r.paidVal) || 0);
-                if (!paid || (Array.isArray(r.months) && r.months.length)) return;
-                if (!r.fromDate || !r.toDate || r.toDate < fromStr || r.fromDate > toStr) return;
-                let pool = paid;
-                monthRows.forEach(row => {
-                    if (pool <= 0 || row.remaining <= 0) return;
-                    const use = Math.min(row.remaining, pool);
-                    row.remaining -= use;
-                    row.paid += use;
-                    pool -= use;
-                });
-            });
+            // ચૂકવણીનું વિતરણ ઉપર એક જ વાર થાય છે; ફરી ગણતરી ટાળવામાં આવે છે.
 
             const tuitionTotal = monthRows.reduce((a,m)=>a+m.fee,0);
             const tuitionPaid = monthRows.reduce((a,m)=>a+m.paid,0);
